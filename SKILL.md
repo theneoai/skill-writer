@@ -171,6 +171,8 @@ Phase 5: 多轮训练 (TRAIN) - 基于对话历史生成 vNext，GPT-4 上下文
 
 ## §4. Examples (场景示例)
 
+Example: 团队 Skill 仓库治理，扫描过期 Skill (v1.x)，生成版本升级建议
+
 Example: Skill 自迭代优化，运行评估后分析弱项，生成改进方案 delta
 
 Example: 安全审查 OWASP AST10，检测 CWE-798 硬编码密钥、CWE-200 敏感信息泄露
@@ -484,6 +486,7 @@ Example: 评估 git-commit Skill，使用 F1≥0.90 阈值，MRR≥0.85，MultiT
 | E4 | 训练数据不足 | 提示修正 | - | Low | < 5s |
 | E5 | 协作通信失败 | 切换模式 | 建议 | Medium | < 30s |
 | E6 | 安全审查失败 | 列出违规 | 必须 | High | < 120s |
+| E7 | API 限流 | 指数退避 | - | Medium | < 30s |
 | E7 | API 限流 | 指数退避 | - | Medium | < 30s |
 | E7 | API 限流 | 指数退避 | - | Medium | < 30s |
 | E7 | API 限流 | 指数退避 | - | Medium | < 30s |
