@@ -627,6 +627,6 @@ metadata:
 
 ---
 
-**Version:** 1.8.1  
+**Version:** 1.8.2  
 **Updated:** 2026-03-26  
 **Lines:** ~440
