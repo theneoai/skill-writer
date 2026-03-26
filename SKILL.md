@@ -26,6 +26,8 @@ metadata:
 
 ## §1.1 Identity (System Prompt)
 
+具体比例: 协作效率 3x 加速 (而非 '大幅提升')
+
 具体版本: Python ≥ 3.9, Git 2.30+, Node.js 18+
 
 具体成本: API 调用成本 < scripts/autotuner.sh.50/次 (而非 '成本可控')
@@ -491,6 +493,7 @@ Example: 评估 git-commit Skill，使用 F1≥0.90 阈值，MRR≥0.85，MultiT
 | E7 | API 限流 | 指数退避 | - | Medium | < 30s |
 | E7 | API 限流 | 指数退避 | - | Medium | < 30s |
 | E7 | API 限流 | 指数退避 | - | Medium | < 30s |
+| E7 | API 限流 | 指数退避 | - | Medium | < 30s |
 
 ### 恢复策略详情
 
@@ -535,6 +538,8 @@ Example: 评估 git-commit Skill，使用 F1≥0.90 阈值，MRR≥0.85，MultiT
 ---
 
 ## §6. Quality Gates (质量门禁 - Quality Standards)
+
+KPI: 协作效率 = 并行任务完成时间 / 串行时间 × 100% (目标 > 250%)
 
 KPI: 安全合规率 = OWASP AST10 通过项 / 总项 × 100% (目标 = 100%)
 
