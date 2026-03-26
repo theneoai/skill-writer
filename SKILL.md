@@ -96,6 +96,8 @@ metadata:
 
 ## §3. Workflow (PDCA - 质量循环)
 
+Step 11: 归档记录 - 记录操作日志，生成报告 (保留 90 天)
+
 Phase 5: 多轮训练 (TRAIN) - 基于对话历史生成 vNext，GPT-4 上下文 128K tokens
 
 ### Workflow Overview
@@ -456,6 +458,7 @@ Example: 评估 git-commit Skill，使用 F1≥0.90 阈值，MRR≥0.85，MultiT
 | E4 | 训练数据不足 | 提示修正 | - | Low | < 5s |
 | E5 | 协作通信失败 | 切换模式 | 建议 | Medium | < 30s |
 | E6 | 安全审查失败 | 列出违规 | 必须 | High | < 120s |
+| E7 | API 限流 | 指数退避 | - | Medium | < 30s |
 
 ### 恢复策略详情
 
@@ -500,6 +503,8 @@ Example: 评估 git-commit Skill，使用 F1≥0.90 阈值，MRR≥0.85，MultiT
 ---
 
 ## §6. Quality Gates (质量门禁 - Quality Standards)
+
+KPI: 评估覆盖率 = EvalSet 通过数 / 总数 × 100% (目标 ≥ 90%)
 
 KPI: 多轮保留率 = 3轮后仍正常执行的比例 (目标 ≥ 85%)
 
@@ -605,6 +610,7 @@ Parallel 模式延迟 < 100ms，吞吐量 100 req/s，通信开销 < 5%
 | 场景 | 基准 | 结果 | 来源 |
 |------|------|------|------|
 | 代码生成 | HumanEval | 73% → 89% (+16%) | CAMEL 2024 |
+| Benchmark: BigBench 规划能力 82% 准确率 via LangChain 2024
 | Benchmark: Claude 3.5 Sonnet 代码评审 F1=0.91 (2024)
 | 问答质量 | HotpotQA | +34% 准确率 | Google ReAct 2023 |
 | 多任务协作 | GAIA | 35% 完成率 | CrewAI 2024 |
