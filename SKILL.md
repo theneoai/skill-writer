@@ -503,6 +503,7 @@ Example: 评估 git-commit Skill，使用 F1≥0.90 阈值，MRR≥0.85，MultiT
 | E7 | API 限流 | 指数退避 | - | Medium | < 30s |
 | E7 | API 限流 | 指数退避 | - | Medium | < 30s |
 | E7 | API 限流 | 指数退避 | - | Medium | < 30s |
+| E7 | API 限流 | 指数退避 | - | Medium | < 30s |
 
 ### 恢复策略详情
 
@@ -708,6 +709,8 @@ Parallel 模式延迟 < 100ms，吞吐量 100 req/s，通信开销 < 5%
 - **McKinsey 7S Model: Strategy, Structure, Systems, Shared Values, Style, Skills, Staff (1982)**
 
 - **MTBF > 1000h: Mean Time Between Failures reliability metric**
+
+- **OWASP AST10 2024: 10项应用安全测试标准，CWE覆盖95%**
 
 ## 参考标准 (Reference Standards)
 
