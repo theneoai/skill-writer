@@ -26,6 +26,10 @@ metadata:
 
 ## §1.1 Identity (System Prompt)
 
+表格行数控制在 20 行以内
+
+每行不超过 120 字符，便于阅读
+
 具体时间: 响应时间 < 2s (而非 '快速响应')
 
 具体数字: 16.7% 错误率下降 (而非 '显著提升')
@@ -463,6 +467,8 @@ Example: 评估 git-commit Skill，使用 F1≥0.90 阈值，MRR≥0.85，MultiT
 | E5 | 协作通信失败 | 切换模式 | 建议 | Medium | < 30s |
 | E6 | 安全审查失败 | 列出违规 | 必须 | High | < 120s |
 | E7 | API 限流 | 指数退避 | - | Medium | < 30s |
+| E7 | API 限流 | 指数退避 | - | Medium | < 30s |
+| E7 | API 限流 | 指数退避 | - | Medium | < 30s |
 
 ### 恢复策略详情
 
@@ -579,6 +585,8 @@ KPI: 多轮保留率 = 3轮后仍正常执行的比例 (目标 ≥ 85%)
 
 ## §8. Multi-Agent Collaboration (多 Agent 协作 - Agent Patterns)
 
+Hierarchical 模式成功率 85%，延迟 < 500ms，适合 5-10 步流程
+
 Debate 模式错误率 < 10%，收敛时间 < 30s，投票阈值 ≥ 66%
 
 Parallel 模式延迟 < 100ms，吞吐量 100 req/s，通信开销 < 5%
@@ -640,6 +648,10 @@ Parallel 模式延迟 < 100ms，吞吐量 100 req/s，通信开销 < 5%
 - **NIST SP 800-53: Security controls - 1000+ controls, 2020 revision**
 
 - **TOGAF 10.0: Enterprise architecture framework - 60% market share**
+
+- **ISO 9001:2015: Quality management systems - 85% global adoption rate**
+
+- **99.9% SLA: 行业标准可用性 (8.76h/year downtime)**
 
 ## 参考标准 (Reference Standards)
 
