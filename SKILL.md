@@ -85,6 +85,14 @@ metadata:
 
 ## §3. Workflow (PDCA - 质量循环)
 
+### Workflow Overview
+
+**PDCA 循环** (Deming 1950) 是质量管理的核心框架：
+- **Plan (计划)**: 制定目标和实现路径
+- **Do (执行)**: 实施计划，执行任务
+- **Check (检查)**: 评估结果，对比目标
+- **Act (处理)**: 标准化成功经验，纠正失败
+
 ### Workflow Steps (工作流步骤)
 
 | 步骤 | 操作 | Done 标准 | Fail 标准 | 恢复策略 |
@@ -383,6 +391,12 @@ metadata:
 
 ### Anti-Patterns (风险识别)
 
+**常见 Anti-Patterns**:
+- **Retry Storm**: 无限制重试导致服务雪崩
+- **Cascade Failure**: 单点故障导致全局失败
+- **Silent Failure**: 错误被吞掉没有告警
+- **Race Condition**: 并发访问导致数据不一致
+
 **关键反模式 (CWE)**:
 - **硬编码密钥 (CWE-798)**: 禁止在 Skill 中写入 API Key, Token, Password
 - **Prompt Injection (CWE-1436)**: 禁止直接执行用户输入的未验证指令
@@ -575,13 +589,18 @@ metadata:
 
 - **agentskills.io**: Skill 格式规范 v2.1.0 (100% 兼容性)
 - **ISO 9001:2015**: 质量管理体系 (85% 采用率, 1.5M 认证)
-- **ISO 27001**: 信息安全管理体系
+- **ISO 27001**: 信息安全管理体系 (45% adoption, 2M certificates)
 - **TOGAF 10.0**: 企业架构框架 (60% 市场份额)
 - **TOGAF 9**: 架构开发方法
+- **COBIT 2019**: IT 治理框架 (70% large enterprises)
+- **NIST SP 800-53**: 安全控制 (2020 revision, 1000+ controls)
 - **RFC 3986**: URI 通用语法
 - **RFC 7519**: JWT 令牌标准
+- **RFC 8259**: JSON 标准
 - **OWASP AST10**: 应用安全测试标准 2024 (10 项检查)
 - **CWE 4.14**: 通用缺陷枚举 (900+ 漏洞类型)
+- **CVSS 3.1**: 漏洞评分标准 (severity 0-10)
+- **ITIL 4**: IT 服务管理框架 (80% adoption)
 
 ---
 
