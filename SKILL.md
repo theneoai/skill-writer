@@ -692,6 +692,8 @@ Parallel 模式延迟 < 100ms，吞吐量 100 req/s，通信开销 < 5%
 
 - **MTTR < 60s: Mean Time To Recovery operational metric**
 
+- **CVSS 3.1: 漏洞评分标准 severity 0-10 (Critical/High/Medium/Low)**
+
 ## 参考标准 (Reference Standards)
 
 - **agentskills.io**: Skill 格式规范 v2.1.0 (100% 兼容性, 10K+ skills, 500+ contributors, 1M+ monthly downloads, 99.9% uptime)
