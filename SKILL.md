@@ -514,7 +514,7 @@ Before any Skill release, run security checks:
 
 ---
 
-## §8.10 Validation
+## §8.1 Validation
 
 When running validate.sh, execute from the **parent directory**:
 
@@ -522,6 +522,79 @@ When running validate.sh, execute from the **parent directory**:
 cd /path/to/parent
 bash agent-skills-creator/scripts/skill-manager/validate.sh agent-skills-creator/SKILL.md
 ```
+
+---
+
+## §8.2 Certification Status
+
+| Criterion | Target | Actual |
+|-----------|--------|--------|
+| Text Score | ≥ 8.0 | 9.30 |
+| Runtime Score | ≥ 8.0 | 9.30 |
+| Variance | < 1.0 | 0.21 |
+| F1 Score | ≥ 0.90 | 0.923 |
+| MRR | ≥ 0.85 | 0.891 |
+| Trigger Accuracy | ≥ 99% | 99.7% |
+
+**Status**: CERTIFIED ✓
+
+---
+
+## §8.3 Benchmark Performance
+
+**Multi-Agent Method Improvements (2024-2026)**:
+
+- **Benchmark**: HumanEval pass@1 76.3%→85.2% (+8.9%) via multi-agent code review with debate consensus (OpenAI DevDay, 2024)
+- **Benchmark**: MMLU accuracy 72.1%→79.4% (+7.3%) via hierarchical multi-agent knowledge aggregation (DeepMind Research, 2025)
+- **Benchmark**: GAIA average score 38.2%→52.7% (+14.5%) via parallel multi-agent evaluation with ensemble voting (Meta AI, 2025)
+- **Benchmark**: BIG-bench hard task 61.4%→73.8% (+12.4%) via multi-agent reasoning with 66%+ consensus threshold (Anthropic Research, 2024)
+
+---
+
+## §8.4 Execution Performance Targets
+
+| Performance Metric | Target | Measurement |
+|-------------------|--------|-------------|
+| Cost per Skill Run | < $0.50 | API tokens × rate |
+| Evaluation Time (F1) | < 45s | time eval_runner.py |
+| Validation Time | < 10s | time validate.sh |
+| Scoring Time | < 15s | time score.sh |
+| Self-Optimization Round | < 10 min | 9-step loop |
+| Concurrent Lock Timeout | 300s | .skill.lock expiry |
+| Retry Backoff | 1s→2s→4s | Exponential cap 3 retries |
+| Circuit Breaker | 5 failures | 60s cooldown |
+
+---
+
+## §8.5 Benchmark Results
+
+| Benchmark | Baseline | Multi-Agent | Delta |
+|-----------|----------|-------------|-------|
+| HumanEval pass@1 | 76.3% | 85.2% | +8.9% |
+| MMLU accuracy | 72.1% | 79.4% | +7.3% |
+| GAIA average | 38.2% | 52.7% | +14.5% |
+| BIG-bench hard | 61.4% | 73.8% | +12.4% |
+
+### Execution Time
+
+| Operation | Target | Actual |
+|-----------|--------|--------|
+| eval_runner.py | < 45s | 31.2s |
+| validate.sh | < 10s | 6.4s |
+| score.sh | < 15s | 9.8s |
+
+---
+
+## §8.6 Quantitative Metadata
+
+| Field | Value |
+|-------|-------|
+| example_count | 47 |
+| test_case_count | 156 |
+| verification_frequency | 14 days |
+| review_cycle_days | 90 |
+| optimization_rounds | 20 |
+| agent_deployment_count | 8 |
 
 ---
 
@@ -544,66 +617,10 @@ bash agent-skills-creator/scripts/skill-manager/validate.sh agent-skills-creator
 - **Security Patches**: Critical CVEs patched within 48 hours
 - **Refresh Cycle**: 90 days mandatory review
 - **Next Review**: 2026-06-25
+- **Deprecation Policy**: 6-month notice before removing triggers or workflow steps
+- **Breaking Changes**: Major version bumps require 90-day transition
 
 ---
-
-## §8.5 Benchmark Performance
-
-**Multi-Agent Method Improvements (2024-2026)**:
-
-- **Benchmark**: HumanEval pass@1 76.3%→85.2% (+8.9%) via multi-agent code review with debate consensus (OpenAI DevDay, 2024)
-- **Benchmark**: MMLU accuracy 72.1%→79.4% (+7.3%) via hierarchical multi-agent knowledge aggregation (DeepMind Research, 2025)
-- **Benchmark**: GAIA average score 38.2%→52.7% (+14.5%) via parallel multi-agent evaluation with ensemble voting (Meta AI, 2025)
-- **Benchmark**: BIG-bench hard task 61.4%→73.8% (+12.4%) via multi-agent reasoning with 66%+ consensus threshold (Anthropic Research, 2024)
-
----
-
-## §8.6 Execution Performance Targets
-
-| Performance Metric | Target | Measurement |
-|-------------------|--------|-------------|
-| Cost per Skill Run | < $0.50 | API tokens × rate |
-| Evaluation Time (F1) | < 45s | time eval_runner.py |
-| Validation Time | < 10s | time validate.sh |
-| Scoring Time | < 15s | time score.sh |
-| Self-Optimization Round | < 10 min | 9-step loop |
-| Concurrent Lock Timeout | 300s | .skill.lock expiry |
-| Retry Backoff | 1s→2s→4s | Exponential cap 3 retries |
-| Circuit Breaker | 5 failures | 60s cooldown |
-
----
-
-## §8.7 Certification Status
-
-| Criterion | Target | Actual |
-|-----------|--------|--------|
-| Text Score | ≥ 8.0 | 9.30 |
-| Runtime Score | ≥ 8.0 | 9.30 |
-| Variance | < 1.0 | 0.21 |
-| F1 Score | ≥ 0.90 | 0.923 |
-| MRR | ≥ 0.85 | 0.891 |
-| Trigger Accuracy | ≥ 99% | 99.7% |
-
-**Status**: CERTIFIED ✓
-
----
-
-## §8.9 Benchmark Results
-
-| Benchmark | Baseline | Multi-Agent | Delta |
-|-----------|----------|-------------|-------|
-| HumanEval pass@1 | 76.3% | 85.2% | +8.9% |
-| MMLU accuracy | 72.1% | 79.4% | +7.3% |
-| GAIA average | 38.2% | 52.7% | +14.5% |
-| BIG-bench hard | 61.4% | 73.8% | +12.4% |
-
-### Execution Time
-
-| Operation | Target | Actual |
-|-----------|--------|--------|
-| eval_runner.py | < 45s | 31.2s |
-| validate.sh | < 10s | 6.4s |
-| score.sh | < 15s | 9.8s |
 
 ### Consistency Checklist
 
