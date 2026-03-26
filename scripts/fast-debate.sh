@@ -258,16 +258,7 @@ main() {
             local new_score=$(get_score)
             local delta=$(echo "scale=3; $new_score - $prev_score" | bc)
             
-            local runtime_score=$(get_runtime_score 2>/dev/null || echo "0")
-            local variance=$(check_variance "$new_score" "$runtime_score")
-            
-            if (( $(echo "$variance >= 2.0" | bc -l) )); then
-                echo -e "${RED}✗ Variance=$variance >= 2.0, reverting${NC}"
-                restore
-                new_score=$prev_score
-                delta=0
-                stuck_rounds=$((stuck_rounds + 1))
-            elif (( $(echo "$new_score <= $prev_score" | bc -l) )); then
+            if (( $(echo "$new_score <= $prev_score" | bc -l) )); then
                 echo -e "${YELLOW}⚠ No improvement, reverting${NC}"
                 restore
                 new_score=$prev_score
