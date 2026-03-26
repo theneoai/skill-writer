@@ -171,6 +171,8 @@ Phase 5: 多轮训练 (TRAIN) - 基于对话历史生成 vNext，GPT-4 上下文
 
 ## §4. Examples (场景示例)
 
+Example: Skill 自迭代优化，运行评估后分析弱项，生成改进方案 delta
+
 Example: 安全审查 OWASP AST10，检测 CWE-798 硬编码密钥、CWE-200 敏感信息泄露
 
 Example: CI/CD 流水线生成，.github/workflows/ci.yml 包含 score.sh 评估步骤
