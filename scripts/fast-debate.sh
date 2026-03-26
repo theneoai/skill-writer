@@ -22,7 +22,7 @@ get_score() {
 }
 
 get_weakest() {
-    bash "$SCRIPT_DIR/skill-manager/score-v2.sh" "$SKILL_FILE" 2>/dev/null | grep -E "^  [A-Za-z].* [0-9]+\.[0-9]/10" | sed 's|[0-9]\.[0-9]/10.*||' | awk '{print $2, $1}' | sort -n | head -1 | awk '{$1=""; print $0}' | sed 's/^ //'
+    bash "$SCRIPT_DIR/skill-manager/score-v2.sh" "$SKILL_FILE" 2>/dev/null | grep -E "^  [A-Za-z].* [0-9]+\.[0-9]/10" | sed -E 's/^  ([A-Za-z ]+)[ ]+([0-9]+\.[0-9])\/10.*/\2 \1/' | sort -n | head -1 | awk '{$1=""; print $0}' | sed 's/^ //'
 }
 
 get_runtime_score() {
