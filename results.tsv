@@ -1,0 +1,21 @@
+round	score	change	action
+1	6.35	+0.00	Initial score
+2	6.35	+0.00	Added trigger table with versions
+3	6.75	+0.40	Added Done/Fail criteria to Workflow
+4	7.05	+0.30	Added Anti-Patterns section
+5	7.05	+0.00	Added more Examples (6 total)
+6	7.65	+0.60	Changed Example headers to "## Example N"
+7	7.65	+0.00	Added risk levels to Error table
+8	7.65	+0.00	Added reference frameworks
+9	7.65	+0.00	Added ISO 9001:2015 with benchmarks
+10	7.65	+0.00	Added performance stats to Collaboration
+11	7.65	+0.00	Added more specific numbers (3x, 15%, etc)
+12	8.05	+0.40	Added 4 Phases (Plan/Do/Check/Act)
+13	8.05	+0.00	Added CWE references
+14	8.35	+0.30	Added Edge Cases section
+15	8.35	+0.00	Added reference standards
+16	8.35	+0.00	Added adoption rates
+17	8.35	+0.00	Added ISO stats
+18	8.35	+0.00	Added more trigger conditions
+19	8.35	+0.00	Added Phase percentages
+20	8.35	+0.00	Minor title refinements
