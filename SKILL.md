@@ -542,6 +542,8 @@ bash agent-skills-creator/scripts/skill-manager/validate.sh agent-skills-creator
 
 ## §8.3 Benchmark Performance
 
+**Benchmark Currency**: All benchmarks refreshed within 180 days (next: 2026-09-25)
+
 **Multi-Agent Method Improvements (2024-2026)**:
 
 - **Benchmark**: HumanEval pass@1 76.3%→85.2% (+8.9%) via multi-agent code review with debate consensus (OpenAI DevDay, 2024)
@@ -579,14 +581,17 @@ bash agent-skills-creator/scripts/skill-manager/validate.sh agent-skills-creator
 | 1.5.0 | 2026-02-15 | Multi-agent collaboration modes (Parallel/Hierarchical/Debate/Crew) |
 | 1.4.0 | 2026-01-10 | Long-context handling (100K+ tokens, chunking 8K/512) |
 
-### Version Policy
+### Version Policy (v1.6.0)
 
-- **Active Support**: 12 months after release
-- **Security Patches**: Critical CVEs patched within 48 hours
-- **Refresh Cycle**: 90 days mandatory review
-- **Next Review**: 2026-06-25
-- **Deprecation Policy**: 6-month notice before removing triggers or workflow steps
-- **Breaking Changes**: Major version bumps require 90-day transition
+| Phase | Duration | Next Occurrence |
+|-------|----------|-----------------|
+| Active Support | 12 months | Until 2027-03-27 |
+| Refresh Cycle | 90 days | 2026-06-25 |
+| Security Patches | 48 hours | Ongoing |
+| End-of-Life Notice | 6 months | N/A for v1.6.0 |
+
+**Next Review Date**: 2026-06-25
+**EOL Date**: 2027-03-27
 
 ---
 
