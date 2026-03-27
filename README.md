@@ -2,7 +2,7 @@
 
 [📄 Paper (English)](paper/agent_skills_engineering.md) | [📄 论文 (中文)](paper/agent_skills_engineering_zh.md) | [📖 Methodology](paper/methodology.md) | [🔧 Scripts](scripts/skill-manager/)
 
-**Authors**: neo.ai <lucas_hsueh@hotmail.com>  
+**Authors**: theneoai <lucas_hsueh@hotmail.com>  
 **Version**: 1.6.0 | **License**: MIT | **Standard**: agentskills.io v2.1.0
 
 ---

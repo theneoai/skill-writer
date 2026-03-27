@@ -3,7 +3,7 @@
 ---
 
 **作者**  
-thneoai <lucas_hsueh@hotmail.com>
+theneoai <lucas_hsueh@hotmail.com>
 
 **投稿元数据**  
 *日期：2026年3月27日*  

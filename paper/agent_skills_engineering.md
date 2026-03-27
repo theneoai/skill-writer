@@ -3,7 +3,7 @@
 ---
 
 **Authors**  
-thneoai <lucas_hsueh@hotmail.com>
+theneoai <lucas_hsueh@hotmail.com>
 
 **Submission Metadata**  
 *Date: March 27, 2026*  
