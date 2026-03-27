@@ -75,7 +75,7 @@ WF_NOTES=""
 HAS_WORKFLOW=$(grep -ci "workflow\|§ [0-9]\+.*workflow\|## Workflow\|## Phase\|Step [0-9]" "$SKILL_FILE" || true)
 HAS_DONE=$(grep -ci "done.criteri\|done:" "$SKILL_FILE" || true)
 HAS_FAIL=$(grep -ci "fail.criteri\|fail:" "$SKILL_FILE" || true)
-HAS_PHASES=$(grep -cE "Phase [1-9]|Step [1-9]" "$SKILL_FILE" || true)
+HAS_PHASES=$(grep -cE "Phase [1-9]|Step [1-9]|^\| [1-9] \|" "$SKILL_FILE" || true)
 HAS_TABLE=$(grep -c "|" "$SKILL_FILE" || true)
 HAS_DECISION=$(grep -ci "if.*then\|decision\|choice\|select\|option" "$SKILL_FILE" || true)
 
@@ -108,7 +108,7 @@ dim_score "Error Handling" 15 "$EH_SCORE" "$EH_NOTES"
 # ── Dimension 5: Examples (15%) ─────────────────────────────────────────────
 EX_SCORE=2
 EX_NOTES=""
-EXAMPLE_SECTIONS=$(grep -cE "^## .*[Ee]xample|^### .*[Ee]xample|^\| [0-9]+ \|.*[Ee]xample" "$SKILL_FILE" || true)
+EXAMPLE_SECTIONS=$(grep -cE "^## .*[Ee]xample|^### .*[Ee]xample|^\| [0-9]+ \|.*[Ee]xample|\*\*[Ee]xample [0-9]+" "$SKILL_FILE" || true)
 EXAMPLE_MENTIONS=$(grep -ci "example\|scenario\|use case" "$SKILL_FILE" || true)
 HAS_INPUT=$(grep -ci "输入\|input\|user says\|user input" "$SKILL_FILE" || true)
 HAS_OUTPUT=$(grep -ci "输出\|output\|expected\|result" "$SKILL_FILE" || true)
