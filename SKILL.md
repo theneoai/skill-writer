@@ -275,6 +275,18 @@ See [`./references/benchmarks.md`](references/benchmarks.md) for detailed benchm
 
 ---
 
+## §8 · Automation Scripts
+
+**Core Scripts:**
+- `scripts/skill-manager/score.sh` — Text quality scoring (7 dimensions)
+- `scripts/skill-manager/runtime-validate.sh` — Runtime effectiveness testing
+- `scripts/skill-manager/tune.sh` — 9-step autonomous optimization loop
+- `scripts/skill-manager/certify.sh` — Full certification determination
+- `scripts/skill-manager/validate.sh` — Format validation
+- `scripts/skill-manager/auto_retro.sh` — Automatic retrospective generation
+
+---
+
 ## Changelog
 
 | Version | Date | Changes |
