@@ -12,7 +12,7 @@ SKILL_FILE="${1:-}"
 TEXT_SCORE_PARAM="${2:-}"
 OUTPUT_MODE="${3:-summary}"
 
-RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC='\033[0m'
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; CYAN='\033[0;36m'; BROWN='\033[0;33m'; NC='\033[0m'
 
 pass()  { echo -e "${GREEN}  ✓ $1${NC}"; }
 fail()  { echo -e "${RED}  ✗ $1${NC}"; }
@@ -448,22 +448,37 @@ main() {
     echo ""
     
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "  CERTIFICATION CHECK"
+    echo "  CERTIFICATION TIER CHECK"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     
-    TEXT_OK=$(echo "$TEXT_SCORE >= 8.5" | bc -l)
-    RUNTIME_OK=$(echo "$RUNTIME_SCORE >= 8.5" | bc -l)
-    VARIANCE_OK=$(echo "$VARIANCE < 1.5" | bc -l)
+    PLATINUM_TEXT=$(echo "$TEXT_SCORE >= 9.5" | bc -l)
+    PLATINUM_RUNTIME=$(echo "$RUNTIME_SCORE >= 9.5" | bc -l)
+    PLATINUM_VARIANCE=$(echo "$VARIANCE < 1.0" | bc -l)
     
-    echo "  Text ≥ 8.5:      $TEXT_SCORE → $([ "$TEXT_OK" -eq 1 ] && echo -e "${GREEN}PASS${NC}" || echo -e "${RED}FAIL${NC}")"
-    echo "  Runtime ≥ 8.5:  $RUNTIME_SCORE → $([ "$RUNTIME_OK" -eq 1 ] && echo -e "${GREEN}PASS${NC}" || echo -e "${RED}FAIL${NC}")"
-    echo "  Variance < 1.5: $VARIANCE → $([ "$VARIANCE_OK" -eq 1 ] && echo -e "${GREEN}PASS${NC}" || echo -e "${RED}FAIL${NC}")"
+    GOLD_TEXT=$(echo "$TEXT_SCORE >= 9.0" | bc -l)
+    GOLD_RUNTIME=$(echo "$RUNTIME_SCORE >= 9.0" | bc -l)
+    GOLD_VARIANCE=$(echo "$VARIANCE < 1.5" | bc -l)
+    
+    SILVER_TEXT=$(echo "$TEXT_SCORE >= 8.0" | bc -l)
+    SILVER_RUNTIME=$(echo "$RUNTIME_SCORE >= 8.0" | bc -l)
+    SILVER_VARIANCE=$(echo "$VARIANCE < 2.0" | bc -l)
+    
+    BRONZE_TEXT=$(echo "$TEXT_SCORE >= 7.0" | bc -l)
+    BRONZE_RUNTIME=$(echo "$RUNTIME_SCORE >= 7.0" | bc -l)
+    BRONZE_VARIANCE=$(echo "$VARIANCE < 3.0" | bc -l)
+    
     echo ""
-    
-    if [[ "$TEXT_OK" -eq 1 && "$RUNTIME_OK" -eq 1 && "$VARIANCE_OK" -eq 1 ]]; then
-        echo -e "  ${GREEN}★ CERTIFIED — All thresholds met${NC}"
+    if [[ "$PLATINUM_TEXT" -eq 1 && "$PLATINUM_RUNTIME" -eq 1 && "$PLATINUM_VARIANCE" -eq 1 ]]; then
+        echo -e "  ${CYAN}★ PLATINUM${NC} — Elite tier (Text=$TEXT_SCORE, Runtime=$RUNTIME_SCORE, Var=$VARIANCE)"
+    elif [[ "$GOLD_TEXT" -eq 1 && "$GOLD_RUNTIME" -eq 1 && "$GOLD_VARIANCE" -eq 1 ]]; then
+        echo -e "  ${YELLOW}★ GOLD${NC} — Excellent tier (Text=$TEXT_SCORE, Runtime=$RUNTIME_SCORE, Var=$VARIANCE)"
+    elif [[ "$SILVER_TEXT" -eq 1 && "$SILVER_RUNTIME" -eq 1 && "$SILVER_VARIANCE" -eq 1 ]]; then
+        echo -e "  ${BLUE}★ SILVER${NC} — Good tier (Text=$TEXT_SCORE, Runtime=$RUNTIME_SCORE, Var=$VARIANCE)"
+    elif [[ "$BRONZE_TEXT" -eq 1 && "$BRONZE_RUNTIME" -eq 1 && "$BRONZE_VARIANCE" -eq 1 ]]; then
+        echo -e "  ${BROWN}★ BRONZE${NC} — Entry tier (Text=$TEXT_SCORE, Runtime=$RUNTIME_SCORE, Var=$VARIANCE)"
     else
-        echo -e "  ${YELLOW}⚠ NOT CERTIFIED — Fix thresholds above${NC}"
+        echo -e "  ${RED}⚠ NOT CERTIFIED${NC} — Below minimum standards"
+        echo "    Minimum: BRONZE ≥7.0, SILVER ≥8.0, GOLD ≥9.0, PLATINUM ≥9.5"
     fi
     
     echo ""

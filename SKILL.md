@@ -212,9 +212,16 @@ See [`./references/skill-manager/antipatterns.md`](references/skill-manager/anti
 - Auto-infer lessons from changes and update OPTIMIZATION_METHODOLOGY.md
 - Enable continuous self-improvement through accumulated knowledge
 
-**Certification Formula**:
+**Certification Tier System**:
 ```
-CERTIFIED = (Text ≥ 8.5) AND (Runtime ≥ 8.5) AND (Variance < 1.5)
+┌─────────────┬────────────┬────────────┬────────────┐
+│   TIER      │ TEXT SCORE │ RUNTIME    │ VARIANCE   │
+├─────────────┼────────────┼────────────┼────────────┤
+│ PLATINUM    │   ≥ 9.5    │   ≥ 9.5    │   < 1.0    │
+│ GOLD        │   ≥ 9.0    │   ≥ 9.0    │   < 1.5    │
+│ SILVER      │   ≥ 8.0    │   ≥ 8.0    │   < 2.0    │
+│ BRONZE      │   ≥ 7.0    │   ≥ 7.0    │   < 3.0    │
+└─────────────┴────────────┴────────────┴────────────┘
 ```
 
 See [`./references/SELF_OPTIMIZATION.md`](references/SELF_OPTIMIZATION.md) for detailed process.
