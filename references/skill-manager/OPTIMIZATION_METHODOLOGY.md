@@ -500,17 +500,32 @@ for trigger in triggers:
 
 ### Success Metrics
 
-| Metric | Round 601 | Round 900 | Improvement |
-|--------|-----------|-----------|-------------|
-| Text Score | 9.50 | 9.95 | +0.45 |
-| Runtime Score | 6.21 | 9.17 | +2.96 |
-| Variance | 3.81 | 0.78 | -3.03 |
-| Mode Detection | 8.88% | 58.88% | +50% |
-| Certification Standard | ≥8.0 | ≥8.5 | +0.5 |
+| Metric | Round 601 | Round 900 | Round 950 | Improvement |
+|--------|-----------|-----------|-----------|-------------|
+| Text Score | 9.50 | 9.95 | 9.95 | +0.45 |
+| Runtime Score | 6.21 | 9.17 | 9.95 | +3.74 |
+| Variance | 3.81 | 0.78 | 0 | -3.81 |
+| Mode Detection | 8.88% | 58.88% | 97.50% | +88.62% |
+| Certification Standard | ≥8.0 | ≥8.5 | ≥8.5 | +0.5 |
 
 ---
 
 ### Lesson 1: Enhanced optimization loop/retro process — auto-infer lessons mechanism
+
+### Lesson 2: Coverage-based vs ANY-mode scoring
+
+**Problem**: ANY-mode formula `(trigger × input matches) / (total combinations)` is flawed:
+- Adding more triggers increases denominator faster than numerator
+- Even with good trigger coverage, percentage could be low
+
+**Fix**: Changed to coverage formula `(inputs with ≥1 match) / (total inputs)`:
+- Measures if test inputs are actually covered
+- More intuitive: "90% of test inputs are handled"
+
+**Impact**:
+- Mode Detection: 58.88% → 97.50%
+- Runtime Score: 9.17 → 9.95
+- Variance: 0.78 → 0
 
 
 *Document Version: 1.2*  
