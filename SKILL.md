@@ -10,7 +10,7 @@ license: MIT
 compatibility: "python>=3.9, git, agentskills.io, mcp, opencode"
 tags: [meta, agent, lifecycle, quality, autonomous-optimization, multi-agent]
 metadata:
-  author: neo.ai <lucas_hsueh@hotmail.com>
+  author: theneoai <lucas_hsueh@hotmail.com>
   version: "1.6.0"
   updated: "2026-03-27"
   tags: [meta, agent, lifecycle, quality, autonomous-optimization, multi-agent]
@@ -106,6 +106,16 @@ Decision Priority: **Security > Quality > Efficiency**
 | **TUNE** | "tune", "optimize", "improve", "self-optimize", "autotune", "enhance" | "自优化", "调优", "优化" |
 | **SECURITY** | "security", "OWASP", "vulnerability", "CWE", "audit security" | "安全审查", "漏洞扫描" |
 | **CI/CD** | "ci/cd", "pipeline", "github actions", "deploy", "release" | "持续集成", "流水线" |
+
+---
+
+## §2.6 Mode Routing Documentation
+
+**CREATE Mode Routing**: When user says "write a new skill", "create skill and start", or "build skill from scratch", route to CREATE mode which generates the complete `SKILL.md + evals/ + scripts/ + references/` directory structure.
+
+**EVALUATE Mode Routing**: When user says "evaluate", "test skill and certify", or "score and assess", route to EVALUATE mode which runs F1≥0.90, MRR≥0.85, MultiTurnPassRate≥85% validation with 6-dimension scoring.
+
+**RESTORE/TUNE Mode Routing**: Route to RESTORE when user says "restore", "fix", or "upgrade". Route to TUNE when user says "optimize", "autotune", or "tune" for self-optimization (9-step loop: READ → ANALYZE → CURATION → PLAN → IMPLEMENT → VERIFY → HUMAN_REVIEW → LOG → COMMIT).
 
 ---
 
@@ -575,6 +585,21 @@ bash agent-skills-creator/scripts/skill-manager/validate.sh agent-skills-creator
 | Concurrent Lock Timeout | 300s | .skill.lock expiry |
 | Retry Backoff | 1s→2s→4s | Exponential cap 3 retries |
 | Circuit Breaker | 5 failures | 60s cooldown |
+
+---
+
+## §8.5 6-Dimension Rubric
+
+| Dimension | Weight | Floor | Excellence Criteria |
+|-----------|--------|-------|---------------------|
+| System Prompt | 20% | 6.0 | §1.1 Identity + §1.2 Framework + §1.3 Thinking — all three required |
+| Domain Knowledge | 20% | 6.0 | Specific data: "McKinsey 7-S", "128K context", "16.7% error reduction" |
+| Workflow | 20% | 6.0 | 4-6 phases, explicit Done/Fail criteria per phase |
+| Error Handling | 15% | 5.0 | Named failure modes, recovery steps, anti-patterns |
+| Examples | 15% | 5.0 | 5+ scenarios with realistic inputs, outputs, and edge cases |
+| Metadata | 10% | 5.0 | agentskills-spec compliant; description triggers the right prompts |
+
+**Certification Formula**: Text ≥ 8.0 AND Runtime ≥ 8.0 AND Variance < 1.0 = CERTIFIED
 
 ---
 

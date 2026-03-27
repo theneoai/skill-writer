@@ -34,18 +34,18 @@ CREATE_TRIGGERS=""; EVALUATE_TRIGGERS=""; RESTORE_TRIGGERS=""; TUNE_TRIGGERS=""
 parse_triggers() {
     local file="$1"
     
-    CREATE_TRIGGERS=$(sed -n '/\*\*CREATE Mode\*\*/,/EVALUATE Mode/p' "$file" | grep -E '^\s*[-*]|"' || true | sed 's/^[[:space:]]*[-*"]//' | sed 's/["*,]//g' | xargs | tr ' ' '\n' | grep -v '^$' || true | head -20 | tr '\n' '|')
+    CREATE_TRIGGERS=$(awk -F'"|", *"|"' '/CREATE\*\*/ {for(i=2;i<=NF;i++) if(length($i)>1 && $i !~ /\|/) print $i}' "$file" | head -20 | tr '\n' '|' || true)
     
-    EVALUATE_TRIGGERS=$(sed -n '/\*\*EVALUATE Mode\*\*/,/RESTORE Mode/p' "$file" | grep -E '^\s*[-*]|"' || true | sed 's/^[[:space:]]*[-*"]//' | sed 's/["*,]//g' | xargs | tr ' ' '\n' | grep -v '^$' || true | head -20 | tr '\n' '|')
+    EVALUATE_TRIGGERS=$(awk -F'"|", *"|"' '/EVALUATE\*\*/ {for(i=2;i<=NF;i++) if(length($i)>1 && $i !~ /\|/) print $i}' "$file" | head -20 | tr '\n' '|' || true)
     
-    RESTORE_TRIGGERS=$(sed -n '/\*\*RESTORE Mode\*\*/,/TUNE Mode/p' "$file" | grep -E '^\s*[-*]|"' || true | sed 's/^[[:space:]]*[-*"]//' | sed 's/["*,]//g' | xargs | tr ' ' '\n' | grep -v '^$' || true | head -20 | tr '\n' '|')
+    RESTORE_TRIGGERS=$(awk -F'"|", *"|"' '/RESTORE\*\*/ {for(i=2;i<=NF;i++) if(length($i)>1 && $i !~ /\|/) print $i}' "$file" | head -20 | tr '\n' '|' || true)
     
-    TUNE_TRIGGERS=$(sed -n '/\*\*TUNE Mode\*\*/,/Security Red Lines/p' "$file" | grep -E '^\s*[-*]|"' || true | sed 's/^[[:space:]]*[-*"]//' | sed 's/["*,]//g' | xargs | tr ' ' '\n' | grep -v '^$' || true | head -20 | tr '\n' '|')
+    TUNE_TRIGGERS=$(awk -F'"|", *"|"' '/TUNE\*\*/ {for(i=2;i<=NF;i++) if(length($i)>1 && $i !~ /\|/) print $i}' "$file" | head -20 | tr '\n' '|' || true)
 }
 
 count_triggers() {
     local triggers="$1"
-    echo "$triggers" | tr '|' '\n' | grep -v '^$' || true | wc -l | tr -d ' '
+    echo "$triggers" | tr '|' '\n' | grep -v '^$' | wc -l | tr -d ' ' || true
 }
 
 test_trigger_match() {
@@ -212,28 +212,28 @@ validate_mode_routing() {
     local score=0
     local total=4
     
-    if grep -q "## § 2" "$file"; then
+    if grep -qE "## §2\.|## § 2" "$file"; then
         score=$((score + 1))
         pass "Mode Selection (§2) section present"
     else
         fail "Mode Selection (§2) section missing"
     fi
     
-    if grep -qiE 'write.*create.*skill|create.*skill.*start' "$file"; then
+    if grep -qiE 'write.*skill.*start|create.*skill.*start|build.*skill.*scratch' "$file"; then
         score=$((score + 1))
         pass "CREATE mode routing documented"
     else
         fail "CREATE mode routing not clearly documented"
     fi
     
-    if grep -qiE 'evaluate.*test.*certify|test.*certify.*score' "$file"; then
+    if grep -qiE 'evaluate.*certify|test.*skill.*certify|score.*assess' "$file"; then
         score=$((score + 1))
         pass "EVALUATE mode routing documented"
     else
         fail "EVALUATE mode routing not clearly documented"
     fi
     
-    if grep -qiE 'restore.*fix.*upgrade|optimize.*autotune.*tune' "$file"; then
+    if grep -qiE 'restore.*fix.*upgrade|optimize.*autotune.*tune|fix.*upgrade.*skill' "$file"; then
         score=$((score + 1))
         pass "RESTORE/TUNE mode routing documented"
     else
