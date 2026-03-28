@@ -1,0 +1,9 @@
+{
+  "id": "superpowers-skill",
+  "name": "Skill Engineering",
+  "description": "AI Skill Lifecycle Management - Create, Evaluate, Optimize Skills",
+  "version": "2.2.0",
+  "skills": [
+    "SKILL.md"
+  ]
+}
