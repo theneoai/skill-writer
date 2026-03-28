@@ -688,12 +688,16 @@ eval/analyzer/variance_analyzer.sh 280 360
 
 ### 4.1.4 Multi-LLM Provider Support
 
-| Provider | Environment Variable | Default Model |
-|----------|---------------------|--------------|
-| **Anthropic** | `ANTHROPIC_API_KEY` | claude-sonnet-4-20250514 |
-| **OpenAI** | `OPENAI_API_KEY` | gpt-4o-mini |
-| **Kimi** | `KIMI_API_KEY` / `KIMI_CODE_API_KEY` | moonshot-v1-8k / kimi-for-coding |
-| **MiniMax** | `MINIMAX_API_KEY` | MiniMax-M2.7-highspeed |
+**Provider Strength Ranking** (for auto-selection):
+| Rank | Provider | Strength | Environment Variable |
+|------|----------|----------|----------------------|
+| 1 | anthropic | 100 | `ANTHROPIC_API_KEY` |
+| 2 | openai | 90 | `OPENAI_API_KEY` |
+| 3 | kimi-code | 85 | `KIMI_CODE_API_KEY` |
+| 4 | minimax | 80 | `MINIMAX_API_KEY` |
+| 5 | kimi | 75 | `KIMI_API_KEY` |
+
+**Auto-Selection**: System automatically detects available providers and selects top 2 for cross-validation. Lean evaluation uses heuristic scoring (~0s, $0) and only invokes LLM deliberation for edge cases or when score is below threshold.
 
 **Cross-Validation**: All critical decisions require 2/3 LLM agreement. Conflicts trigger HUMAN_REVIEW.
 
@@ -868,3 +872,101 @@ Enter choice (1-6):
 2. "Target tier (current/MISSING):"
 3. "Max rounds (default: 20):"
 ```
+
+---
+
+## §6 Self-Evolution (Use-Then-Evolve)
+
+### 6.1 Trigger Mechanisms
+
+**Dual Trigger System**:
+
+| Trigger | Condition | Priority |
+|---------|-----------|----------|
+| **Threshold** | Score < GOLD (475) | High |
+| **Scheduled** | Every 24 hours | Medium |
+| **Usage-based** | Trigger F1 < 0.85 OR Task Rate < 0.80 | High |
+| **Manual** | `evolve_with_auto` called with force=true | Highest |
+
+**Decision Flow**:
+```
+check_threshold() → check_scheduled() → check_usage_metrics() → decision
+```
+
+### 6.2 Usage Data Collection
+
+**Tracked Events**:
+
+| Event | Fields | Storage |
+|-------|--------|---------|
+| `trigger` | expected_mode, actual_mode, correct | logs/evolution/usage_<skill>_<date>.jsonl |
+| `task` | task_type, completed, rounds | logs/evolution/usage_<skill>_<date>.jsonl |
+| `feedback` | rating (1-5), comment | logs/evolution/usage_<skill>_<date>.jsonl |
+
+**Metrics Computed**:
+- **Trigger F1**: correct_triggers / total_triggers
+- **Task Completion Rate**: completed_tasks / total_tasks
+- **Avg Feedback Rating**: mean of all ratings
+
+### 6.3 Usage-Triggered Evolution
+
+**Enhanced 9-Step Loop with Step 0**:
+
+| Step | Name | Description |
+|------|------|-------------|
+| 0 | **USAGE_ANALYSIS** | Extract patterns from usage data (NEW) |
+| 1 | READ | Locate weakest dimension (multi-LLM) |
+| 2 | ANALYZE | Prioritize strategy (multi-LLM) |
+| 3 | CURATION | Knowledge consolidation + usage learning |
+| 4 | PLAN | Select improvement approach |
+| 5 | IMPLEMENT | Apply change with rollback |
+| 6 | VERIFY | Re-evaluate with multi-LLM |
+| 7 | HUMAN_REVIEW | Every 10 rounds if score < SILVER |
+| 8 | LOG | Record to results.tsv + track usage |
+| 9 | COMMIT | Git commit if needed |
+
+### 6.4 Pattern Learning
+
+**Pattern Types Extracted**:
+- `weak_triggers`: Array of `expected->actual` confusion pairs
+- `failed_task_types`: Array of task types with low completion
+
+**Knowledge Consolidation**:
+- Patterns stored in `logs/evolution/patterns/<skill>_patterns.json`
+- Knowledge docs in `logs/evolution/knowledge/<skill>_knowledge.md`
+
+**Improvement Hints**:
+- Generated from pattern analysis
+- Injected into optimization loop
+- Example: "Trigger confusion: OPTIMIZE->EVALUATE. Add disambiguation examples."
+
+### 6.5 Auto-Evolution Command
+
+```bash
+# Check if evolution needed (returns JSON decision)
+engine/evolution/evolve_decider.sh <skill_file> [force]
+
+# Run auto-evolution with usage learning
+engine/evolution/engine.sh <skill_file> auto [force]
+
+# Track usage manually
+source engine/evolution/usage_tracker.sh
+track_trigger "agent-skill" "OPTIMIZE" "OPTIMIZE"
+track_task "agent-skill" "optimization" "true" 3
+track_feedback "agent-skill" 5 "Good results"
+```
+
+### 6.6 Integration with Lean Eval
+
+Lean evaluation (~0s, $0) runs first:
+- If score >= GOLD threshold → skip expensive LLM evolution
+- If score < threshold → trigger evolution
+- Usage metrics provide additional trigger signals
+
+**Threshold Configuration**:
+| Tier | Score | Evolution Trigger |
+|------|-------|-------------------|
+| GOLD | >= 475 | Usage-based only |
+| SILVER | 425-474 | Scheduled + Usage |
+| BRONZE | 350-424 | All triggers |
+| FAIL | < 350 | Immediate + Force |

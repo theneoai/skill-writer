@@ -25,6 +25,7 @@ fi
 LOG_DIR="${EVAL_DIR_FROM_ENGINE}/logs"
 SNAPSHOT_DIR="/tmp/engine/snapshots"
 LOCK_DIR="/tmp/engine/locks"
+EVOLUTION_USAGE_DIR="${LOG_DIR}/evolution"
 
 # 确保必要目录存在
 mkdir -p "$LOG_DIR" "$SNAPSHOT_DIR" "$LOCK_DIR"
@@ -105,4 +106,4 @@ ensure_directory() {
 
 export EVAL_DIR_FROM_ENGINE EVAL_DIR
 export LOG_DIR SNAPSHOT_DIR LOCK_DIR
-export USAGE_LOG EVOLUTION_LOG ERROR_LOG
+export USAGE_LOG EVOLUTION_LOG ERROR_LOG EVOLUTION_USAGE_DIR

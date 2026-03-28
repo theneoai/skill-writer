@@ -10,6 +10,10 @@ source "${EVAL_DIR}/lib/agent_executor.sh"
 require constants concurrency errors integration
 require_evolution rollback _storage
 
+source "$(dirname "${BASH_SOURCE[0]}")/usage_tracker.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/evolve_decider.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/learner.sh"
+
 EVOLUTION_LOG="${LOG_DIR}/evolution.log"
 RESULTS_TSV="${LOG_DIR}/optimization_results.tsv"
 
@@ -49,16 +53,23 @@ log_evolution() {
 evolve_skill() {
     local skill_file="$1"
     local max_rounds="${2:-20}"
+    local usage_context="${3:-}"
     
     init_results_tsv
     
     local skill_name
     skill_name=$(basename "$skill_file" .md)
     
-    log_evolution "$skill_name" "start" "9-step evolution cycle started (max $max_rounds rounds)"
+    log_evolution "$skill_name" "start" "9-step evolution cycle started with usage learning (max $max_rounds rounds)"
     
     local old_score
     old_score=$(evaluate_skill "$skill_file" "fast" | jq -r '.total_score // 0')
+    
+    local patterns=""
+    if [[ -n "$usage_context" ]]; then
+        patterns=$(learn_from_usage "$skill_file" 7)
+        log_evolution "$skill_name" "patterns_learned" "$patterns"
+    fi
     
     local current_round=0
     local stuck_count=0
@@ -70,6 +81,16 @@ evolve_skill() {
         echo "═══════════════════════════════════════════════════════════════"
         echo "                    ROUND $current_round of $max_rounds"
         echo "═══════════════════════════════════════════════════════════════"
+        
+        if [[ $current_round -eq 1 ]] && [[ -n "$patterns" ]]; then
+            echo ""
+            echo "=== STEP 0: USAGE ANALYSIS (Learn from Usage Data) ==="
+            local hints
+            hints=$(get_improvement_hints "${PATTERNS_DIR}/${skill_name}_patterns.json")
+            echo "  Improvement hints from usage:"
+            echo "$hints" | jq -r '.hints | to_entries | .[].value | "  - \(.value)"'
+            consolidate_knowledge "$skill_name"
+        fi
         
         echo ""
         echo "=== STEP 1: READ - LOCATE WEAKEST DIMENSION (Multi-LLM) ==="
@@ -94,10 +115,13 @@ evolve_skill() {
         strategy=$(multi_llm_prioritize "$skill_file" "$weakest_dim")
         echo "  Strategy: $strategy"
         
-        if [[ $current_round % 10 -eq 1 ]]; then
+        if (( current_round % 10 == 1 )); then
             echo ""
-            echo "=== STEP 3: CURATION (Every 10 Rounds) ==="
+            echo "=== STEP 3: CURATION (Every 10 Rounds + Usage) ==="
             curation_knowledge "$skill_name"
+            if [[ -n "$patterns" ]]; then
+                consolidate_knowledge "$skill_name"
+            fi
         fi
         
         echo ""
@@ -150,7 +174,7 @@ evolve_skill() {
             fi
         fi
         
-        if [[ $current_round % 10 -eq 0 ]]; then
+        if (( current_round % 10 == 0 )); then
             echo ""
             echo "=== STEP 7: HUMAN_REVIEW (Every 10 Rounds) ==="
             local current_score
@@ -165,6 +189,7 @@ evolve_skill() {
         echo ""
         echo "=== STEP 8: LOG - RECORD TO results.tsv ==="
         echo "$current_round\t$weakest_dim\t$old_score\t$new_score\t$delta\t$confidence\tYES" >> "$RESULTS_TSV"
+        track_task "$skill_name" "evolution_round" "$([ "$delta" > 0 ] && echo "true" || echo "false")" "$current_round"
         
         old_score=$new_score
         
@@ -179,7 +204,7 @@ evolve_skill() {
     
     echo ""
     echo "=== STEP 9: COMMIT (If needed) ==="
-    if [[ $current_round % 10 -eq 0 ]] || [[ $stuck_count -ge 3 ]]; then
+    if (( current_round % 10 == 0 )) || (( stuck_count >= 3 )); then
         git_commit_optimization "$skill_name" "$current_round" "$last_delta"
     fi
     
@@ -536,18 +561,47 @@ rollback_to_snapshot() {
     fi
 }
 
+evolve_with_auto() {
+    local skill_file="$1"
+    local force="${2:-false}"
+    
+    local decision
+    decision=$(should_evolve "$skill_file" "$force")
+    
+    local decision_type
+    decision_type=$(echo "$decision" | jq -r '.decision')
+    
+    if [[ "$decision_type" != "evolve" ]]; then
+        echo "Evolution skipped: $(echo "$decision" | jq -r '.reason')"
+        return 0
+    fi
+    
+    echo "Evolution triggered: $(echo "$decision" | jq -r '.reason')"
+    update_last_check
+    
+    evolve_skill "$skill_file" 20 "with_usage"
+}
+
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     if [[ $# -lt 1 ]]; then
-        echo "Usage: $0 <skill_file> [max_rounds]"
+        echo "Usage: $0 <skill_file> [max_rounds] [auto]"
+        echo "  auto mode: $0 <skill_file> auto [force]"
         exit 1
     fi
     
-    acquire_lock "evolution" "$EVOLUTION_TIMEOUT" || {
-        echo "Error: Failed to acquire evolution lock"
-        exit 1
-    }
-    
-    trap "release_lock 'evolution'" EXIT
-    
-    evolve_skill "$1" "${2:-20}"
+    if [[ "${2:-}" == "auto" ]]; then
+        acquire_lock "evolution" "$EVOLUTION_TIMEOUT" || {
+            echo "Error: Failed to acquire evolution lock"
+            exit 1
+        }
+        trap "release_lock 'evolution'" EXIT
+        evolve_with_auto "$1" "${3:-false}"
+    else
+        acquire_lock "evolution" "$EVOLUTION_TIMEOUT" || {
+            echo "Error: Failed to acquire evolution lock"
+            exit 1
+        }
+        trap "release_lock 'evolution'" EXIT
+        evolve_skill "$1" "${2:-20}" ""
+    fi
 fi

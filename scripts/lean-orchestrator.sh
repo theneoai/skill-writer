@@ -15,7 +15,43 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 source "${PROJECT_ROOT}/engine/lib/bootstrap.sh"
 require constants concurrency errors integration
 
+source "${EVAL_DIR}/lib/agent_executor.sh"
+
 LEAN_LOG="${LOG_DIR}/lean.log"
+
+get_provider_strength() {
+    local provider="$1"
+    case "$provider" in
+        anthropic) echo 100 ;;
+        openai) echo 90 ;;
+        kimi-code) echo 85 ;;
+        minimax) echo 80 ;;
+        kimi) echo 75 ;;
+        *) echo 0 ;;
+    esac
+}
+
+select_top_providers() {
+    local available providers_map sorted
+    available=$(check_llm_available)
+    
+    if [[ "$available" == "none" ]] || [[ -z "$available" ]]; then
+        echo ""
+        return
+    fi
+    
+    declare -A providers_map
+    while read -r provider; do
+        [[ -z "$provider" ]] && continue
+        providers_map["$provider"]=$(get_provider_strength "$provider")
+    done <<< "$available"
+    
+    sorted=$(for p in "${!providers_map[@]}"; do
+        echo "${providers_map[$p]} $p"
+    done | sort -rn | head -2)
+    
+    echo "$sorted" | awk '{print $2}' | tr '\n' ' ' | sed 's/ $//'
+}
 
 log_lean() {
     echo "[LEAN $(date +%H:%M:%S)] $1" >&2
@@ -176,9 +212,24 @@ llm_deliberate() {
     
     log_lean "LLM Deliberation: $dimension"
     
-    local r1 r2 r3
-    r1=$(call_llm "You are an expert skill evaluator." "$prompt" "auto" "kimi-code")
-    r2=$(call_llm "You are an expert skill evaluator." "$prompt" "auto" "openai")
+    local top_providers
+    top_providers=$(select_top_providers)
+    
+    if [[ -z "$top_providers" ]]; then
+        log_lean "No LLM providers available, skipping deliberation"
+        echo "0"
+        return
+    fi
+    
+    local p1 p2
+    p1=$(echo "$top_providers" | cut -d' ' -f1)
+    p2=$(echo "$top_providers" | cut -d' ' -f2)
+    
+    log_lean "Using providers: $p1 + $p2 for cross-validation"
+    
+    local r1 r2
+    r1=$(call_llm "You are an expert skill evaluator." "$prompt" "auto" "$p1")
+    r2=$(call_llm "You are an expert skill evaluator." "$prompt" "auto" "$p2" 2>/dev/null || echo '{"score": 0}')
     
     local s1 s2
     s1=$(echo "$r1" | jq -r '.score // 0' 2>/dev/null || echo "0")
@@ -190,7 +241,12 @@ llm_deliberate() {
     
     if (( $(echo "$diff > 15" | bc -l) )); then
         log_lean "High disagreement ($diff), requesting third opinion"
-        r3=$(call_llm "You are an expert skill evaluator." "$prompt" "auto" "anthropic")
+        local p3="anthropic"
+        if [[ "$p1" == "anthropic" ]] || [[ "$p2" == "anthropic" ]]; then
+            p3="openai"
+        fi
+        local r3
+        r3=$(call_llm "You are an expert skill evaluator." "$prompt" "auto" "$p3" 2>/dev/null || echo '{"score": 0}')
         local s3
         s3=$(echo "$r3" | jq -r '.score // 0' 2>/dev/null || echo "0")
         
