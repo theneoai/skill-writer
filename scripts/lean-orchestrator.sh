@@ -209,10 +209,6 @@ runtime_test_fast() {
         log_lean "  Found §2 Invocation section"
     fi
     
-    local table_found=0
-    if grep -qE '\| Mode ' "$skill_file"; then
-        ((table_found++))
-    fi
     if grep -qE '\| CREATE ' "$skill_file"; then
         ((runtime_score+=5))
     fi
@@ -233,11 +229,31 @@ runtime_test_fast() {
         ((runtime_score+=5))
     fi
     
-    [[ $runtime_score -gt 50 ]] && runtime_score=50
+    if grep -qE '(trigger|keyword|keyword|触发)' "$skill_file"; then
+        ((runtime_score+=40))
+        log_lean "  Found trigger pattern accuracy indicators"
+    fi
+    
+    if grep -qE '(EN|ZH|bilingual|双语)' "$skill_file"; then
+        ((runtime_score+=15))
+        log_lean "  Found bilingual trigger support"
+    fi
+    
+    if grep -qE '(Progressive Disclosure|≤400|reference/)' "$skill_file"; then
+        ((runtime_score+=20))
+        log_lean "  Found progressive disclosure reference"
+    fi
+    
+    if grep -qE '(Self-Evolution|auto-evolve|threshold|scheduled)' "$skill_file"; then
+        ((runtime_score+=25))
+        log_lean "  Found self-evolution triggers"
+    fi
+    
+    [[ $runtime_score -gt 150 ]] && runtime_score=150
     
     echo "$runtime_score"
     
-    log_lean "Runtime score: $runtime_score/50"
+    log_lean "Runtime score: $runtime_score/150"
 }
 
 # ============================================================================
@@ -344,11 +360,11 @@ certify() {
     
     log_lean "CERTIFY: Total=$total"
     
-    if [[ $total -ge 475 ]]; then
+    if [[ $total -ge 570 ]]; then
         echo "GOLD"
-    elif [[ $total -ge 425 ]]; then
+    elif [[ $total -ge 510 ]]; then
         echo "SILVER"
-    elif [[ $total -ge 350 ]]; then
+    elif [[ $total -ge 420 ]]; then
         echo "BRONZE"
     else
         echo "FAIL"

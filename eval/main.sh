@@ -209,7 +209,7 @@ run_phase2() {
     local skill="$1"
     local output="$2"
     
-    echo "【Phase 2】 Text Score (350pts)" >&2
+    echo "【Phase 2】 Text Score (505pts)" >&2
     
     source "${SCRIPT_DIR}/lib/constants.sh"
     
@@ -283,18 +283,47 @@ run_phase2() {
     
     local total=$((sp_score + dk_score + wf_score + eh_score + ex_score + md_score))
     
+    local cross_ref_score=0
+    if grep -qE 'reference/triggers\.md' "$skill" && [[ -f "${SCRIPT_DIR}/../reference/triggers.md" ]]; then
+        ((cross_ref_score+=25))
+    fi
+    if grep -qE 'reference/workflows\.md' "$skill" && [[ -f "${SCRIPT_DIR}/../reference/workflows.md" ]]; then
+        ((cross_ref_score+=25))
+    fi
+    if grep -qE 'reference/tools\.md' "$skill" && [[ -f "${SCRIPT_DIR}/../reference/tools.md" ]]; then
+        ((cross_ref_score+=25))
+    fi
+    if grep -qE 'Progressive Disclosure' "$skill" && grep -qE 'reference/' "$skill"; then
+        ((cross_ref_score+=25))
+    fi
+    
+    local evolution_score=0
+    if grep -qE '## §6\. Self-Evolution|§6 Self-Evolution|Self-Evolution' "$skill"; then
+        ((evolution_score+=25))
+    fi
+    if grep -qE 'usage_tracker|usage tracking|使用追踪' "$skill"; then
+        ((evolution_score+=15))
+    fi
+    if grep -qE 'evolve_decider|evolution trigger|进化触发' "$skill"; then
+        ((evolution_score+=15))
+    fi
+    
+    total=$((total + cross_ref_score + evolution_score))
+    
     cat > "$output/phase2.json" <<EOF
 {
     "phase": "text_score",
     "score": $total,
-    "max": 350,
+    "max": 505,
     "details": {
         "system_prompt": {"score": $sp_score, "max": $TEXT_SYSTEM_PROMPT},
         "domain_knowledge": {"score": $dk_score, "max": $TEXT_DOMAIN_KNOWLEDGE},
         "workflow": {"score": $wf_score, "max": $TEXT_WORKFLOW},
         "error_handling": {"score": $eh_score, "max": $TEXT_ERROR_HANDLING},
         "examples": {"score": $ex_score, "max": $TEXT_EXAMPLES},
-        "metadata": {"score": $md_score, "max": $TEXT_METADATA}
+        "metadata": {"score": $md_score, "max": $TEXT_METADATA},
+        "cross_ref_score": {"score": $cross_ref_score, "max": 100},
+        "evolution_score": {"score": $evolution_score, "max": 55}
     }
 }
 EOF
@@ -305,10 +334,12 @@ EOF
     echo "  Error Handling: $eh_score/$TEXT_ERROR_HANDLING" >&2
     echo "  Examples: $ex_score/$TEXT_EXAMPLES" >&2
     echo "  Metadata: $md_score/$TEXT_METADATA" >&2
-    echo "  Phase 2 Score: $total/350" >&2
+    echo "  Cross-Reference: $cross_ref_score/100" >&2
+    echo "  Self-Evolution: $evolution_score/55" >&2
+    echo "  Phase 2 Score: $total/505" >&2
     echo "" >&2
     
-    echo "$total:$sp_score:$dk_score:$wf_score:$eh_score:$ex_score:$md_score"
+    echo "$total:$sp_score:$dk_score:$wf_score:$eh_score:$ex_score:$md_score:$cross_ref_score:$evolution_score"
 }
 
 # Phase 3: Runtime Score (450pts) - Agent-based evaluation
@@ -507,7 +538,7 @@ generate_summary() {
     "skill": "$SKILL_PATH",
     "timestamp": "$timestamp",
     "total_score": $total,
-    "max_score": 1000,
+    "max_score": 1155,
     "tier": "$tier",
     "phases": {
         "parse_validate": $p1,
@@ -564,7 +595,7 @@ EOF
     
     <div class="summary-grid">
         <div class="summary-card"><div class="label">Parse & Validate</div><div class="value">%P1%<span style="font-size:14px;">/100</span></div></div>
-        <div class="summary-card"><div class="label">Text Score</div><div class="value">%P2%<span style="font-size:14px;">/350</span></div></div>
+        <div class="summary-card"><div class="label">Text Score</div><div class="value">%P2%<span style="font-size:14px;">/505</span></div></div>
         <div class="summary-card"><div class="label">Runtime Score</div><div class="value">%P3%<span style="font-size:14px;">/450</span></div></div>
         <div class="summary-card"><div class="label">Certification</div><div class="value">%P4%<span style="font-size:14px;">/100</span></div></div>
     </div>

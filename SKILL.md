@@ -59,7 +59,7 @@ User Input → Mode Router → [CREATE|EVALUATE|RESTORE|SECURITY] → OPTIMIZE
 | restorer | engine/agents/restorer.sh | Skill repair |
 
 **Constraints**:
-- Score thresholds: GOLD≥475, SILVER≥425, BRONZE≥350 (Lean 500-point scale)
+- Score thresholds: GOLD≥570, SILVER≥510, BRONZE≥420 (Lean 600-point scale)
 - Auto-rollback on score regression
 - HUMAN_REVIEW when score < 8.0 after 10 rounds
 
@@ -195,12 +195,12 @@ confidence = primary_match×0.5 + secondary×0.2 + context×0.2 + no_negative×0
 | Tier match | Score ≥ threshold | Warning |
 | Security scan | OWASP AST10 pass | Block P0 |
 
-**Score Thresholds (Lean 500pts)**:
+**Score Thresholds (Lean 600pts)**:
 | Tier | Min Score | F1 | MRR |
 |------|-----------|-----|-----|
-| GOLD | 475 | ≥0.90 | ≥0.85 |
-| SILVER | 425 | ≥0.87 | ≥0.82 |
-| BRONZE | 350 | ≥0.85 | ≥0.80 |
+| GOLD | 570 | ≥0.90 | ≥0.85 |
+| SILVER | 510 | ≥0.87 | ≥0.82 |
+| BRONZE | 420 | ≥0.85 | ≥0.80 |
 
 ---
 
@@ -227,7 +227,7 @@ confidence = primary_match×0.5 + secondary×0.2 + context×0.2 + no_negative×0
 
 **Trigger F1**: correct_triggers / total_triggers
 **MRR**: Mean Reciprocal Rank of correct triggers
-**Score**: Parse (100) + Text (350) + Runtime (50) = 500
+**Score**: Parse (100) + Text (350) + Runtime (150) = 600
 
 ---
 
@@ -247,7 +247,7 @@ confidence = primary_match×0.5 + secondary×0.2 + context×0.2 + no_negative×0
 
 | Trigger | Condition | Priority |
 |---------|-----------|----------|
-| **Threshold** | Score < 475 | High |
+| **Threshold** | Score < 570 | High |
 | **Scheduled** | Every 24 hours | Medium |
 | **Usage-based** | F1 < 0.85 OR Task Rate < 0.80 | High |
 | **Manual** | force=true | Highest |
