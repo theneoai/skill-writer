@@ -1,0 +1,15 @@
+{
+    "framework": "unified-skill-eval",
+    "version": "2.0",
+    "skill": "/Users/lucas/Documents/Projects/skill/SKILL.md",
+    "timestamp": "2026-03-28T14:18:47Z",
+    "total_score": 703,
+    "max_score": 1000,
+    "tier": "NOT_CERTIFIED",
+    "phases": {
+        "parse_validate": 75,
+        "text_score": 215,
+        "runtime_score": 383,
+        "certification": 30
+    }
+}

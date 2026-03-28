@@ -1,0 +1,17 @@
+{
+    "phase": "certification",
+    "score": 30,
+    "max": 100,
+    "total": 703,
+    "tier": "NOT_CERTIFIED",
+    "variance": 168,
+    "p1_score": 75,
+    "text_score": 215,
+    "runtime_score": 383,
+    "details": {
+        "variance_control": {"score": 0, "max": 40},
+        "tier_determination": {"score": 0, "max": 20},
+        "report_completeness": {"score": 20, "max": 20},
+        "security_gates": {"score": 10, "max": 10}
+    }
+}

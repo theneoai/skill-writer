@@ -1,0 +1,13 @@
+{
+    "phase": "text_score",
+    "score": 215,
+    "max": 350,
+    "details": {
+        "system_prompt": {"score": 60, "max": 70},
+        "domain_knowledge": {"score": 70, "max": 70},
+        "workflow": {"score": 45, "max": 70},
+        "error_handling": {"score": 25, "max": 55},
+        "examples": {"score": 0, "max": 55},
+        "metadata": {"score": 15, "max": 30}
+    }
+}

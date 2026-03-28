@@ -231,18 +231,18 @@ Tracks whether the skill correctly identified the execution mode.
 source engine/evolution/usage_tracker.sh
 
 # Track a correct trigger
-track_trigger "agent-skill" "OPTIMIZE" "OPTIMIZE"
+track_trigger "skill" "OPTIMIZE" "OPTIMIZE"
 
 # Track an incorrect trigger
-track_trigger "agent-skill" "CREATE" "EVALUATE"
+track_trigger "skill" "CREATE" "EVALUATE"
 ```
 
-**Output (JSONL entry in `logs/evolution/usage_agent-skill_<date>.jsonl`):**
+**Output (JSONL entry in `logs/evolution/usage_skill_<date>.jsonl`):**
 ```json
-{"timestamp":"2026-03-28T14:30:00Z","skill":"agent-skill","event_type":"trigger","expected_mode":"OPTIMIZE","actual_mode":"OPTIMIZE","correct":true}
+{"timestamp":"2026-03-28T14:30:00Z","skill":"skill","event_type":"trigger","expected_mode":"OPTIMIZE","actual_mode":"OPTIMIZE","correct":true}
 ```
 ```json
-{"timestamp":"2026-03-28T14:35:00Z","skill":"agent-skill","event_type":"trigger","expected_mode":"CREATE","actual_mode":"EVALUATE","correct":false}
+{"timestamp":"2026-03-28T14:35:00Z","skill":"skill","event_type":"trigger","expected_mode":"CREATE","actual_mode":"EVALUATE","correct":false}
 ```
 
 **Trigger Mode Reference:**
@@ -273,18 +273,18 @@ Tracks task completion and rounds.
 **Example:**
 ```bash
 # Track successful task
-track_task "agent-skill" "code_review" "true" 3
+track_task "skill" "code_review" "true" 3
 
 # Track failed task
-track_task "agent-skill" "debug_session" "false" 5
+track_task "skill" "debug_session" "false" 5
 ```
 
 **Output (JSONL):**
 ```json
-{"timestamp":"2026-03-28T15:00:00Z","skill":"agent-skill","event_type":"task","task_type":"code_review","completed":true,"rounds":3}
+{"timestamp":"2026-03-28T15:00:00Z","skill":"skill","event_type":"task","task_type":"code_review","completed":true,"rounds":3}
 ```
 ```json
-{"timestamp":"2026-03-28T15:30:00Z","skill":"agent-skill","event_type":"task","task_type":"debug_session","completed":false,"rounds":5}
+{"timestamp":"2026-03-28T15:30:00Z","skill":"skill","event_type":"task","task_type":"debug_session","completed":false,"rounds":5}
 ```
 
 ### 3.3 track_feedback()
@@ -304,15 +304,15 @@ Tracks user feedback ratings.
 **Example:**
 ```bash
 # Track positive feedback
-track_feedback "agent-skill" "5" "Excellent pattern recognition"
+track_feedback "skill" "5" "Excellent pattern recognition"
 
 # Track negative feedback
-track_feedback "agent-skill" "2" "Failed to detect OPTIMIZE mode"
+track_feedback "skill" "2" "Failed to detect OPTIMIZE mode"
 ```
 
 **Output (JSONL):**
 ```json
-{"timestamp":"2026-03-28T16:00:00Z","skill":"agent-skill","event_type":"feedback","rating":5,"comment":"Excellent pattern recognition"}
+{"timestamp":"2026-03-28T16:00:00Z","skill":"skill","event_type":"feedback","rating":5,"comment":"Excellent pattern recognition"}
 ```
 
 ### 3.4 get_usage_summary()
@@ -331,7 +331,7 @@ Aggregates usage data over a specified period.
 **Example:**
 ```bash
 source engine/evolution/usage_tracker.sh
-get_usage_summary "agent-skill" 7
+get_usage_summary "skill" 7
 ```
 
 **Output:**
@@ -393,7 +393,7 @@ learn_from_usage "SKILL.md" 7
 **Output (JSON):**
 ```json
 {
-  "skill": "agent-skill",
+  "skill": "skill",
   "metrics": {
     "trigger_f1": 0.8571,
     "task_completion_rate": 0.7500
@@ -420,13 +420,13 @@ Generates actionable improvement hints from patterns.
 **Example:**
 ```bash
 source engine/evolution/learner.sh
-get_improvement_hints "logs/evolution/patterns/agent-skill_patterns.json"
+get_improvement_hints "logs/evolution/patterns/skill_patterns.json"
 ```
 
 **Output:**
 ```json
 {
-  "skill": "agent-skill",
+  "skill": "skill",
   "hint_count": 2,
   "hints": [
     "Trigger confusion detected: CREATE->EVALUATE, OPTIMIZE->DEBUG. Consider adding disambiguation examples.",
@@ -450,12 +450,12 @@ Generates a human-readable knowledge document.
 **Example:**
 ```bash
 source engine/evolution/learner.sh
-consolidate_knowledge "agent-skill"
+consolidate_knowledge "skill"
 ```
 
-**Output File (`logs/evolution/knowledge/agent-skill_knowledge.md`):**
+**Output File (`logs/evolution/knowledge/skill_knowledge.md`):**
 ```markdown
-# Knowledge Consolidation: agent-skill
+# Knowledge Consolidation: skill
 
 Generated: 2026-03-28T16:00:00Z
 
@@ -1164,13 +1164,13 @@ evolve_skill "SKILL.md" 20  # Max 20 rounds
 
 ```
 logs/evolution/
-├── usage_agent-skill_20260328.jsonl      # Daily usage data (JSONL)
-├── usage_agent-skill_20260327.jsonl
-├── usage_agent-skill_20260326.jsonl
+├── usage_skill_20260328.jsonl      # Daily usage data (JSONL)
+├── usage_skill_20260327.jsonl
+├── usage_skill_20260326.jsonl
 ├── patterns/
-│   └── agent-skill_patterns.json          # Pattern analysis
+│   └── skill_patterns.json          # Pattern analysis
 ├── knowledge/
-│   └── agent-skill_knowledge.md           # Consolidated knowledge
+│   └── skill_knowledge.md           # Consolidated knowledge
 └── .last_evolution_check                 # Timestamp of last check
 ```
 
@@ -1205,17 +1205,17 @@ logs/
 ### 9.5 Example JSONL Usage File
 
 ```jsonl
-{"timestamp":"2026-03-28T10:00:00Z","skill":"agent-skill","event_type":"trigger","expected_mode":"CREATE","actual_mode":"CREATE","correct":true}
-{"timestamp":"2026-03-28T10:05:00Z","skill":"agent-skill","event_type":"task","task_type":"code_generation","completed":true,"rounds":2}
-{"timestamp":"2026-03-28T10:15:00Z","skill":"agent-skill","event_type":"trigger","expected_mode":"OPTIMIZE","actual_mode":"EVALUATE","correct":false}
-{"timestamp":"2026-03-28T10:30:00Z","skill":"agent-skill","event_type":"feedback","rating":4,"comment":"Good accuracy"}
+{"timestamp":"2026-03-28T10:00:00Z","skill":"skill","event_type":"trigger","expected_mode":"CREATE","actual_mode":"CREATE","correct":true}
+{"timestamp":"2026-03-28T10:05:00Z","skill":"skill","event_type":"task","task_type":"code_generation","completed":true,"rounds":2}
+{"timestamp":"2026-03-28T10:15:00Z","skill":"skill","event_type":"trigger","expected_mode":"OPTIMIZE","actual_mode":"EVALUATE","correct":false}
+{"timestamp":"2026-03-28T10:30:00Z","skill":"skill","event_type":"feedback","rating":4,"comment":"Good accuracy"}
 ```
 
 ### 9.6 Example Patterns File
 
 ```json
 {
-  "skill": "agent-skill",
+  "skill": "skill",
   "metrics": {
     "trigger_f1": 0.8571,
     "task_completion_rate": 0.7500

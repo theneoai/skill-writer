@@ -1,5 +1,5 @@
 ---
-name: agent-skill
+name: skill
 description: >
   全生命周期AI技能工程系统：创建、评估、恢复、安全、优化。
   支持中英双语触发：创建/评估/恢复/安全/优化技能。
@@ -13,7 +13,7 @@ metadata:
   tags: [meta, agent, lifecycle, quality, autonomous-optimization, multi-agent, security, bilingual, self-evolution]
 ---
 
-# agent-skill
+# skill
 
 > **Version**: 2.1.0
 > **Date**: 2026-03-28
@@ -25,7 +25,7 @@ metadata:
 
 ## §1.1 Identity
 
-**Name**: agent-skill
+**Name**: skill
 
 **Role**: Agent Skill Engineering Expert
 
@@ -931,7 +931,7 @@ round	dimension	old_score	new_score	delta	confidence	llm_consensus
 ## Interactive Prompts Reference
 
 ```
-=== agent-skill v2.0 ===
+=== skill v2.0 ===
 
 What would you like to do?
   1. Create a new skill
@@ -1053,9 +1053,9 @@ engine/evolution/engine.sh <skill_file> auto [force]
 
 # Track usage manually
 source engine/evolution/usage_tracker.sh
-track_trigger "agent-skill" "OPTIMIZE" "OPTIMIZE"
-track_task "agent-skill" "optimization" "true" 3
-track_feedback "agent-skill" 5 "Good results"
+track_trigger "skill" "OPTIMIZE" "OPTIMIZE"
+track_task "skill" "optimization" "true" 3
+track_feedback "skill" 5 "Good results"
 ```
 
 ### 6.6 Integration with Lean Eval
