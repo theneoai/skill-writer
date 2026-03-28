@@ -95,7 +95,32 @@ analyze_triggers() {
     echo "F1_SCORE=$f1_score"
     echo "MRR_SCORE=$mrr_score"
     echo "TRIGGER_ACCURACY=$trigger_accuracy"
-    
+
+    echo ""
+    echo "=== Threshold Checks ==="
+    local f1_pass mrr_pass acc_pass
+    f1_pass=$(echo "$f1_score >= $F1_THRESHOLD" | bc -l)
+    mrr_pass=$(echo "$mrr_score >= $MRR_THRESHOLD" | bc -l)
+    acc_pass=$(echo "$trigger_accuracy >= $TRIGGER_ACCURACY_THRESHOLD" | bc -l)
+
+    if [[ "$f1_pass" -eq 1 ]]; then
+        echo -e "${GREEN}✓${NC} F1 ($f1_score) >= $F1_THRESHOLD"
+    else
+        echo -e "${RED}✗${NC} F1 ($f1_score) < $F1_THRESHOLD"
+    fi
+
+    if [[ "$mrr_pass" -eq 1 ]]; then
+        echo -e "${GREEN}✓${NC} MRR ($mrr_score) >= $MRR_THRESHOLD"
+    else
+        echo -e "${RED}✗${NC} MRR ($mrr_score) < $MRR_THRESHOLD"
+    fi
+
+    if [[ "$acc_pass" -eq 1 ]]; then
+        echo -e "${GREEN}✓${NC} Trigger Accuracy ($trigger_accuracy) >= $TRIGGER_ACCURACY_THRESHOLD"
+    else
+        echo -e "${RED}✗${NC} Trigger Accuracy ($trigger_accuracy) < $TRIGGER_ACCURACY_THRESHOLD"
+    fi
+
     return 0
 }
 
@@ -178,7 +203,32 @@ analyze_triggers_from_json() {
     echo "F1_SCORE=$f1_score"
     echo "MRR_SCORE=$mrr_score"
     echo "TRIGGER_ACCURACY=$trigger_accuracy"
-    
+
+    echo ""
+    echo "=== Threshold Checks ==="
+    local f1_pass mrr_pass acc_pass
+    f1_pass=$(echo "$f1_score >= $F1_THRESHOLD" | bc -l)
+    mrr_pass=$(echo "$mrr_score >= $MRR_THRESHOLD" | bc -l)
+    acc_pass=$(echo "$trigger_accuracy >= $TRIGGER_ACCURACY_THRESHOLD" | bc -l)
+
+    if [[ "$f1_pass" -eq 1 ]]; then
+        echo -e "${GREEN}✓${NC} F1 ($f1_score) >= $F1_THRESHOLD"
+    else
+        echo -e "${RED}✗${NC} F1 ($f1_score) < $F1_THRESHOLD"
+    fi
+
+    if [[ "$mrr_pass" -eq 1 ]]; then
+        echo -e "${GREEN}✓${NC} MRR ($mrr_score) >= $MRR_THRESHOLD"
+    else
+        echo -e "${RED}✗${NC} MRR ($mrr_score) < $MRR_THRESHOLD"
+    fi
+
+    if [[ "$acc_pass" -eq 1 ]]; then
+        echo -e "${GREEN}✓${NC} Trigger Accuracy ($trigger_accuracy) >= $TRIGGER_ACCURACY_THRESHOLD"
+    else
+        echo -e "${RED}✗${NC} Trigger Accuracy ($trigger_accuracy) < $TRIGGER_ACCURACY_THRESHOLD"
+    fi
+
     return 0
 }
 

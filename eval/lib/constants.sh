@@ -56,7 +56,7 @@ readonly CERTIFY_SECURITY=10
 # Security CWE checks
 readonly CWE_798_PATTERN='(sk-|api[-_]?key|password|token|secret|credential)'
 readonly CWE_89_PATTERN='(eval\(|exec\(|system\()'
-readonly CWE_78_PATTERN='(eval|exec|system|popen)'
+readonly CWE_78_PATTERN='(^|[;&|])\s*(eval|exec|system|popen)\s*\(|`[^`]+`|\$\([^)]+\)'
 readonly CWE_22_PATTERN='(\.\.\/|\.\.\\|%00)'
 
 # Evaluation timeouts (seconds)

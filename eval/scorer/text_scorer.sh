@@ -15,13 +15,13 @@ text_score() {
         local score=0
         local content="$1"
         
-        if echo "$content" | grep -qE '(^|\n)#+\s+1\.1[[:space:]:.]'; then
+        if echo "$content" | grep -qE '(^|\n)#+\s+(§1\.1|1\.1 Identity|1\.1[[:space:]:.])'; then
             score=$((score + 20))
         fi
-        if echo "$content" | grep -qE '(^|\n)#+\s+1\.2[[:space:]:.]'; then
+        if echo "$content" | grep -qE '(^|\n)#+\s+(§1\.2|1\.2 Framework|1\.2[[:space:]:.])'; then
             score=$((score + 20))
         fi
-        if echo "$content" | grep -qE '(^|\n)#+\s+1\.3[[:space:]:.]'; then
+        if echo "$content" | grep -qE '(^|\n)#+\s+(§1\.3|1\.3 Thinking|1\.3[[:space:]:.])'; then
             score=$((score + 20))
         fi
         if echo "$content" | grep -qE '(never|always|forbidden|never\s+[Dd]o|always\s+[Mm]ust|do\s+not|must\s+not)'; then
@@ -35,9 +35,9 @@ text_score() {
         local score=0
         local content="$1"
         local quantitative_count=$(echo "$content" | grep -cE '[0-9]+\.[0-9]+%|[0-9]+%|[0-9]+(x|倍|次|个|px|ms|s|min|hour|day|K|M|G|T|P)|\$[0-9]+|[0-9]+\.[0-9]+')
-        local framework_count=$(echo "$content" | grep -cE '(ReAct|CoT|ToT|RAG|Chain|Agent|Prompt|Retrieval)')
+        local framework_count=$(echo "$content" | grep -cE '(ReAct|CoT|ToT|RAG|Chain|Agent|Prompt|Retrieval|框架|方法|范式|案例|标准)')
         local benchmark_count=$(echo "$content" | grep -cE '(NIST|OWASP|ISO|SECURITY|SANS|CVE|benchmark|standard|framework)')
-        local case_study_count=$(echo "$content" | grep -cE '(case|study|example|实例|案例|例如)')
+        local case_study_count=$(echo "$content" | grep -cE '(case|study|example|实例|案例|例如|例子|示例)')
         
         if [[ $quantitative_count -ge 10 ]]; then
             score=$((score + 20))
@@ -165,7 +165,9 @@ text_score() {
         local score=0
         local content="$1"
         
-        local example_count=$(echo "$content" | grep -cE '(example|Example|示例|例子|case|Case|scenario|Scenario)')
+        local example_count=$(echo "$content" | grep -cE '(example|Example|示例|例子|实例|case|Case|scenario|Scenario)')
+        local table_example_count=$(echo "$content" | grep -E '\|.*\|.*\|' | grep -ciE '(example|示例|例子|实例|案例|case)')
+        example_count=$((example_count + table_example_count))
         
         if [[ $example_count -ge 5 ]]; then
             score=$((score + 20))
@@ -213,23 +215,23 @@ text_score() {
         local score=0
         local content="$1"
         
-        if echo "$content" | grep -qE '^name:\s*['\''"]?[^'\''" ]'; then
+        if echo "$content" | grep -qE '^[[:space:]]*name:\s*['\''"]?[^'\''" ]'; then
             score=$((score + 5))
         fi
         
-        if echo "$content" | grep -qE '^description:\s*['\''"]?[^'\''" ]'; then
+        if echo "$content" | grep -qE '^[[:space:]]*description:\s*['\''"]?[^'\''" ]'; then
             score=$((score + 5))
         fi
         
-        if echo "$content" | grep -qE '^license:\s*['\''"]?[^'\''" ]'; then
+        if echo "$content" | grep -qE '^[[:space:]]*license:\s*['\''"]?[^'\''" ]'; then
             score=$((score + 5))
         fi
         
-        if echo "$content" | grep -qE '^version:\s*['\''"]?[^'\''" ]'; then
+        if echo "$content" | grep -qE '^[[:space:]]*version:\s*['\''"]?[^'\''" ]'; then
             score=$((score + 5))
         fi
         
-        if echo "$content" | grep -qE '^author:\s*['\''"]?[^'\''" ]'; then
+        if echo "$content" | grep -qE '^[[:space:]]*author:\s*['\''"]?[^'\''" ]'; then
             score=$((score + 5))
         fi
         

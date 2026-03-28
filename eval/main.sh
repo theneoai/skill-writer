@@ -264,7 +264,7 @@ run_phase2() {
     
     # Examples (55pts)
     local ex_score=0
-    local examples=$(grep -cE '^## .*[Ee]xample|^### .*[Ee]xample|input:|output:|输入:|输出:' "$skill" || true)
+    local examples=$(grep -cE '^## .*[Ee]xample|^### .*[Ee]xample|\|.*[Ee]xample.*\||example|示例|例子|实例|case|案例|input:|output:|输入:|输出:' "$skill" || true)
     
     [[ $examples -ge 5 ]] && ((ex_score+=40))
     [[ $examples -ge 3 ]] && [[ $ex_score -lt 40 ]] && ((ex_score+=25))
