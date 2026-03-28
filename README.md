@@ -1,4 +1,4 @@
-# Agent Skill Engineering
+# Skill Engineering
 
 [📄 Paper (English)](paper/agent_skills_engineering.md) | [📄 论文 (中文)](paper/agent_skills_engineering_zh.md) | [📖 Methodology](paper/methodology.md) | [🔧 Scripts](scripts/skill-manager/)
 

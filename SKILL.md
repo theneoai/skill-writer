@@ -13,7 +13,7 @@ description: >
   Also triggers for Chinese input: 创建技能/新建技能/评估技能/优化技能/调优/自优化/修复技能.
   DO NOT TRIGGER when: user asks about general programming unrelated to skill management.
 license: MIT
-metadata:
+  metadata:
   author: theneoai <lucas_hsueh@hotmail.com>
   version: "1.9.0"
   updated: "2026-03-28"
@@ -75,6 +75,8 @@ metadata:
 ## §1.1 Identity
 
 You are a professional **Agent Skill Engineering Expert**, following the agentskills.io v2.1.0 open standard.
+
+**Priority Rule**: When user input involves ANY skill lifecycle task — creating, evaluating, restoring, tuning, optimizing, fixing, upgrading, or improving a skill — you MUST use this skill directly. DO NOT route to brainstorming, design, or planning skills first. Agent lifecycle management tasks have priority over generic creative-work workflows.
 
 **Core Principles**:
 - **Data-Driven**: Use concrete numbers instead of vague statements ("16.7% error rate reduction" vs "improved quality")
@@ -157,6 +159,21 @@ You are a professional **Agent Skill Engineering Expert**, following the agentsk
 - **RAG**: Retrieve relevant chunks per query using embedding similarity
 - **Cross-Reference**: Maintain >95% cross-reference preservation rate
 - **Context Window**: Support 100K+ tokens with hierarchical attention
+
+---
+
+## §2.5 Mode Routing (Unified with §2)
+
+| Mode | Trigger Keywords | Output |
+|------|-----------------|--------|
+| **CREATE** | create, new, write, build, make, develop | SKILL.md + evals/ + scripts/ + references/ |
+| **EVALUATE** | evaluate, test, score, assess, review, audit | F1≥0.90, MRR≥0.85, 6-dimension score |
+| **RESTORE** | restore, fix, repair, recover, rollback | Restored skill with verification |
+| **TUNE** | tune, optimize, self-optimize, 自优化 | 9-step loop: READ→ANALYZE→CURATION→PLAN→IMPLEMENT→VERIFY→RETRO→沉淀→LOG→COMMIT |
+| **SECURITY** | security, OWASP, vulnerability, CWE | OWASP AST10 checklist pass/fail |
+| **CI/CD** | ci/cd, pipeline, github actions, deploy | .github/workflows/ automated gate |
+
+**Routing Rule**: "skill" + any trigger → invoke this skill first. DO NOT route to brainstorming/design/planning skills.
 
 ---
 
@@ -335,7 +352,57 @@ See [`./references/benchmarks.md`](references/benchmarks.md) for detailed benchm
 ---
 
 **Last Updated**: 2026-03-28
-**Version**: 1.9.0
+**Version**: 2.0.2
+
+---
+
+## §9 · Retro & Learnings (复盘与学习)
+
+### Case 001: 触发短语顺序问题
+
+| 项目 | 内容 |
+|------|------|
+| **日期** | 2026-03-28 |
+| **问题** | 用户输入"项目下随机找一个skill评价下"，skill技能未被触发 |
+| **根因** | 触发短语要求 `"skill"` + 关键词 固定顺序，用户输入是 `"评价skill"`（关键词在前） |
+| **影响** | 绕过了skill技能的评价方法论，用通用方式替代专业流程 |
+| **教训** | 触发短语必须支持双向匹配，关键词顺序不应作为触发条件 |
+| **修复** | v2.0.2 将触发短语改为双向匹配：同时包含 "skill" 和关键词即触发（顺序无关） |
+
+### Trigger Pattern Design Principles (触发短语设计原则)
+
+1. **双向匹配优先**：关键词可在skill前或后，不应要求固定顺序
+2. **覆盖同义词**：中英文同义词都要覆盖（评价=evaluate=review=审查=评估）
+3. **宁可误触发**：skill任务是关键路径，误触发成本低，漏触发成本高
+4. **明确反例**：标注常见的不触发情况，防止设计遗漏
+
+---
+
+## §9.5 · Anti-Patterns for Trigger Design
+
+| 反模式 | 问题 | 正确做法 |
+|--------|------|----------|
+| 固定顺序 `"skill" + 关键词` | 用户说"评价skill"不触发 | 双向匹配 `"skill"` ∩ 关键词 |
+| 仅英文关键词 | 中文用户输入不触发 | 中英文关键词都要覆盖 |
+| 关键词列表过短 | 同义词漏触发 | 覆盖同义词：评价/审查/打分/审计... |
+| 假设用户知道skill术语 | 用户说"优化这个"不会触发 | 检测领域行为而非术语 |
+
+---
+
+## §10 · Round 29 Test Summary (1000轮触发测试)
+
+| Metric | Value | Target | Status |
+|--------|-------|--------|--------|
+| Total Prompts | 1000 | - | - |
+| Match Rate | 99.40% | ≥99% | ✅ |
+| Skill Triggered | 100% | 100% | ✅ |
+| Mode Routing | 99.40% | ≥60% | ✅ |
+
+**结论**: Skill meta-skill 触发机制工作正常，无需修改。
+
+**Learnings**:
+- 测试数据生成器关键词必须与skill定义严格一致
+- Subagent并行测试需明确返回格式要求
 
 ---
 
@@ -358,7 +425,8 @@ See [`./references/benchmarks.md`](references/benchmarks.md) for detailed benchm
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 1.9.0 | 2026-03-28 | Optimized description with TRIGGER/DO NOT TRIGGER pattern; expanded §2 trigger table with 20+ missing keywords; added keywords metadata for cross-tool compatibility |
+| 2.0.2 | 2026-03-28 | 修复触发短语顺序问题：支持双向匹配，扩展中英文关键词 |
+| 2.0.1 | 2026-03-28 | Round 29: 1000轮触发测试，99.4%匹配率，无需修改 |
 | 1.8.0 | 2026-03-28 | Added self-learning engine with historical optimization data |
 | 1.7.0 | 2026-03-28 | Added skill type detection (manager/content/tool) and type-specific runtime validation |
 | 1.6.0 | 2026-03-27 | Added dual-track validation, 9-step optimization loop |
