@@ -52,6 +52,45 @@ The skill system is a self-contained skill engineering framework that enables cr
 ## Directory Structure
 
 ```
+docs/
+├── product/                    # Product documentation
+│   ├── README.md
+│   ├── OVERVIEW.md
+│   ├── ROADMAP.md
+│   └── CHANGELOG.md
+│
+├── user/                      # User documentation
+│   ├── README.md
+│   ├── QUICKSTART.md
+│   ├── TUTORIAL.md
+│   └── workflows/
+│       ├── CREATE.md
+│       ├── EVALUATE.md
+│       ├── OPTIMIZE.md
+│       ├── RESTORE.md
+│       ├── SECURITY.md
+│       └── AUTO-EVOLVE.md
+│
+├── technical/                 # Technical documentation
+│   ├── README.md
+│   ├── ARCHITECTURE.md        # This file
+│   ├── DESIGN.md
+│   ├── core/
+│   │   ├── ENGINE.md
+│   │   ├── EVAL.md
+│   │   ├── EVOLUTION.md
+│   │   └── LEAN-EVAL.md
+│   └── api/
+│       ├── CLI.md
+│       └── INTERNAL.md
+│
+└── reference/                 # Reference documentation
+    ├── README.md
+    ├── SKILL.md
+    ├── METRICS.md
+    ├── THRESHOLDS.md
+    └── PROVIDERS.md
+
 skill-system/
 ├── SKILL.md                    # Self-describing skill manifest
 ├── README.md                   # Project overview
@@ -63,6 +102,7 @@ skill-system/
 │   ├── optimize-skill.sh       # Self-optimization
 │   ├── security-audit.sh       # Security audit
 │   ├── restore-skill.sh       # Skill restoration
+│   ├── auto-evolve.sh         # Auto-evolution trigger
 │   └── quick-score.sh         # Fast text scoring
 │
 ├── engine/                     # Skill lifecycle management
@@ -82,7 +122,8 @@ skill-system/
 │   │   ├── improver.sh        # LLM improvement
 │   │   ├── summarizer.sh      # Finding synthesis
 │   │   ├── rollback.sh        # Snapshot/rollback
-│   │   └── _storage.sh        # Log abstraction
+│   │   ├── _storage.sh        # Log abstraction
+│   │   └── auto-trigger.sh    # Auto-evolution logic
 │   │
 │   ├── orchestrator/          # Workflow components
 │   │   ├── _state.sh         # State management
@@ -135,12 +176,6 @@ skill-system/
 │   ├── run_tests.sh           # Test runner
 │   ├── unit/                  # Unit tests
 │   └── integration/            # Integration tests
-│
-├── docs/                       # Documentation
-│   ├── API.md                 # API reference
-│   └── ARCHITECTURE.md        # This file
-│
-├── examples/                  # Usage examples
 │
 └── .github/workflows/         # CI/CD
     ├── ci.yml                # Continuous integration
@@ -283,6 +318,159 @@ User Input → optimize-skill.sh → evolution/engine.sh
 8. Data Exposure Prevention
 9. Log Security
 10. Error Handling Security
+
+---
+
+## Auto-Evolution Architecture
+
+### Overview
+
+Auto-evolution enables skills to automatically improve themselves based on usage data and evaluation results. The system monitors skill performance in production and triggers optimization when degradation is detected.
+
+### Components
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    AUTO-EVOLUTION SYSTEM                             │
+│                                                                      │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐               │
+│  │ USAGE        │  │ TRIGGER      │  │ EVOLUTION    │               │
+│  │ TRACKER      │──▶│ MONITOR      │──▶│ ENGINE       │               │
+│  │              │  │              │  │ (9-step loop)│               │
+│  └──────────────┘  └──────────────┘  └──────────────┘               │
+│         │                 │                 │                         │
+│         ▼                 ▼                 ▼                         │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐               │
+│  │ metrics.db   │  │ threshold    │  │ snapshots/   │               │
+│  │ (SQLite)     │  │ config       │  │ git commits  │               │
+│  └──────────────┘  └──────────────┘  └──────────────┘               │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Usage Tracking
+
+The usage tracker collects real-time metrics for each skill:
+
+| Metric | Description | Threshold |
+|--------|-------------|-----------|
+| `invocation_count` | Number of skill executions | > 10 |
+| `failure_count` | Failed executions | > 0 |
+| `avg_latency_ms` | Average response time | > 5000ms |
+| `error_rate` | Failure / Total | > 5% |
+| `quality_score` | User feedback (1-5) | < 3.5 |
+
+### Trigger Logic
+
+```bash
+auto-trigger.sh:
+    if [ "$failure_count" -gt "$THRESHOLD_FAILURE" ]; then
+        trigger_evolution "FAILURE_DETECTED"
+    elif [ "$error_rate" -gt "$THRESHOLD_ERROR_RATE" ]; then
+        trigger_evolution "DEGRADATION_DETECTED"
+    elif [ "$avg_latency_ms" -gt "$THRESHOLD_LATENCY" ]; then
+        trigger_evolution "LATENCY_DEGRADATION"
+    elif [ "$quality_score" -lt "$THRESHOLD_QUALITY" ]; then
+        trigger_evolution "QUALITY_DEGRADATION"
+    fi
+```
+
+### Evolution Thresholds by Skill Age
+
+| Skill State | Evals Before Evolution | Description |
+|-------------|------------------------|-------------|
+| NEW | 10 | Initial learning phase |
+| GROWING | 50 | Building proficiency |
+| STABLE | 100 | Minor refinements only |
+| MATURE | 200 | Rarely evolves |
+
+### Auto-Evolution Flow
+
+```
+1. TRIGGER detected → Lock skill for evolution
+2. SNAPSHOT current state → Git commit + snapshot
+3. RUN evolution loop → 9-step optimization
+4. VERIFY improved → Multi-LLM verification
+5. COMPARE scores → New vs baseline
+6. COMMIT or ROLLBACK → If improved, commit; else rollback
+7. UNLOCK skill → Resume service
+```
+
+### Rollback Mechanism
+
+On evolution failure or regression:
+- Restore from latest snapshot
+- Reset to previous git commit
+- Log failure reason
+- Alert if score drops below minimum threshold
+
+---
+
+## Usage Tracking Architecture
+
+### Overview
+
+Usage tracking captures skill execution data for analytics, trigger decisions, and continuous improvement decisions.
+
+### Data Collection
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    USAGE TRACKING PIPELINE                           │
+│                                                                      │
+│  ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐       │
+│  │ Skill    │───▶│ Collector │───▶│ Aggregat │───▶│ SQLite   │       │
+│  │ Runtime  │    │ (async)  │    │ or       │    │ metrics  │       │
+│  └──────────┘    └──────────┘    └──────────┘    └──────────┘       │
+│                                                   │                  │
+│                                                   ▼                  │
+│                                            ┌──────────┐              │
+│                                            │ Trigger  │              │
+│                                            │ Monitor  │              │
+│                                            └──────────┘              │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Metrics Schema
+
+```sql
+CREATE TABLE skill_metrics (
+    skill_id TEXT PRIMARY KEY,
+    invocation_count INTEGER DEFAULT 0,
+    failure_count INTEGER DEFAULT 0,
+    total_latency_ms INTEGER DEFAULT 0,
+    quality_scores TEXT,  -- JSON array
+    last_updated TIMESTAMP,
+    state TEXT DEFAULT 'NEW'
+);
+
+CREATE TABLE metric_history (
+    id INTEGER PRIMARY KEY,
+    skill_id TEXT,
+    metric_type TEXT,
+    value REAL,
+    recorded_at TIMESTAMP
+);
+```
+
+### Aggregation
+
+- **Per-invocation**: Latency, success/failure, quality score
+- **5-minute windows**: Error rate, throughput
+- **Hourly**: P50/P95/P99 latency, trend analysis
+- **Daily**: Overall health score, comparison to baseline
+
+### Integration Points
+
+| Component | Data Provided | Usage |
+|-----------|---------------|-------|
+| `invoke-skill.sh` | Latency, success | Real-time monitoring |
+| `evaluate-skill.sh` | Quality scores | Certification decisions |
+| `auto-evolve.sh` | Health metrics | Trigger decisions |
+| `dashboard` | Aggregated stats | User visibility |
+
+---
+
+## Configuration
 
 ---
 

@@ -92,6 +92,7 @@ skill-system/
 │   ├── optimize-skill.sh       # Self-optimization
 │   ├── security-audit.sh      # OWASP AST10
 │   ├── restore-skill.sh       # Fix broken skills
+│   ├── auto-evolve.sh         # Auto-evolution trigger
 │   └── quick-score.sh         # Text scoring
 │
 ├── engine/                    # Skill lifecycle management
@@ -112,11 +113,52 @@ skill-system/
 │   ├── unit/                 # Unit tests
 │   └── integration/           # Integration tests
 │
-├── docs/                      # Documentation
-│   ├── API.md                # API reference
-│   └── ARCHITECTURE.md       # Technical architecture
+├── docs/                      # Documentation (see docs/ for structure)
 │
 └── .github/workflows/         # CI/CD
+```
+
+### Documentation Structure
+
+```
+docs/
+├── product/                    # Product documentation
+│   ├── README.md
+│   ├── OVERVIEW.md
+│   ├── ROADMAP.md
+│   └── CHANGELOG.md
+│
+├── user/                      # User documentation
+│   ├── README.md
+│   ├── QUICKSTART.md
+│   ├── TUTORIAL.md
+│   └── workflows/
+│       ├── CREATE.md
+│       ├── EVALUATE.md
+│       ├── OPTIMIZE.md
+│       ├── RESTORE.md
+│       ├── SECURITY.md
+│       └── AUTO-EVOLVE.md
+│
+├── technical/                 # Technical documentation
+│   ├── README.md
+│   ├── ARCHITECTURE.md
+│   ├── DESIGN.md
+│   ├── core/
+│   │   ├── ENGINE.md
+│   │   ├── EVAL.md
+│   │   ├── EVOLUTION.md
+│   │   └── LEAN-EVAL.md
+│   └── api/
+│       ├── CLI.md
+│       └── INTERNAL.md
+│
+└── reference/                 # Reference documentation
+    ├── README.md
+    ├── SKILL.md
+    ├── METRICS.md
+    ├── THRESHOLDS.md
+    └── PROVIDERS.md
 ```
 
 ---
