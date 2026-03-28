@@ -1,5 +1,5 @@
 ---
-name: agent-skill-creator
+name: skill
 description: >
   Full-lifecycle AI agent skill engineering: CREATE, EVALUATE, OPTIMIZE, RESTORE.
   TRIGGER when: user wants to create a new skill ("create skill", "new skill", "write

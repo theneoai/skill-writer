@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-WORKDIR="/Users/lucas/Documents/Projects/agent-skill-creator"
+WORKDIR="/Users/lucas/Documents/Projects/skill"
 SKILL_FILE="$WORKDIR/SKILL.md"
 SCORE_SCRIPT="$WORKDIR/scripts/score.sh"
 LOG_FILE="$WORKDIR/.autotuner.log"

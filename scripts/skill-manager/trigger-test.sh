@@ -230,7 +230,7 @@ if $JSON_OUTPUT; then
 else
     echo ""
     echo "══════════════════════════════════════════════════════"
-    echo "  Trigger Accuracy Test — agent-skill-creator"
+    echo "  Trigger Accuracy Test — skill"
     echo "══════════════════════════════════════════════════════"
     echo ""
     echo "  Per-Mode Results:"

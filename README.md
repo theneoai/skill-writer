@@ -45,8 +45,8 @@ We introduce a **multi-agent optimization architecture** employing parallel eval
 
 ```bash
 # Clone the repository
-git clone https://github.com/theneoai/agent-skill-creator.git
-cd agent-skill-creator
+git clone https://github.com/theneoai/skill.git
+cd skill
 
 # Create a new skill
 opencode "create a code-review skill"
@@ -81,7 +81,7 @@ opencode "execute OWASP AST10 security review"
 ## Directory Structure
 
 ```
-agent-skill-creator/
+skill/
 ├── SKILL.md                      # Main skill definition
 ├── paper/
 │   ├── agent_skills_engineering.md    # English paper
