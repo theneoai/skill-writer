@@ -467,42 +467,158 @@ User Input
 
 ## §4.1 Tool Set
 
-**orchestrator_create**:
-```bash
-engine/orchestrator.sh "$prompt" "$output_file" "$tier"
-```
-- Creates new skill via Creator+Evaluator loop
-- Returns: final score, tier, F1, MRR
+### 4.1.1 ENGINE - Skill Lifecycle Management
 
-**evaluator_score**:
-```bash
-engine/agents/evaluator.sh "$skill_file"
-```
-- Evaluates single skill file
-- Returns: score (0-1000), tier, suggestions, F1, MRR
+#### Core Orchestration
 
-**restorer_fix**:
-```bash
-engine/agents/restorer.sh "$skill_file"
-```
-- Restores broken skills
-- Multi-LLM diagnosis and fix verification
+| Tool | Path | Purpose |
+|------|------|---------|
+| **orchestrator** | `engine/orchestrator.sh` | Main workflow coordinator for CREATE mode |
+| **main** | `engine/main.sh` | CLI entry point for engine |
+| **bootstrap** | `engine/lib/bootstrap.sh` | Module loading, path init, require() |
 
-**security_audit**:
-```bash
-engine/agents/security.sh "$skill_file" "$level"
-```
-- OWASP AST10 checklist
-- Multi-LLM cross-validation
-- Returns: violations, severity, fixes
+#### Agent Tools
 
-**evolution_optimize**:
+| Tool | Path | Purpose |
+|------|------|---------|
+| **creator** | `engine/agents/creator.sh` | Generate SKILL.md sections via LLM |
+| **evaluator** | `engine/agents/evaluator.sh` | Evaluate skills, return score+suggestions |
+| **restorer** | `engine/agents/restorer.sh` | Multi-LLM diagnosis and fix verification |
+| **security** | `engine/agents/security.sh` | OWASP AST10 10-item security audit |
+| **base** | `engine/agents/base.sh` | Agent infrastructure (LLM calls, prompts) |
+
+#### Evolution Pipeline
+
+| Tool | Path | Purpose |
+|------|------|---------|
+| **engine** | `engine/evolution/engine.sh` | 9-step optimization loop |
+| **analyzer** | `engine/evolution/analyzer.sh` | LLM-based usage log analysis |
+| **improver** | `engine/evolution/improver.sh` | LLM-based improvement generation |
+| **summarizer** | `engine/evolution/summarizer.sh` | LLM-based analysis summarization |
+| **rollback** | `engine/evolution/rollback.sh` | Snapshot and rollback management |
+| **storage** | `engine/evolution/_storage.sh` | Usage log abstraction layer |
+
+#### State & Concurrency
+
+| Tool | Path | Purpose |
+|------|------|---------|
+| **state** | `engine/orchestrator/_state.sh` | Global state variables |
+| **actions** | `engine/orchestrator/_actions.sh` | Workflow decision logic |
+| **parallel** | `engine/orchestrator/_parallel.sh` | Background task execution |
+| **concurrency** | `engine/lib/concurrency.sh` | Lock management, with_lock() |
+
+#### Errors & Constants
+
+| Tool | Path | Purpose |
+|------|------|---------|
+| **errors** | `engine/lib/errors.sh` | Error handling, retry logic |
+| **constants** | `engine/lib/constants.sh` | Thresholds, timeouts, tier definitions |
+| **integration** | `engine/lib/integration.sh` | eval framework integration |
+
+---
+
+### 4.1.2 EVAL - Skill Evaluation Framework
+
+#### Main Evaluation
+
+| Tool | Path | Purpose |
+|------|------|---------|
+| **main** | `eval/main.sh` | Unified 4-phase evaluation engine |
+| **parse_validate** | `eval/parse/parse_validate.sh` | Phase 1: Format validation |
+| **certifier** | `eval/certifier.sh` | Phase 4: Tier determination |
+
+#### Scoring
+
+| Tool | Path | Purpose |
+|------|------|---------|
+| **text_scorer** | `eval/scorer/text_scorer.sh` | Phase 2: Text quality (350pts) |
+| **runtime_tester** | `eval/scorer/runtime_tester.sh` | Phase 3: Runtime behavior (450pts) |
+| **runtime_agent** | `eval/scorer/runtime_agent_tester.sh` | LLM-based runtime testing |
+
+#### Analyzers
+
+| Tool | Path | Purpose |
+|------|------|---------|
+| **trigger_analyzer** | `eval/analyzer/trigger_analyzer.sh` | F1/MRR/trigger accuracy |
+| **variance_analyzer** | `eval/analyzer/variance_analyzer.sh` | Text-Runtime variance calculation |
+| **dimension_analyzer** | `eval/analyzer/dimension_analyzer.sh` | Per-dimension scoring |
+
+#### Reporting
+
+| Tool | Path | Purpose |
+|------|------|---------|
+| **json_reporter** | `eval/report/json_reporter.sh` | JSON report generation |
+| **html_reporter** | `eval/report/html_reporter.sh` | HTML report with badges |
+
+#### Utilities
+
+| Tool | Path | Purpose |
+|------|------|---------|
+| **agent_executor** | `eval/lib/agent_executor.sh` | Multi-LLM call orchestration |
+| **constants** | `eval/lib/constants.sh` | 1000pts scoring thresholds |
+| **utils** | `eval/lib/utils.sh` | Shared utilities |
+| **i18n** | `eval/lib/i18n.sh` | Internationalization |
+
+#### Corpus
+
+| Tool | Path | Purpose |
+|------|------|---------|
+| **corpus_100** | `eval/corpus/corpus_100.json` | 100 test cases (fast eval) |
+| **corpus_1000** | `eval/corpus/corpus_1000.json` | 1000 test cases (full eval) |
+
+---
+
+### 4.1.3 Tool Usage Reference
+
+#### Create Skill
 ```bash
-engine/evolution/engine.sh "$skill_file"
+engine/orchestrator.sh "Create a code review skill" ./code-review.md BRONZE
 ```
-- 9-step optimization loop
-- Multi-LLM deliberation at each step
-- Auto-rollback on regression
+
+#### Evaluate Skill
+```bash
+eval/main.sh --skill ./SKILL.md --fast
+engine/agents/evaluator.sh ./SKILL.md
+```
+
+#### Security Audit
+```bash
+engine/agents/security.sh ./SKILL.md FULL
+```
+
+#### Restore Skill
+```bash
+engine/agents/restorer.sh ./SKILL.md
+```
+
+#### Optimize Skill
+```bash
+engine/evolution/engine.sh ./SKILL.md 20
+```
+
+#### Quick Score
+```bash
+eval/scorer/text_scorer.sh ./SKILL.md
+eval/analyzer/trigger_analyzer.sh eval/corpus/corpus_100.json
+```
+
+#### Analyze Variance
+```bash
+eval/analyzer/variance_analyzer.sh 280 360
+```
+
+---
+
+### 4.1.4 Multi-LLM Provider Support
+
+| Provider | Environment Variable | Default Model |
+|----------|---------------------|--------------|
+| **Anthropic** | `ANTHROPIC_API_KEY` | claude-sonnet-4-20250514 |
+| **OpenAI** | `OPENAI_API_KEY` | gpt-4o-mini |
+| **Kimi** | `KIMI_API_KEY` / `KIMI_CODE_API_KEY` | moonshot-v1-8k / kimi-for-coding |
+| **MiniMax** | `MINIMAX_API_KEY` | MiniMax-M2.7-highspeed |
+
+**Cross-Validation**: All critical decisions require 2/3 LLM agreement. Conflicts trigger HUMAN_REVIEW.
 
 ---
 
