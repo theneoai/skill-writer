@@ -7,91 +7,30 @@ on:
     branches: [main]
 
 jobs:
-  lint:
-    name: Shellcheck
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install shellcheck
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          apt-get update && apt-get install -y shellcheck
-
-      - name: Install shellcheck
-        if: matrix.os == 'macos-latest'
-        run: |
-          brew install shellcheck
-
-      - name: Find shell scripts
-        id: scripts
-        run: |
-          echo "scripts=$(find . -name '*.sh' -type f | grep -v '.git/' | tr '\n' ' ')" >> $GITHUB_OUTPUT
-
-      - name: Run shellcheck
-        run: |
-          for script in ${{ fromJson(steps.scripts.outputs.scripts) }}; do
-            shellcheck "$script" || exit 1
-          done
-
-  eval:
-    name: Eval Framework
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Run eval using script
-        run: |
-          ./scripts/evaluate-skill.sh ./SKILL.md
-
-      - name: Check eval results
-        run: |
-          if [[ -f ./eval_results/summary.json ]]; then
-            echo "=== Eval Summary ==="
-            cat ./eval_results/summary.json
-            echo ""
-            echo "=== Phase Scores ==="
-            for phase in phase1 phase2 phase3 phase4; do
-              if [[ -f ./eval_results/${phase}.json ]]; then
-                echo "--- ${phase}.json ---"
-                cat ./eval_results/${phase}.json
-              fi
-            done
-          else
-            echo "Warning: No eval results found"
-            exit 1
-          fi
-
-      - name: Upload eval results
-        uses: actions/upload-artifact@v4
-        with:
-          name: eval-results
-          path: ./eval_results/
-          retention-days: 7
-
   test:
-    name: Test Suite
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
+      
       - name: Make scripts executable
         run: |
           chmod +x ./scripts/*.sh
           chmod +x ./tests/*.sh
           chmod +x ./tests/unit/*.sh
-
-      - name: Run all tests
+          chmod +x ./eval/**/*.sh
+      
+      - name: Run unit tests
         run: |
-          ./tests/run_tests.sh
-
-      - name: Run quick score
+          bash tests/unit/run_tests.sh
+          
+      - name: Run integration tests
         run: |
-          ./scripts/quick-score.sh ./SKILL.md
+          bash tests/run_tests.sh
+          
+      - name: Lean evaluation
+        run: |
+          bash scripts/lean-orchestrator.sh SKILL.md
+          
+      - name: Parse validation
+        run: |
+          bash eval/parse/parse_validate.sh SKILL.md
