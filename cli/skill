@@ -28,12 +28,12 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-source "${PROJECT_ROOT}/engine/lib/bootstrap.sh"
+source "${PROJECT_ROOT}/tools/lib/bootstrap.sh"
 require constants concurrency errors integration
 
-source "${EVAL_DIR}/lib/agent_executor.sh"
+source "${PROJECT_ROOT}/tools/lib/agent_executor.sh"
 
-source "${EVAL_DIR}/lib/unified_scoring.sh"
+source "${PROJECT_ROOT}/tools/lib/scoring.sh"
 
 LEAN_LOG="${LOG_DIR}/lean.log"
 

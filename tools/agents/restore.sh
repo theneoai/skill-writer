@@ -3,7 +3,7 @@
 #
 # Multi-LLM cross-validation for diagnosis and fix verification
 
-source "$(dirname "${BASH_SOURCE[0]}")/base.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/agent.sh"
 require integration
 
 agent_init

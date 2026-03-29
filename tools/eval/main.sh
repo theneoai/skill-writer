@@ -209,7 +209,7 @@ run_phase2() {
     local skill="$1"
     local output="$2"
     
-    echo "【Phase 2】 Text Score (505pts)" >&2
+    echo "【Phase 2】 Text Score (350pts)" >&2
     
     source "${SCRIPT_DIR}/lib/constants.sh"
     
@@ -314,7 +314,7 @@ run_phase2() {
 {
     "phase": "text_score",
     "score": $total,
-    "max": 505,
+    "max": 350,
     "details": {
         "system_prompt": {"score": $sp_score, "max": $TEXT_SYSTEM_PROMPT},
         "domain_knowledge": {"score": $dk_score, "max": $TEXT_DOMAIN_KNOWLEDGE},
@@ -336,7 +336,7 @@ EOF
     echo "  Metadata: $md_score/$TEXT_METADATA" >&2
     echo "  Cross-Reference: $cross_ref_score/100" >&2
     echo "  Self-Evolution: $evolution_score/55" >&2
-    echo "  Phase 2 Score: $total/505" >&2
+    echo "  Phase 2 Score: $total/350" >&2
     echo "" >&2
     
     echo "$total:$sp_score:$dk_score:$wf_score:$eh_score:$ex_score:$md_score:$cross_ref_score:$evolution_score"

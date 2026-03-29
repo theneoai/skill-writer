@@ -66,7 +66,7 @@ run_with_timeout() {
         timeout "$timeout" "${cmd[@]}"
     else
         (
-            "$cmd[@]" &
+            "${cmd[@]}" &
         local pid=$!
         (
             sleep "$timeout"

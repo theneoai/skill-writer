@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # evaluator.sh - Evaluator Agent
 
-source "$(dirname "${BASH_SOURCE[0]}")/base.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/agent.sh"
 require integration
 
 # ============================================================================

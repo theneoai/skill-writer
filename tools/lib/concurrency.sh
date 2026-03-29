@@ -62,7 +62,7 @@ with_lock() {
     LOCK_DEPTH=$depth
     echo "$depth" > "$lock_depth_file" 2>/dev/null || true
     
-    trap "release_lock '$lock_name'; rm -f '$lock_depth_file' 2>/dev/null" EXIT
+    trap "release_lock \"$lock_name\"; rm -f \"$lock_depth_file\" 2>/dev/null" EXIT
     
     "$@"
 }

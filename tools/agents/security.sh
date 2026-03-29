@@ -4,7 +4,7 @@
 # Multi-LLM cross-validation for security audit
 # 10 checklist items covering CWE-798, CWE-89, CWE-78, CWE-22, CWE-306, CWE-862
 
-source "$(dirname "${BASH_SOURCE[0]}")/base.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/agent.sh"
 require integration
 
 agent_init

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # creator.sh - Creator Agent
 
-source "$(dirname "${BASH_SOURCE[0]}")/base.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/agent.sh"
 
 # ============================================================================
 # 初始化

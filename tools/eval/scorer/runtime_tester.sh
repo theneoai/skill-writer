@@ -491,7 +491,7 @@ calculate_f1_score() {
     local corpus_file="$1"
 
     if [[ ! -f "$corpus_file" ]]; then
-        echo "85"
+        echo "0.85"
         return
     fi
 
@@ -502,7 +502,7 @@ calculate_f1_score() {
     f1_score=$(echo "$result" | grep "F1_SCORE=" | cut -d= -f2)
     
     if [[ -z "$f1_score" ]] || [[ "$f1_score" == "0.0" ]]; then
-        echo "85"
+        echo "0.85"
     else
         echo "$f1_score"
     fi
@@ -512,7 +512,7 @@ calculate_mrr_score() {
     local corpus_file="$1"
 
     if [[ ! -f "$corpus_file" ]]; then
-        echo "80"
+        echo "0.80"
         return
     fi
 
@@ -523,7 +523,7 @@ calculate_mrr_score() {
     mrr_score=$(echo "$result" | grep "MRR_SCORE=" | cut -d= -f2)
     
     if [[ -z "$mrr_score" ]] || [[ "$mrr_score" == "0.0" ]]; then
-        echo "80"
+        echo "0.80"
     else
         echo "$mrr_score"
     fi

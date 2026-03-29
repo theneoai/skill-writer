@@ -24,7 +24,9 @@ fi
 
 # eval 路径（可通过环境变量覆盖）
 if [[ -z "${EVAL_DIR:-}" ]]; then
-    if [[ -d "$EVAL_DIR_FROM_ENGINE/../eval" ]]; then
+    if [[ -d "$EVAL_DIR_FROM_ENGINE/eval" ]]; then
+        EVAL_DIR="$(cd "$EVAL_DIR_FROM_ENGINE/eval" && pwd)"
+    elif [[ -d "$EVAL_DIR_FROM_ENGINE/../eval" ]]; then
         EVAL_DIR="$(cd "$EVAL_DIR_FROM_ENGINE/../eval" && pwd)"
     elif [[ -d "$EVAL_DIR_FROM_ENGINE/../../eval" ]]; then
         EVAL_DIR="$(cd "$EVAL_DIR_FROM_ENGINE/../../eval" && pwd)"
