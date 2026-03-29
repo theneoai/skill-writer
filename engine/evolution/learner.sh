@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 # learner.sh - Extract patterns from usage data to guide optimization
+#
+# v2.0: Added strong_triggers for positive learning
 
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/bootstrap.sh"
 source "${EVAL_DIR}/lib/agent_executor.sh"
 
-LEARNER_VERSION="1.0"
+LEARNER_VERSION="2.0"
 
 PATTERNS_DIR="${EVOLUTION_USAGE_DIR}/patterns"
 KNOWLEDGE_DIR="${EVOLUTION_USAGE_DIR}/knowledge"
@@ -34,7 +36,9 @@ learn_from_usage() {
     task_rate=$(echo "$usage_summary" | jq -r '.task_completion_rate')
     
     local weak_triggers=()
+    local strong_triggers=()
     local failed_tasks=()
+    local successful_tasks=()
     
     for ((i=0; i<rounds; i++)); do
         local date
@@ -50,35 +54,54 @@ learn_from_usage() {
             
             if [[ "$event_type" == "trigger" ]]; then
                 correct=$(echo "$line" | jq -r '.correct')
+                local confidence
+                confidence=$(echo "$line" | jq -r '.confidence // 0.5')
+                local expected actual
+                expected=$(echo "$line" | jq -r '.expected_mode')
+                actual=$(echo "$line" | jq -r '.actual_mode')
+                
                 if [[ "$correct" == "false" ]]; then
-                    local expected actual
-                    expected=$(echo "$line" | jq -r '.expected_mode')
-                    actual=$(echo "$line" | jq -r '.actual_mode')
                     weak_triggers+=("${expected}->${actual}")
+                elif [[ "$(echo "$confidence >= 0.8" | bc -l)" == "1" ]]; then
+                    strong_triggers+=("${expected}->${actual}(conf=${confidence})")
                 fi
             fi
             
             if [[ "$event_type" == "task" ]]; then
-                local completed
+                local completed rating
                 completed=$(echo "$line" | jq -r '.completed')
+                rating=$(echo "$line" | jq -r '.rating // 3')
+                local task_type
+                task_type=$(echo "$line" | jq -r '.task_type')
+                
                 if [[ "$completed" == "false" ]]; then
-                    local task_type
-                    task_type=$(echo "$line" | jq -r '.task_type')
                     failed_tasks+=("$task_type")
+                elif [[ "$(echo "$rating >= 4" | bc -l)" == "1" ]]; then
+                    successful_tasks+=("$task_type")
                 fi
             fi
         done < "$usage_file"
     done
     
     local weak_triggers_json="[]"
+    local strong_triggers_json="[]"
     local failed_tasks_json="[]"
+    local successful_tasks_json="[]"
     
     if [[ ${#weak_triggers[@]} -gt 0 ]]; then
         weak_triggers_json=$(printf '%s\n' "${weak_triggers[@]}" | jq -R . | jq -s .)
     fi
     
+    if [[ ${#strong_triggers[@]} -gt 0 ]]; then
+        strong_triggers_json=$(printf '%s\n' "${strong_triggers[@]}" | jq -R . | jq -s .)
+    fi
+    
     if [[ ${#failed_tasks[@]} -gt 0 ]]; then
         failed_tasks_json=$(printf '%s\n' "${failed_tasks[@]}" | jq -R . | jq -s .)
+    fi
+    
+    if [[ ${#successful_tasks[@]} -gt 0 ]]; then
+        successful_tasks_json=$(printf '%s\n' "${successful_tasks[@]}" | jq -R . | jq -s .)
     fi
     
     local patterns
@@ -87,10 +110,14 @@ learn_from_usage() {
         --argjson trigger_f1 "$trigger_f1" \
         --argjson task_rate "$task_rate" \
         --argjson weak_triggers_count "${#weak_triggers[@]}" \
+        --argjson strong_triggers_count "${#strong_triggers[@]}" \
         --argjson failed_tasks_count "${#failed_tasks[@]}" \
+        --argjson successful_tasks_count "${#successful_tasks[@]}" \
         --argjson analyzed_days "$rounds" \
         --argjson weak_triggers "$weak_triggers_json" \
+        --argjson strong_triggers "$strong_triggers_json" \
         --argjson failed_tasks "$failed_tasks_json" \
+        --argjson successful_tasks "$successful_tasks_json" \
         '{
             skill: $skill,
             metrics: {
@@ -99,7 +126,9 @@ learn_from_usage() {
             },
             patterns: {
                 weak_triggers: $weak_triggers,
-                failed_task_types: $failed_tasks
+                strong_triggers: $strong_triggers,
+                failed_task_types: $failed_tasks,
+                successful_task_types: $successful_tasks
             },
             analysis_days: $analyzed_days,
             generated_at: (now | strftime("%Y-%m-%dT%H:%M:%SZ"))
@@ -188,8 +217,14 @@ Generated: $generated_at
 
 ## Usage Patterns
 
-### Weak Triggers
+### Strong Triggers (Positive Patterns)
+$(echo "$patterns" | jq -r '.patterns.strong_triggers | if length > 0 then . | to_entries | .[].value | "- \(.)" else "- None yet" end')
+
+### Weak Triggers (Areas to Improve)
 $(echo "$patterns" | jq -r '.patterns.weak_triggers | if length > 0 then . | to_entries | .[].value | "- \(.)" else "- None detected" end')
+
+### Successful Task Types
+$(echo "$patterns" | jq -r '.patterns.successful_task_types | if length > 0 then . | to_entries | .[].value | "- \(.)" else "- None yet" end')
 
 ### Failed Task Types
 $(echo "$patterns" | jq -r '.patterns.failed_task_types | if length > 0 then . | to_entries | .[].value | "- \(.)" else "- None detected" end')

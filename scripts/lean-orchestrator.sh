@@ -1,11 +1,27 @@
 #!/usr/bin/env bash
 # lean-orchestrator.sh - Lean, Fast, Cost-effective Skill Lifecycle
 #
+# ============================================================================
+# ARCHITECTURE: Lean vs Eval
+# ============================================================================
+#
+# This script implements the LEAN evaluation path - fast, heuristic-based
+# scoring for rapid iteration during development.
+#
+# | Path    | Purpose              | Speed  | LLM | Use Case              |
+# |---------|----------------------|--------|-----|------------------------|
+# | LEAN    | Fast pre-evaluation  | ~0s    | No  | Dev feedback, CI       |
+# | EVAL    | Final certification  | ~30s   | Yes | Release, formal review |
+#
+# LEAN Output: Estimated tier, directional improvement hints
+# EVAL Output: Certified tier, F1/MRR metrics, formal report
+#
 # Design Principles:
 # 1. Fast Path: Parse + Heuristic scoring (no LLM)
 # 2. LLM on-demand: Multi-LLM only for critical decisions
 # 3. Parallel Execution: Independent dimensions run in parallel
 # 4. Incremental: Only fix what needs fixing
+# ============================================================================
 
 set -euo pipefail
 
