@@ -98,10 +98,21 @@ class GEPAScorer:
             return 1.0
 
         mean = sum(step_scores) / len(step_scores)
+        if (
+            not (-1e10 < mean < 1e10)
+            or mean == float("nan")
+            or mean == float("inf")
+            or mean == float("-inf")
+        ):
+            return 0.0
+
         variance = sum((s - mean) ** 2 for s in step_scores) / len(step_scores)
+        if variance != variance or variance == float("inf") or variance == float("-inf"):
+            return 0.0
+
         max_variance = mean * (1 - mean) if 0.0 < mean < 1.0 else 0.0
 
         if max_variance == 0:
-            return 1.0
+            return 0.0 if (mean == 0.0 or mean == 1.0) else 1.0
 
         return max(0.0, 1.0 - variance / max_variance)

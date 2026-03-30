@@ -14,6 +14,18 @@ app = typer.Typer(
 )
 
 
+@app.callback()
+def version_callback(
+    version: bool = typer.Option(False, "--version", help="Show version information"),
+) -> None:
+    """Show version information."""
+    if version:
+        from skill import __version__
+
+        typer.echo(f"skill version {__version__}")
+        raise typer.Exit(0)
+
+
 @app.command()
 def evaluate(
     target: str = typer.Argument(..., help="Target skill or prompt to evaluate"),
@@ -60,6 +72,7 @@ def create(
     ),
     output: str | None = typer.Option(None, "--output", "-o", help="Output SKILL.md path"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Preview without execution"),
+    force: bool = typer.Option(False, "--force", "-f", help="Overwrite existing file"),
 ) -> None:
     """Create a new skill from a prompt."""
     from skill.agents.creator import init_skill_file
@@ -72,6 +85,13 @@ def create(
         return
 
     output_path = Path(output) if output else Path.cwd() / "SKILL.md"
+
+    if output_path.exists() and not force:
+        typer.secho(
+            f"Error: File exists: {output_path}. Use --force to overwrite.",
+            fg=typer.colors.YELLOW,
+        )
+        raise typer.Exit(1)
 
     init_skill_file(str(output_path), prompt)
     typer.secho(f"Skill created: {output_path}", fg=typer.colors.GREEN)

@@ -16,11 +16,16 @@
             --accent-primary: #6366f1;
             --accent-secondary: #8b5cf6;
             --accent-tertiary: #a855f7;
+            --accent: #6366f1;
+            --accent-light: #818cf8;
             --text-primary: #f8fafc;
             --text-secondary: #94a3b8;
             --text-muted: #64748b;
             --border: rgba(99, 102, 241, 0.2);
             --glow: rgba(99, 102, 241, 0.4);
+            --green: #22c55e;
+            --yellow: #eab308;
+            --red: #ef4444;
         }
 
         * {
@@ -1331,7 +1336,7 @@
             <li><a href="#architecture">Architecture</a></li>
             <li><a href="#format">Format</a></li>
             <li><a href="#modes">Modes</a></li>
-            <li><a href="#studio">Architecture</a></li>
+            <li><a href="#studio">Studio</a></li>
         </ul>
     </nav>
 
@@ -1721,8 +1726,8 @@
                         <p class="install-desc">CLI tool for AI-assisted coding with codebase awareness.</p>
                         <div class="install-commands">
                             <div class="install-cmd">
-                                <span class="install-cmd-label">npm</span>
-                                <code>npm install -g opencode.ai</code>
+                                <span class="install-cmd-label">Install</span>
+                                <code>curl -fsSL https://opencode.ai/install.sh</code>
                             </div>
                             <div class="install-cmd">
                                 <span class="install-cmd-label">pip</span>
@@ -1814,10 +1819,10 @@
     <footer class="footer">
         <div class="footer-content">
             <div class="footer-links">
-                <a href="SKILL.md">Specification</a>
-                <a href="refs/">References</a>
-                <a href="docs/superpowers/">Design Docs</a>
-                <a href="tests/unit/">Tests</a>
+                <a href="../SKILL.md">Specification</a>
+                <a href="../refs/">References</a>
+                <a href="../source/">Documentation</a>
+                <a href="../tests/unit/">Tests</a>
             </div>
             <p class="footer-copy">Skill Engineering Framework · MIT License</p>
         </div>
@@ -1934,7 +1939,7 @@
                     progress: 0,
                     speed: 0.003 + Math.random() * 0.002,
                     size: 4 + Math.random() * 3,
-                    hue: start.color
+                    hue: hexToHue(start.color)
                 });
                 totalPackets++;
             }
@@ -2012,6 +2017,28 @@
                 return result ? 
                     `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : 
                     '99, 102, 241';
+            }
+
+            function hexToHue(hex) {
+                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                if (!result) return 239;
+                let r = parseInt(result[1], 16) / 255;
+                let g = parseInt(result[2], 16) / 255;
+                let b = parseInt(result[3], 16) / 255;
+                const max = Math.max(r, g, b), min = Math.min(r, g, b);
+                let h, s, l = (max + min) / 2;
+                if (max === min) {
+                    h = s = 0;
+                } else {
+                    const d = max - min;
+                    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                    switch (max) {
+                        case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+                        case g: h = ((b - r) / d + 2) / 6; break;
+                        case b: h = ((r - g) / d + 4) / 6; break;
+                    }
+                }
+                return Math.round(h * 360);
             }
 
             function animate(time) {
