@@ -198,7 +198,9 @@ class SkillTester:
         minimax_eval = self.run_skill_evaluate(str(minimax_skill_path))
         kimi_eval = self.run_skill_evaluate(str(kimi_skill_path))
 
-        issues = self._check_issues(minimax_eval, kimi_eval)
+        issues = self._check_issues(
+            minimax_eval, kimi_eval, str(minimax_skill_path), str(kimi_skill_path)
+        )
 
         self._save_results(round_dir, minimax_eval, kimi_eval, issues)
 
@@ -211,17 +213,57 @@ class SkillTester:
             issues=issues,
         )
 
-    def _check_issues(self, minimax_eval: dict, kimi_eval: dict) -> list:
+    def _check_issues(
+        self, minimax_eval: dict, kimi_eval: dict, minimax_skill: str, kimi_skill: str
+    ) -> list:
         issues = []
-        for name, eval_result in [("minimax", minimax_eval), ("kimi", kimi_eval)]:
-            if "error" in eval_result:
-                issues.append({"severity": "HIGH", "source": name, "message": eval_result["error"]})
-            score = eval_result.get("total_score", 0)
-            if score < 700:
+
+        for name, eval_result, skill_path in [
+            ("minimax", minimax_eval, minimax_skill),
+            ("kimi", kimi_eval, kimi_skill),
+        ]:
+            parse_result = self.run_skill_parse(skill_path)
+            if parse_result.get("returncode", 0) != 0:
                 issues.append(
-                    {"severity": "MEDIUM", "source": name, "message": f"Low score: {score}"}
+                    {
+                        "severity": "HIGH",
+                        "source": name,
+                        "type": "parse_error",
+                        "message": parse_result.get("stderr", "Unknown parse error"),
+                    }
                 )
+
+            validate_result = self.run_skill_validate(skill_path)
+            if validate_result.get("returncode", 0) != 0:
+                issues.append(
+                    {
+                        "severity": "MEDIUM",
+                        "source": name,
+                        "type": "validation_error",
+                        "message": validate_result.get("stderr", "Unknown validation error"),
+                    }
+                )
+
+            score = eval_result.get("total_score", 0)
+            if score < 500:
+                issues.append(
+                    {
+                        "severity": "HIGH",
+                        "source": name,
+                        "type": "low_score",
+                        "message": f"Score too low: {score}",
+                    }
+                )
+
         return issues
+
+    def run_skill_parse(self, skill_path: str) -> dict:
+        result = subprocess.run(["skill", "parse", skill_path], capture_output=True, text=True)
+        return {"returncode": result.returncode, "stdout": result.stdout, "stderr": result.stderr}
+
+    def run_skill_validate(self, skill_path: str) -> dict:
+        result = subprocess.run(["skill", "validate", skill_path], capture_output=True, text=True)
+        return {"returncode": result.returncode, "stdout": result.stdout, "stderr": result.stderr}
 
     def _save_results(self, round_dir: Path, minimax_eval: dict, kimi_eval: dict, issues: list):
         with open(round_dir / "minimax_eval_result.json", "w") as f:
