@@ -6,78 +6,85 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Run shellcheck
-        run: |
-          # Exclude third-party and generated files; fail on real issues
-          find . -name "*.sh" -type f \
-            ! -path "./.git/*" \
-            | xargs shellcheck --severity=error
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+      - name: Install dependencies
+        run: python -m pip install ruff
+      - name: Run ruff
+        run: ruff check skill/
 
-  unit-test:
+  typecheck:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Make executable
-        run: |
-          chmod +x cli/* tools/**/*.sh tests/**/*.sh 2>/dev/null || true
-      - name: Run unit tests
-        run: bash tests/unit/run_tests.sh
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+      - name: Install dependencies
+        run: python -m pip install mypy types-requests
+      - name: Run mypy
+        run: mypy skill/ --ignore-missing-imports
 
-  business-test:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Make executable
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+      - name: Install dependencies
         run: |
-          chmod +x cli/* tools/**/*.sh tests/**/*.sh 2>/dev/null || true
-      - name: Run business tests
-        run: bash tests/business/run_tests.sh
+          python -m pip install -e .
+          python -m pip install pytest pytest-asyncio
+      - name: Run tests
+        run: python -m pytest tests/unit/ -v --tb=short
 
-  integration-test:
+  skill-validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Make executable
-        run: |
-          chmod +x cli/* tools/**/*.sh tests/**/*.sh 2>/dev/null || true
-      - name: Run integration tests
-        run: bash tests/integration/run_tests.sh
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+      - name: Install package
+        run: python -m pip install -e .
+      - name: Parse SKILL.md
+        run: python -m skill.cli.main parse ./SKILL.md
+      - name: Validate SKILL.md
+        run: python -m skill.cli.main validate ./SKILL.md
 
-  e2e-test:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Make executable
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+      - name: Install dependencies
+        run: python -m pip install build
+      - name: Build package
+        run: python -m build
+      - name: Check package
         run: |
-          chmod +x cli/* tools/**/*.sh tests/**/*.sh 2>/dev/null || true
-      - name: Run E2E tests (LLM mock playback - no real API calls)
-        env:
-          LLM_MOCK_MODE: playback
-        run: bash tests/e2e/run_tests.sh
-
-  eval-test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Make executable
-        run: |
-          chmod +x cli/* tools/**/*.sh tests/**/*.sh 2>/dev/null || true
-      - name: Run full eval
-        run: bash tools/eval/main.sh --skill SKILL.md --fast --no-agent
-
-  cli-test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Make executable
-        run: |
-          chmod +x cli/* tools/**/*.sh tests/**/*.sh 2>/dev/null || true
-      - name: Test CLI
-        run: |
-          ./cli/skill help
-          ./cli/skill eval SKILL.md --fast 2>/dev/null || true
+          python -m pip install dist/*.tar.gz
+          python -c "import skill; print(skill.__version__ if hasattr(skill, '__version__') else 'installed')"
