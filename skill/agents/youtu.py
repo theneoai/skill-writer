@@ -1,6 +1,8 @@
 from __future__ import annotations
+
 from typing import Any, Literal
-from skill.agents.evolution_memory import EvolutionMemory, MemoryEntry
+
+from skill.agents.evolution_memory import EvolutionMemory
 from skill.agents.trajectory import TrajectoryCollector
 
 
@@ -23,7 +25,7 @@ class YoutuAgent:
             return "practice"
         return "rl"
 
-    def practice(self, task: str, context: dict[str, Any]) -> AgentAction:
+    def practice(self, _task: str, context: dict[str, Any]) -> AgentAction:
         trajectories = self.memory.get_successful_trajectories(context.get("task_type", ""))
         if not trajectories:
             return AgentAction("practice", "no_successful_trajectories", 0.0)
