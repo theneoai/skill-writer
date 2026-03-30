@@ -1,8 +1,9 @@
 # Workflows Reference
 
 > **Purpose**: Detailed workflow specifications for each mode
-> **Load**: When §3 Process section is accessed
+> **Load**: When §1.3 Loop or §6.0 Usage Examples is accessed
 > **Patterns**: Tool Wrapper + Generator + Inversion + Pipeline
+> **Main doc**: SKILL.md §1.3, §6.0
 
 ---
 
@@ -390,5 +391,5 @@ OWASP AST10 security audit with multi-LLM cross-validation
 
 ## Usage
 
-This file is loaded when §3 Workflow section is accessed in SKILL.md.
-Load with: `source reference/workflows.md` or include via Markdown reference.
+This file is loaded when §1.3 Loop or §6.0 Usage Examples is accessed in SKILL.md.
+Reference from: SKILL.md lines 79, 283

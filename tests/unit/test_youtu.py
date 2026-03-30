@@ -5,6 +5,25 @@ from skill.agents.evolution_memory import EvolutionMemory, MemoryEntry
 
 
 class TestYoutuAgent:
+    def test_youtu_with_ucb1_selection(self):
+        from skill.agents.boad import BOADOptimizer, AgentTier, AgentSpec
+
+        memory = EvolutionMemory()
+        agent = YoutuAgent(memory=memory)
+        optimizer = BOADOptimizer()
+
+        spec = AgentSpec(
+            name="test",
+            tier=AgentTier.SPECIALIST,
+            capabilities=["a"],
+            reward=1.0,
+            visits=5,
+        )
+        optimizer.agents[AgentTier.SPECIALIST].append(spec)
+
+        selected = agent.select_agent_with_ucb1(optimizer, "SPECIALIST")
+        assert selected.name == "test"
+
     def test_init(self):
         memory = EvolutionMemory()
         agent = YoutuAgent(memory=memory)

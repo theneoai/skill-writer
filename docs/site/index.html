@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skill Engineering - AI Skill Lifecycle Management</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a24;
+            --accent-primary: #6366f1;
+            --accent-secondary: #8b5cf6;
+            --accent-tertiary: #a855f7;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border: rgba(99, 102, 241, 0.2);
+            --glow: rgba(99, 102, 241, 0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-primary);
+            border-radius: 4px;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            padding: 2rem;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.15), transparent),
+                radial-gradient(ellipse 60% 40% at 80% 60%, rgba(139, 92, 246, 0.1), transparent),
+                radial-gradient(ellipse 50% 30% at 20% 80%, rgba(168, 85, 247, 0.08), transparent);
+            pointer-events: none;
+        }
+
+        .hero-content {
+            text-align: center;
+            z-index: 1;
+            max-width: 900px;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            font-size: 0.875rem;
+            color: var(--accent-primary);
+            margin-bottom: 2rem;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .hero-badge::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        .hero h1 {
+            font-size: clamp(3rem, 10vw, 6rem);
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-primary) 50%, var(--accent-tertiary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: fadeInUp 0.8s ease-out 0.1s both;
+        }
+
+        .hero-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto 3rem;
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+
+        .hero-cta {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            animation: fadeInUp 0.8s ease-out 0.3s both;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.875rem 1.75rem;
+            border-radius: 12px;
+            font-weight: 500;
+            font-size: 0.95rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            box-shadow: 0 4px 20px var(--glow);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px var(--glow);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-secondary);
+            border-color: var(--accent-primary);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Floating Grid Background */
+        .grid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Navigation */
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(10, 10, 15, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            z-index: 1000;
+        }
+
+        .nav-logo {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            font-size: 1.25rem;
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+
+        .nav-logo span {
+            color: var(--accent-primary);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--accent-primary);
+        }
+
+        /* Sections */
+        .section {
+            padding: 8rem 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--accent-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-bottom: 1rem;
+        }
+
+        .section-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .section-desc {
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Feature Cards */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .feature-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-tertiary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent-primary);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .feature-card:hover::before {
+            opacity: 1;
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        /* Architecture Diagram */
+        .arch-diagram {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 3rem;
+            margin: 2rem 0;
+            position: relative;
+        }
+
+        .arch-layers {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .arch-layer {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .arch-layer-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--accent-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            min-width: 120px;
+            text-align: right;
+        }
+
+        .arch-layer-content {
+            flex: 1;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .arch-module {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem 1.25rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+        }
+
+        .arch-module:hover {
+            border-color: var(--accent-primary);
+            color: var(--text-primary);
+            transform: translateY(-2px);
+        }
+
+        .arch-connector {
+            width: 2px;
+            height: 40px;
+            background: linear-gradient(to bottom, var(--accent-primary), var(--accent-tertiary));
+            margin-left: 60px;
+            opacity: 0.5;
+        }
+
+        /* Skill Format Preview */
+        .skill-preview {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .skill-preview-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem 1.5rem;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .skill-preview-header .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .skill-preview-header .dot.red { background: #ef4444; }
+        .skill-preview-header .dot.yellow { background: #eab308; }
+        .skill-preview-header .dot.green { background: #22c55e; }
+
+        .skill-preview-title {
+            margin-left: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .skill-preview-body {
+            padding: 2rem;
+        }
+
+        .skill-code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.8;
+        }
+
+        .skill-code .key {
+            color: var(--accent-primary);
+        }
+
+        .skill-code .value {
+            color: #22c55e;
+        }
+
+        .skill-code .comment {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .skill-code .section {
+            color: var(--accent-tertiary);
+            font-weight: 600;
+        }
+
+        /* Mode Tabs */
+        .modes-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .mode-tab {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .mode-tab:hover {
+            border-color: var(--accent-primary);
+        }
+
+        .mode-tab.active {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+        }
+
+        .mode-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.25rem 1.5rem;
+            cursor: pointer;
+        }
+
+        .mode-header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .mode-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            padding: 0.35rem 0.75rem;
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--accent-primary);
+        }
+
+        .mode-name {
+            font-weight: 600;
+        }
+
+        .mode-desc {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .mode-arrow {
+            color: var(--text-muted);
+            transition: transform 0.3s ease;
+        }
+
+        .mode-tab.active .mode-arrow {
+            transform: rotate(180deg);
+        }
+
+        .mode-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease;
+        }
+
+        .mode-tab.active .mode-content {
+            max-height: 200px;
+        }
+
+        .mode-content-inner {
+            padding: 0 1.5rem 1.5rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin: 3rem 0;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-tertiary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Footer */
+        .footer {
+            padding: 4rem 2rem;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .footer-content {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--accent-primary);
+        }
+
+        .footer-copy {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+            
+            .arch-layer {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .arch-layer-label {
+                text-align: left;
+            }
+            
+            .arch-connector {
+                display: none;
+            }
+        }
+
+        /* Animations */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease-out;
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="grid-bg"></div>
+    
+    <nav class="nav">
+        <a href="#" class="nav-logo">skill<span>.</span></a>
+        <ul class="nav-links">
+            <li><a href="#features">Features</a></li>
+            <li><a href="#architecture">Architecture</a></li>
+            <li><a href="#format">Format</a></li>
+            <li><a href="#modes">Modes</a></li>
+        </ul>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-badge">Now Pure Python</div>
+            <h1>Skill Engineering</h1>
+            <p class="hero-subtitle">AI Skill Lifecycle Management: Create, Evaluate, Optimize. A comprehensive framework for building and evolving AI skills with multi-dimensional evaluation.</p>
+            <div class="hero-cta">
+                <a href="#features" class="btn btn-primary">Explore Features</a>
+                <a href="#architecture" class="btn btn-secondary">View Architecture</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" id="features">
+        <div class="section-header">
+            <div class="section-label">Core Capabilities</div>
+            <h2 class="section-title">Everything You Need for AI Skill Development</h2>
+            <p class="section-desc">From creation to certification, from evaluation to optimization.</p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card fade-in">
+                <div class="feature-icon">🎯</div>
+                <h3>Multi-Mode Operation</h3>
+                <p>CREATE, EVALUATE, LEAN, RESTORE, SECURITY, OPTIMIZE modes for the complete skill lifecycle.</p>
+            </div>
+            <div class="feature-card fade-in">
+                <div class="feature-icon">🧠</div>
+                <h3>LoongFlow Orchestration</h3>
+                <p>Plan-Execute-Summarize cognitive architecture for intelligent task processing.</p>
+            </div>
+            <div class="feature-card fade-in">
+                <div class="feature-icon">📊</div>
+                <h3>Multi-Dimensional Evaluation</h3>
+                <p>GEPA trajectory scoring, SAE survivability analysis, and ground truth benchmarks.</p>
+            </div>
+            <div class="feature-card fade-in">
+                <div class="feature-icon">🔄</div>
+                <h3>Self-Evolution</h3>
+                <p>BOAD optimization with UCB1 exploration and ROAD recovery for autonomous improvement.</p>
+            </div>
+            <div class="feature-card fade-in">
+                <div class="feature-icon">🛡️</div>
+                <h3>Security Audit</h3>
+                <p>OWASP AST10 compliance checking with comprehensive vulnerability detection.</p>
+            </div>
+            <div class="feature-card fade-in">
+                <div class="feature-icon">🏆</div>
+                <h3>4-Tier Certification</h3>
+                <p>GOLD ≥900, SILVER ≥800, BRONZE ≥700, PASSING ≥600 on 1000-point scale.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" id="architecture">
+        <div class="section-header">
+            <div class="section-label">System Design</div>
+            <h2 class="section-title">Clean Architecture</h2>
+            <p class="section-desc">Modular Python package with clear separation of concerns.</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card fade-in">
+                <div class="stat-value">634</div>
+                <div class="stat-label">Tests Passing</div>
+            </div>
+            <div class="stat-card fade-in">
+                <div class="stat-value">55</div>
+                <div class="stat-label">Python Modules</div>
+            </div>
+            <div class="stat-card fade-in">
+                <div class="stat-value">8</div>
+                <div class="stat-label">Core Components</div>
+            </div>
+            <div class="stat-card fade-in">
+                <div class="stat-value">6</div>
+                <div class="stat-label">Operation Modes</div>
+            </div>
+        </div>
+
+        <div class="arch-diagram fade-in">
+            <div class="arch-layers">
+                <div class="arch-layer">
+                    <div class="arch-layer-label">CLI</div>
+                    <div class="arch-layer-content">
+                        <div class="arch-module">main.py</div>
+                    </div>
+                </div>
+                <div class="arch-connector"></div>
+                <div class="arch-layer">
+                    <div class="arch-layer-label">Orchestrator</div>
+                    <div class="arch-layer-content">
+                        <div class="arch-module">loongflow.py</div>
+                        <div class="arch-module">workflow.py</div>
+                        <div class="arch-module">parallel.py</div>
+                        <div class="arch-module">actions.py</div>
+                        <div class="arch-module">state.py</div>
+                    </div>
+                </div>
+                <div class="arch-connector"></div>
+                <div class="arch-layer">
+                    <div class="arch-layer-label">Agents</div>
+                    <div class="arch-layer-content">
+                        <div class="arch-module">youtu.py</div>
+                        <div class="arch-module">boad.py</div>
+                        <div class="arch-module">creator.py</div>
+                        <div class="arch-module">evaluator.py</div>
+                        <div class="arch-module">restorer.py</div>
+                        <div class="arch-module">security.py</div>
+                    </div>
+                </div>
+                <div class="arch-connector"></div>
+                <div class="arch-layer">
+                    <div class="arch-layer-label">Engine</div>
+                    <div class="arch-layer-content">
+                        <div class="arch-module">analyzer.py</div>
+                        <div class="arch-module">convergence.py</div>
+                        <div class="arch-module">decider.py</div>
+                        <div class="arch-module">learner.py</div>
+                        <div class="arch-module">improver.py</div>
+                        <div class="arch-module">rollback.py</div>
+                        <div class="arch-module">storage.py</div>
+                    </div>
+                </div>
+                <div class="arch-connector"></div>
+                <div class="arch-layer">
+                    <div class="arch-layer-label">Evaluation</div>
+                    <div class="arch-layer-content">
+                        <div class="arch-module">gepa.py</div>
+                        <div class="arch-module">sae.py</div>
+                        <div class="arch-module">ground_truth.py</div>
+                        <div class="arch-module">multi_dimensional.py</div>
+                        <div class="arch-module">certifier.py</div>
+                    </div>
+                </div>
+                <div class="arch-connector"></div>
+                <div class="arch-layer">
+                    <div class="arch-layer-label">Lib</div>
+                    <div class="arch-layer-content">
+                        <div class="arch-module">triggers.py</div>
+                        <div class="arch-module">calibration.py</div>
+                        <div class="arch-module">swap_augmentation.py</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" id="format">
+        <div class="section-header">
+            <div class="section-label">Skill Definition</div>
+            <h2 class="section-title">SKILL.md Format</h2>
+            <p class="section-desc">YAML-based skill specification with sections, triggers, and evaluation criteria.</p>
+        </div>
+
+        <div class="skill-preview fade-in">
+            <div class="skill-preview-header">
+                <div class="dot red"></div>
+                <div class="dot yellow"></div>
+                <div class="dot green"></div>
+                <div class="skill-preview-title">example-skill/SKILL.md</div>
+            </div>
+            <div class="skill-preview-body">
+                <div class="skill-code">
+<span class="section">name:</span> example-skill
+<span class="section">version:</span> <span class="value">"1.0.0"</span>
+<span class="section">description:</span> <span class="value">"A sample skill demonstrating the format"</span>
+
+<span class="comment"># Core sections that define skill behavior</span>
+<span class="key">sections</span>:
+  <span class="key">introduction</span>:
+    <span class="key">description</span>: <span class="value">"What this skill does"</span>
+    <span class="key">content</span>: <span class="value">"..."</span>
+
+<span class="comment"># Triggers that activate the skill</span>
+<span class="key">triggers</span>:
+  <span class="key">patterns</span>:
+    - <span class="value">"create a skill"</span>
+    - <span class="value">"make a new skill"</span>
+
+<span class="comment"># Evaluation criteria for certification</span>
+<span class="key">evaluation</span>:
+  <span class="key">criteria</span>:
+    - <span class="key">name</span>: <span class="value">"clarity"</span>
+      <span class="key">weight</span>: <span class="value">0.3</span>
+    - <span class="key">name</span>: <span class="value">"completeness"</span>
+      <span class="key">weight</span>: <span class="value">0.4</span>
+</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" id="modes">
+        <div class="section-header">
+            <div class="section-label">Operation Modes</div>
+            <h2 class="section-title">Six Modes for Skill Lifecycle</h2>
+            <p class="section-desc">Each mode serves a specific purpose in the skill development process.</p>
+        </div>
+
+        <div class="modes-container">
+            <div class="mode-tab active" onclick="this.classList.toggle('active')">
+                <div class="mode-header">
+                    <div class="mode-header-left">
+                        <span class="mode-badge">CREATE</span>
+                        <span class="mode-name">Skill Creation</span>
+                    </div>
+                    <span class="mode-arrow">▼</span>
+                </div>
+                <div class="mode-content">
+                    <div class="mode-content-inner">
+                        Generate new skills from natural language descriptions. Supports inheritance from existing skills and automatic section generation.
+                    </div>
+                </div>
+            </div>
+
+            <div class="mode-tab" onclick="this.classList.toggle('active')">
+                <div class="mode-header">
+                    <div class="mode-header-left">
+                        <span class="mode-badge">EVALUATE</span>
+                        <span class="mode-name">Comprehensive Evaluation</span>
+                    </div>
+                    <span class="mode-arrow">▼</span>
+                </div>
+                <div class="mode-content">
+                    <div class="mode-content-inner">
+                        Multi-dimensional scoring with GEPA trajectory analysis, SAE survivability testing, and ground truth benchmarks. Produces detailed certification reports.
+                    </div>
+                </div>
+            </div>
+
+            <div class="mode-tab" onclick="this.classList.toggle('active')">
+                <div class="mode-header">
+                    <div class="mode-header-left">
+                        <span class="mode-badge">LEAN</span>
+                        <span class="mode-name">Fast Heuristic Evaluation</span>
+                    </div>
+                    <span class="mode-arrow">▼</span>
+                </div>
+                <div class="mode-content">
+                    <div class="mode-content-inner">
+                        Lightning-fast evaluation (~0s, ~$0) using heuristic-based scoring for rapid iteration during development.
+                    </div>
+                </div>
+            </div>
+
+            <div class="mode-tab" onclick="this.classList.toggle('active')">
+                <div class="mode-header">
+                    <div class="mode-header-left">
+                        <span class="mode-badge">RESTORE</span>
+                        <span class="mode-name">Skill Repair</span>
+                    </div>
+                    <span class="mode-arrow">▼</span>
+                </div>
+                <div class="mode-content">
+                    <div class="mode-content-inner">
+                        Automatic diagnosis and repair of skill issues. Uses trajectory analysis to identify failure modes and apply corrections.
+                    </div>
+                </div>
+            </div>
+
+            <div class="mode-tab" onclick="this.classList.toggle('active')">
+                <div class="mode-header">
+                    <div class="mode-header-left">
+                        <span class="mode-badge">SECURITY</span>
+                        <span class="mode-name">OWASP AST10 Audit</span>
+                    </div>
+                    <span class="mode-arrow">▼</span>
+                </div>
+                <div class="mode-content">
+                    <div class="mode-content-inner">
+                        Comprehensive security analysis against OWASP AST10 guidelines. Detects command injection, path traversal, secret exposure, and other vulnerabilities.
+                    </div>
+                </div>
+            </div>
+
+            <div class="mode-tab" onclick="this.classList.toggle('active')">
+                <div class="mode-header">
+                    <div class="mode-header-left">
+                        <span class="mode-badge">OPTIMIZE</span>
+                        <span class="mode-name">Self-Evolution</span>
+                    </div>
+                    <span class="mode-arrow">▼</span>
+                </div>
+                <div class="mode-content">
+                    <div class="mode-content-inner">
+                        BOAD/ROAD-powered autonomous improvement. Uses UCB1 exploration and reward shaping to discover optimal skill configurations.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-links">
+                <a href="SKILL.md">Specification</a>
+                <a href="refs/">References</a>
+                <a href="docs/superpowers/">Design Docs</a>
+                <a href="tests/unit/">Tests</a>
+            </div>
+            <p class="footer-copy">Skill Engineering Framework · MIT License</p>
+        </div>
+    </footer>
+
+    <script>
+        // Intersection Observer for fade-in animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        });
+
+        document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+        // Smooth scroll for navigation
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

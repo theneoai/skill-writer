@@ -1,8 +1,9 @@
 # Trigger Patterns Reference
 
 > **Purpose**: Detailed trigger patterns for skill mode routing
-> **Load**: When §2 Invocation is accessed
+> **Load**: When §1.4 Mode Router Decision Tree is accessed
 > **Language**: Bilingual (EN/ZH)
+> **Main doc**: SKILL.md §1.4
 
 ---
 
@@ -153,5 +154,5 @@ confidence = (
 
 ## Usage
 
-This file is loaded when §2 Invocation section is accessed in SKILL.md.
-Load with: `source reference/triggers.md` or include via Markdown reference.
+This file is loaded when §1.4 Mode Router Decision Tree is accessed in SKILL.md.
+Reference from: SKILL.md line 140

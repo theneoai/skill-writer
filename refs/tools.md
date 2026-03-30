@@ -1,7 +1,8 @@
 # Tools Reference
 
 > **Purpose**: Complete tool documentation for skill management
-> **Load**: When §4 Tool Set section is accessed
+> **Load**: When tool references are needed
+> **Main doc**: SKILL.md (tool references throughout)
 
 ---
 
@@ -208,5 +209,5 @@ KIMI_CODE_ENDPOINT=https://api.kimi.com/coding/v1
 
 ## Usage
 
-This file is loaded when §4 Tool Set section is accessed in SKILL.md.
-Load with: `source reference/tools.md` or include via Markdown reference.
+Referenced from SKILL.md footer for tool documentation.
+Reference from: SKILL.md line 319

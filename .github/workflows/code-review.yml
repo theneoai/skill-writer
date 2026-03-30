@@ -26,32 +26,37 @@ jobs:
           echo "author=$(jq -r '.pull_request.user.login' $GITHUB_EVENT_PATH)" >> $GITHUB_OUTPUT
           echo "number=$(jq -r '.pull_request.number' $GITHUB_EVENT_PATH)" >> $GITHUB_OUTPUT
 
+      - name: Check Python files changed
+        id: python-changes
+        run: |
+          CHANGED_PY=$(git diff --name-only ${{ github.event.pull_request.base.sha }} HEAD | grep -E '\.py$' | wc -l)
+          echo "count=$CHANGED_PY" >> $GITHUB_OUTPUT
+
       - name: Run code review
         id: review
         run: |
           PR_TITLE="${{ steps.pr.outputs.title }}"
-          PR_BODY="${{ steps.pr.outputs.body }}"
           PR_AUTHOR="${{ steps.pr.outputs.author }}"
+          PY_CHANGES=${{ steps.python-changes.outputs.count }}
           
           REVIEW_COMMENT="## 🤖 AI Code Review
 
 ### Review Summary
-This pull request introduces CI/CD workflows for automated code review and evaluation.
+**Author:** @$PR_AUTHOR  
+**PR Title:** $PR_TITLE  
 
-**Files Changed:**
-- `.github/workflows/ci.yml` - Main CI pipeline
-- `.github/workflows/code-review.yml` - AI-powered code review
+This pull request modifies **$PY_CHANGES** Python files.
 
 **Review Focus Areas:**
-1. **Shell Script Quality** - shellcheck compliance
-2. **Eval Framework Integration** - eval/main.sh correctness
-3. **Test Coverage** - engine/tests/ and test_cases/
-4. **Workflow Best Practices** - GitHub Actions conventions
+1. **Code Quality** - PEP 8 compliance, type hints
+2. **Test Coverage** - Unit tests for changed modules
+3. **API Design** - Backward compatibility
+4. **Documentation** - Docstrings and comments
 
 **Automated Checks:**
-- Lint: shellcheck on all .sh files
-- Eval: Quality verification via eval/main.sh
-- Test: Engine test suite + test_cases execution
+- Lint: ruff check
+- Type Check: mypy
+- Tests: pytest (634 tests)
 
 ---
 *Automated review by skill CI system*"
@@ -68,9 +73,3 @@ This pull request introduces CI/CD workflows for automated code review and evalu
               repo: context.repo.repo,
               body: `${{ steps.review.outputs.comment }}`
             })
-
-      - name: Set PR status
-        run: |
-          echo "Code review completed for PR #${{ steps.pr.outputs.number }}"
-          echo "Author: ${{ steps.pr.outputs.author }}"
-          echo "Title: ${{ steps.pr.outputs.title }}"

@@ -1,53 +1,52 @@
 # Python
 __pycache__/
 *.pyc
-.ruff_cache/
+*.pyo
 *.egg-info/
-.pytest_cache/
-.mypy_cache/
-.tox/
 dist/
 build/
-*.egg
+
+# Tests
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Type checking
+.mypy_cache/
+
+# Linting
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
 
 # Logs
 *.log
-.autotuner.log
 logs/
-*.tsv
-results.tsv
-
-# Backups
-*.backup
-*.bak
-*~
 
 # Temporary
 *.tmp
+*.temp
 temp/
+tmp/
 .cache/
 
 # IDE
 .vscode/
 .idea/
+*.swp
+*.swo
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Skill optimization
+# Skill artifacts
 snapshots/
-eval_results/
-tmp/
-
-# Test artifacts
-test_skill*.md
-测试技能*.md
-测试技能.md
-创建子技能.md
-创建一个代码审查技能.md
-快速测试技能.md
-test skill.md
-create a child skill.md
-create a test_skill*
-create a child skill*
+skill/__pycache__/
+skill/.mypy_cache/
+skill/.pytest_cache/
+skill/.ruff_cache/
+skill/eval_results/
