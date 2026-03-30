@@ -1,9 +1,12 @@
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any
 
 from skill.agents.evolution_memory import EvolutionMemory
 from skill.agents.trajectory import TrajectoryCollector
+
+if TYPE_CHECKING:
+    from typing import Literal
 
 
 class AgentAction:
@@ -20,7 +23,6 @@ class YoutuAgent:
         self.collector = TrajectoryCollector()
         self._q_table: dict[tuple[str, str], float] = {}
         self._alpha = 0.1
-        self._gamma = 0.9
 
     def decide_mode(self, context: dict[str, Any]) -> Literal["practice", "rl"]:
         successful = self.memory.get_successful_trajectories(context.get("task_type", ""))
@@ -39,17 +41,13 @@ class YoutuAgent:
         )
 
     def rl_step(self, state: dict[str, Any], reward: float) -> AgentAction:
-        task_type = state.get("task_type", "UNKNOWN")
         attempts = state.get("attempts", 0)
 
         if reward > 0.8:
             return AgentAction("rl", "exploit_high_reward", 0.9)
-        elif reward > 0.5:
+        if reward > 0.5:
             return AgentAction("rl", "exploit_medium_reward", 0.7)
-        else:
-            return AgentAction(
-                "rl", "explore_new_strategy", 0.5 + (self.exploration_rate * attempts)
-            )
+        return AgentAction("rl", "explore_new_strategy", 0.5 + (self.exploration_rate * attempts))
 
     def update_q(self, task_type: str, action: str, reward: float) -> None:
         key = (task_type, action)
