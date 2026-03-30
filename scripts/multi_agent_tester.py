@@ -36,7 +36,7 @@ def retry_on_failure(max_retries=3, delay=1):
 class AgentConfig:
     api_key: str
     api_base: str = "https://api.minimax.chat/v1"
-    model: str = "Minimax-Text-01"
+    model: str = "minimax-m2.7-highspeed"
 
 
 @dataclass
@@ -187,11 +187,19 @@ class SkillTester:
         round_dir = self.output_dir / f"round_{self.round_num:04d}"
         round_dir.mkdir(parents=True, exist_ok=True)
 
-        minimax_skill_md = self.minimax_agent.create_evaluation_skill(self.round_num)
+        try:
+            minimax_skill_md = self.minimax_agent.create_evaluation_skill(self.round_num)
+        except Exception as e:
+            print(f"Minimax agent failed: {e}")
+            minimax_skill_md = "# Error\n\nMinimax agent failed"
         minimax_skill_path = round_dir / "minimax_eval_skill.md"
         minimax_skill_path.write_text(minimax_skill_md)
 
-        kimi_skill_md = self.kimi_agent.create_optimization_skill(self.round_num)
+        try:
+            kimi_skill_md = self.kimi_agent.create_optimization_skill(self.round_num)
+        except Exception as e:
+            print(f"Kimi agent failed: {e}")
+            kimi_skill_md = "# Error\n\nKimi agent failed"
         kimi_skill_path = round_dir / "kimi_opt_skill.md"
         kimi_skill_path.write_text(kimi_skill_md)
 
@@ -325,7 +333,7 @@ def main():
         api_key=os.environ.get("MINIMAX_API_KEY", ""), api_base="https://api.minimax.chat/v1"
     )
     kimi_config = AgentConfig(
-        api_key=os.environ.get("KIMI_API_KEY", ""), api_base="https://api.moonshot.cn/v1"
+        api_key=os.environ.get("KIMI_CODE_API_KEY", ""), api_base="https://api.moonshot.cn/v1"
     )
 
     tester.minimax_agent = MinimaxAgent(minimax_config)
