@@ -18,6 +18,9 @@ class YoutuAgent:
         self.memory = memory
         self.exploration_rate = exploration_rate
         self.collector = TrajectoryCollector()
+        self._q_table: dict[tuple[str, str], float] = {}
+        self._alpha = 0.1
+        self._gamma = 0.9
 
     def decide_mode(self, context: dict[str, Any]) -> Literal["practice", "rl"]:
         successful = self.memory.get_successful_trajectories(context.get("task_type", ""))
@@ -34,3 +37,21 @@ class YoutuAgent:
         return AgentAction(
             "practice", f"learned_from_{len(trajectories)}_trajectories", avg_confidence
         )
+
+    def rl_step(self, state: dict[str, Any], reward: float) -> AgentAction:
+        task_type = state.get("task_type", "UNKNOWN")
+        attempts = state.get("attempts", 0)
+
+        if reward > 0.8:
+            return AgentAction("rl", "exploit_high_reward", 0.9)
+        elif reward > 0.5:
+            return AgentAction("rl", "exploit_medium_reward", 0.7)
+        else:
+            return AgentAction(
+                "rl", "explore_new_strategy", 0.5 + (self.exploration_rate * attempts)
+            )
+
+    def update_q(self, task_type: str, action: str, reward: float) -> None:
+        key = (task_type, action)
+        current = self._q_table.get(key, 0.0)
+        self._q_table[key] = current + self._alpha * (reward - current)

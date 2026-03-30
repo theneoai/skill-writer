@@ -49,3 +49,19 @@ class TestYoutuAgent:
 
         mode = agent.decide_mode({"task_type": "CREATE"})
         assert mode == "rl"
+
+    def test_rl_mode(self):
+        memory = EvolutionMemory()
+        agent = YoutuAgent(memory=memory, exploration_rate=0.0)
+
+        state = {"task_type": "CREATE", "attempts": 0}
+        action = agent.rl_step(state, reward=0.0)
+        assert action.action_type == "rl"
+
+    def test_q_learning_update(self):
+        memory = EvolutionMemory()
+        agent = YoutuAgent(memory=memory)
+
+        agent.update_q("CREATE", "action1", reward=1.0)
+        assert ("CREATE", "action1") in agent._q_table
+        assert agent._q_table[("CREATE", "action1")] > 0
