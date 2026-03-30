@@ -101,12 +101,9 @@ class KimiAgent:
             endpoint,
             headers={
                 "Authorization": f"Bearer {self.config.api_key}",
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
             },
-            json={
-                "model": self.config.model,
-                "messages": [{"role": "user", "content": prompt}]
-            }
+            json={"model": self.config.model, "messages": [{"role": "user", "content": prompt}]},
         )
         response.raise_for_status()
         return response.json()["choices"][0]["message"]["content"]
@@ -134,24 +131,47 @@ class KimiAgent:
 
 
 class SkillTester:
+    CHECKPOINT_FILE = "eval_results/.checkpoint.json"
+
     def __init__(self, output_dir: Path):
         self.output_dir = output_dir
         self.round_num = 0
         self.minimax_agent = None
         self.kimi_agent = None
 
+    def save_checkpoint(self, round_num: int):
+        with open(self.CHECKPOINT_FILE, "w") as f:
+            json.dump({"last_round": round_num}, f)
+
+    def load_checkpoint(self) -> int:
+        try:
+            with open(self.CHECKPOINT_FILE) as f:
+                return json.load(f)["last_round"]
+        except:
+            return 0
+
+    def git_commit_if_issues(self, issues: list):
+        critical_issues = [i for i in issues if i.get("severity") == "CRITICAL"]
+        if critical_issues:
+            subprocess.run(["git", "add", "eval_results/"], cwd=self.output_dir.parent)
+            subprocess.run(
+                [
+                    "git",
+                    "commit",
+                    "-m",
+                    f"fix: auto-fix critical issues from round {self.round_num}",
+                ]
+            )
+
     def run_skill_evaluate(self, skill_path: str) -> dict:
         result = subprocess.run(
-            ["skill", "evaluate", skill_path],
-            capture_output=True,
-            text=True,
-            timeout=60
+            ["skill", "evaluate", skill_path], capture_output=True, text=True, timeout=60
         )
         if result.returncode != 0:
             return {
                 "error": result.stderr,
                 "stdout": result.stdout,
-                "returncode": result.returncode
+                "returncode": result.returncode,
             }
         try:
             lines = result.stdout.strip().split("\n")
@@ -233,13 +253,18 @@ def main():
 
     print(f"Starting {args.rounds} rounds of testing...")
 
+    start_round = tester.load_checkpoint()
+    print(f"Resuming from round {start_round + 1}")
+
     all_results = []
-    for i in range(args.rounds):
+    for i in range(start_round, args.rounds):
         result = tester.execute_round()
         all_results.append(result)
+        tester.save_checkpoint(result.round_num)
 
         if (i + 1) % 10 == 0:
             print(f"Completed round {i + 1}")
+            tester.git_commit_if_issues(result.issues)
 
     summary = {
         "total_rounds": args.rounds,
