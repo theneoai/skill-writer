@@ -1,8 +1,8 @@
 # Evaluation Rubrics
 
 > **Purpose**: 4-phase 1000-point scoring pipeline used by EVALUATE mode.
-> **Load**: When §8 (EVALUATE Mode) of `claude/skill-framework.md` is accessed.
-> **Main doc**: `claude/skill-framework.md §8`
+> **Load**: When §8 (EVALUATE Mode) of `claude/skill-writer.md` is accessed.
+> **Main doc**: `claude/skill-writer.md §8`
 
 ---
 
@@ -176,7 +176,7 @@ Scored by LLM-3 (Arbiter). Integrates all previous phases.
 
 ## §7  LEAN Fast Path
 
-Before running Phase 1–4, apply LEAN heuristics (§6 of skill-framework.md).
+Before running Phase 1–4, apply LEAN heuristics (§6 of skill-writer.md).
 
 **Quick-Pass**: If lean_score ≥ 450 (GOLD proxy):
 - Run only Phase 1 + security scan
@@ -194,7 +194,7 @@ SKILL EVALUATION REPORT
 =======================
 Skill:      <name> v<version>
 Evaluated:  <ISO-8601>
-Evaluator:  skill-framework v2.0.0
+Evaluator:  skill-writer v2.0.0
 
 PHASE SCORES
   Phase 1 — Parse & Validate:   XX / 100

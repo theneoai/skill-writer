@@ -12,7 +12,7 @@ We release patches for security vulnerabilities. Which versions are eligible rec
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability within Skill Framework, please send an email to security@skill-framework.org. All security vulnerabilities will be promptly addressed.
+If you discover a security vulnerability within Skill Framework, please send an email to security@skill-writer.org. All security vulnerabilities will be promptly addressed.
 
 **Please do not report security vulnerabilities through public GitHub issues.**
 
@@ -115,7 +115,7 @@ We would like to thank the following security researchers who have responsibly d
 
 ## Contact
 
-- **Email**: security@skill-framework.org
+- **Email**: security@skill-writer.org
 - **GPG Key**: [Download public key]
 - **Slack**: #security channel
 

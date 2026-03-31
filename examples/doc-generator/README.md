@@ -202,7 +202,7 @@ examples/doc-generator/
 ## 相关链接
 
 - [评估报告](./eval-report.md) - 详细评估结果
-- [Skill Framework 规范](../../skill-framework.md) - 框架规范文档
+- [Skill Framework 规范](../../skill-writer.md) - 框架规范文档
 - [Data Pipeline 模板](../../templates/data-pipeline.md) - 使用的模板
 
 ---

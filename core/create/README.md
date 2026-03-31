@@ -1,6 +1,6 @@
 # CREATE Mode Documentation
 
-> **Purpose**: CREATE mode is the skill generation engine of the skill-framework. It transforms natural language requirements into production-ready, certified skills through a rigorous 7-step workflow.
+> **Purpose**: CREATE mode is the skill generation engine of the skill-writer. It transforms natural language requirements into production-ready, certified skills through a rigorous 7-step workflow.
 > **Version**: 2.0.0
 > **Last Updated**: 2026-03-31
 
@@ -128,7 +128,7 @@ optional_fields:
 
 ### Output Format
 
-CREATE mode produces a certified skill file following the skill-framework specification.
+CREATE mode produces a certified skill file following the skill-writer specification.
 
 **Output Schema:**
 ```yaml
@@ -145,7 +145,7 @@ required_sections:
 
 certification_metadata:
   - certified_at: "ISO-8601 timestamp"
-  - certified_by: "skill-framework v2.0.0"
+  - certified_by: "skill-writer v2.0.0"
   - lean_score: "0-500"
   - estimated_full_score: "0-1000"
   - tier: "PLATINUM | GOLD | SILVER | BRONZE | FAIL"
@@ -442,7 +442,7 @@ SECURITY SCAN REPORT
 ====================
 Skill: <name> v<version>
 Scanned: <ISO-8601>
-Scanner: skill-framework v2.0.0
+Scanner: skill-writer v2.0.0
 
 P0 FINDINGS (ABORT triggers):
   [NONE | list of findings with location]
@@ -585,7 +585,7 @@ description_i18n:
 
 license: MIT
 author:
-  name: skill-framework
+  name: skill-writer
 created: "2026-03-31"
 updated: "2026-03-31"
 type: api-integration
@@ -682,7 +682,7 @@ Output: "City not found. Please check the spelling."
 
 ## References
 
-- Framework spec: `skill-framework.md`
+- Framework spec: `skill-writer.md`
 - Security patterns: `refs/security-patterns.md`
 - Templates: `templates/`
 - Evaluation rubrics: `eval/rubrics.md`

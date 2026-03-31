@@ -1,8 +1,8 @@
 # Use-to-Evolve (UTE) Specification
 
 > **Purpose**: Protocol for injecting live self-improvement capability into any skill.
-> **Load**: When §15 (UTE Injection) of `claude/skill-framework.md` is accessed.
-> **Main doc**: `claude/skill-framework.md §15`
+> **Load**: When §15 (UTE Injection) of `claude/skill-writer.md` is accessed.
+> **Main doc**: `claude/skill-writer.md §15`
 
 ---
 
@@ -261,7 +261,7 @@ When UTE is injected into a skill, these fields are added to its YAML frontmatte
 ```yaml
 use_to_evolve:
   enabled: true
-  injected_by: skill-framework v2.0.0
+  injected_by: skill-writer v2.0.0
   injected_at: "<ISO-8601>"
   check_cadence: {lightweight: 10, full_recompute: 50, tier_drift: 100}
   micro_patch_enabled: true

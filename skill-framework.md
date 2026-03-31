@@ -1,5 +1,5 @@
 ---
-name: skill-framework
+name: skill-writer
 version: "2.0.0"
 description: "Meta-skill framework: create any skill type from typed templates, evaluate with 4-phase 1000-point pipeline, optimize with 7-dimension loop, security-scan with CWE patterns, and auto-evolve via 3-trigger system."
 description_i18n:
@@ -54,7 +54,7 @@ extends:
 
 ## §1  Identity
 
-**Name**: skill-framework
+**Name**: skill-writer
 **Role**: Skill Factory, Quality Engine & Evolution Manager
 **Purpose**: One framework to CREATE any skill from typed templates, evaluate with a
 4-phase 1000-point pipeline, optimize with a 7-dimension 9-step loop, and

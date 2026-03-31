@@ -1,14 +1,14 @@
 # Convergence Detection
 
 > **Purpose**: Three-signal convergence algorithm used to stop optimization loops early.
-> **Load**: When §9 (OPTIMIZE Loop) of `claude/skill-framework.md` is accessed.
-> **Main doc**: `claude/skill-framework.md §9`
+> **Load**: When §9 (OPTIMIZE Loop) of `claude/skill-writer.md` is accessed.
+> **Main doc**: `claude/skill-writer.md §9`
 
 ---
 
 ## §1  Why Convergence Detection
 
-The 9-step optimization loop (§9 of skill-framework.md) runs up to 20 rounds.
+The 9-step optimization loop (§9 of skill-writer.md) runs up to 20 rounds.
 Without convergence detection, it wastes compute on loops where:
 - Scores have stabilized (volatility check)
 - All easy gains are exhausted (plateau check)

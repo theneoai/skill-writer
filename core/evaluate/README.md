@@ -24,7 +24,7 @@
 
 ## Overview
 
-EVALUATE mode is the quality assurance engine of the skill-framework. It performs comprehensive assessment of skill files against standardized criteria, producing an objective 1000-point score and certification tier.
+EVALUATE mode is the quality assurance engine of the skill-writer. It performs comprehensive assessment of skill files against standardized criteria, producing an objective 1000-point score and certification tier.
 
 ### Key Features
 
@@ -347,7 +347,7 @@ Validates security controls during execution.
 
 ### 3.3 Conformance Testing (100 pts)
 
-Verifies adherence to skill-framework specification.
+Verifies adherence to skill-writer specification.
 
 | Check | Points | Description |
 |-------|--------|-------------|
@@ -543,7 +543,7 @@ Evaluate a single skill file:
 
 ```bash
 # CLI usage
-skill-framework evaluate --file skills/my-skill.md
+skill-writer evaluate --file skills/my-skill.md
 
 # Programmatic usage
 from skill_framework import evaluate
@@ -580,7 +580,7 @@ print(f"Tier: {result.tier}")
 Evaluate multiple skills:
 
 ```bash
-skill-framework evaluate --batch skills/*.md --output report.json
+skill-writer evaluate --batch skills/*.md --output report.json
 ```
 
 **Output:**
@@ -621,7 +621,7 @@ jobs:
       
       - name: Evaluate Skills
         run: |
-          skill-framework evaluate \
+          skill-writer evaluate \
             --batch skills/*.md \
             --min-tier SILVER \
             --output evaluation.json
@@ -645,7 +645,7 @@ jobs:
 Override default thresholds:
 
 ```bash
-skill-framework evaluate \
+skill-writer evaluate \
   --file skills/my-skill.md \
   --min-score 850 \
   --max-variance 0.08 \
@@ -657,7 +657,7 @@ skill-framework evaluate \
 Generate a comprehensive HTML report:
 
 ```bash
-skill-framework evaluate \
+skill-writer evaluate \
   --file skills/my-skill.md \
   --format html \
   --output report.html \
@@ -843,24 +843,24 @@ else:
 
 ```bash
 # Basic evaluation
-skill-framework evaluate -f skill.md
+skill-writer evaluate -f skill.md
 
 # With options
-skill-framework evaluate \
+skill-writer evaluate \
   -f skill.md \
   --format json \
   --output result.json \
   --verbose
 
 # Batch mode
-skill-framework evaluate -b "skills/*.md" --min-tier GOLD
+skill-writer evaluate -b "skills/*.md" --min-tier GOLD
 ```
 
 ### Webhook Integration
 
 ```python
 # Trigger evaluation via webhook
-curl -X POST https://api.skill-framework.dev/evaluate \
+curl -X POST https://api.skill-writer.dev/evaluate \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
@@ -877,7 +877,7 @@ curl -X POST https://api.skill-framework.dev/evaluate \
 
 ## References
 
-- **Framework Specification**: `../skill-framework.md`
+- **Framework Specification**: `../skill-writer.md`
 - **CREATE Mode**: `../create/README.md`
 - **OPTIMIZE Mode**: `../optimize/README.md`
 - **Security Patterns**: `../shared/security/cwe-patterns.yaml`

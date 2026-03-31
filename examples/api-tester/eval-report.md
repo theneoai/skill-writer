@@ -4,7 +4,7 @@
 > **Version**: 1.0.0  
 > **Type**: api-integration  
 > **Evaluated**: 2026-03-31T10:30:00Z  
-> **Evaluator**: skill-framework v2.0.0
+> **Evaluator**: skill-writer v2.0.0
 
 ---
 

@@ -1,8 +1,8 @@
 # Security Patterns Reference
 
 > **Purpose**: CWE regex patterns, severity classification, ABORT protocol, and resume conditions.
-> **Load**: When §11 (Security) of `claude/skill-framework.md` is accessed.
-> **Main doc**: `claude/skill-framework.md §11`
+> **Load**: When §11 (Security) of `claude/skill-writer.md` is accessed.
+> **Main doc**: `claude/skill-writer.md §11`
 
 ---
 
@@ -188,7 +188,7 @@ SECURITY SCAN REPORT
 ====================
 Skill: <name> v<version>
 Scanned: <ISO-8601>
-Scanner: skill-framework v2.0.0
+Scanner: skill-writer v2.0.0
 
 P0 FINDINGS (ABORT triggers):
   [NONE | list of findings with location]

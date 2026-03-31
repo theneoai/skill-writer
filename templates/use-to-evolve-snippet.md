@@ -1,7 +1,7 @@
 # Use-to-Evolve Snippet
 
 > **Purpose**: Copy-paste ready `## Use-to-Evolve` section injected into skills by the framework.
-> **Injected by**: `claude/skill-framework.md §15` during CREATE (Step 8) and OPTIMIZE (Step 7).
+> **Injected by**: `claude/skill-writer.md §15` during CREATE (Step 8) and OPTIMIZE (Step 7).
 > **Full spec**: `claude/refs/use-to-evolve.md`
 
 ---
@@ -21,7 +21,7 @@
 
 **Status**: enabled
 **Spec**: `claude/refs/use-to-evolve.md`
-**Injected**: {{INJECTION_DATE}} by skill-framework v{{FRAMEWORK_VERSION}}
+**Injected**: {{INJECTION_DATE}} by skill-writer v{{FRAMEWORK_VERSION}}
 
 This skill is self-improving. After every invocation the Post-Invocation Hook
 fires automatically. Do not skip it.
@@ -96,7 +96,7 @@ invocations % 100 == 0 → TIER DRIFT CHECK
 - Add ZH trigger equivalent
 - Update `updated` date + bump patch version
 
-**Ineligible** (must queue for OPTIMIZE via skill-framework):
+**Ineligible** (must queue for OPTIMIZE via skill-writer):
 - Structural section changes
 - Output contract changes
 - Security baseline changes
@@ -119,7 +119,7 @@ Structural issues write to `.skill-audit/evolution-queue.jsonl`:
 }
 ```
 
-Consume the queue by invoking skill-framework OPTIMIZE mode on this skill.
+Consume the queue by invoking skill-writer OPTIMIZE mode on this skill.
 ```
 
 ---
@@ -131,7 +131,7 @@ Add this block to the skill's YAML frontmatter (under `extends:`):
 ```yaml
 use_to_evolve:
   enabled: true
-  injected_by: "skill-framework v{{FRAMEWORK_VERSION}}"
+  injected_by: "skill-writer v{{FRAMEWORK_VERSION}}"
   injected_at: "{{INJECTION_DATE}}"
   check_cadence: {lightweight: 10, full_recompute: 50, tier_drift: 100}
   micro_patch_enabled: true
@@ -151,7 +151,7 @@ use_to_evolve:
 |------------|--------|---------|
 | `{{SKILL_NAME}}` | Skill's `name` field | `weather-query` |
 | `{{VERSION}}` | Skill's `version` field | `1.0.0` |
-| `{{FRAMEWORK_VERSION}}` | skill-framework version | `2.0.0` |
+| `{{FRAMEWORK_VERSION}}` | skill-writer version | `2.0.0` |
 | `{{INJECTION_DATE}}` | Today's ISO-8601 date | `2026-03-31` |
 | `{{CERTIFIED_LEAN_SCORE}}` | LEAN score from last EVALUATE | `460` |
 

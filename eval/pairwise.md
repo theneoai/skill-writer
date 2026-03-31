@@ -2,7 +2,7 @@
 
 > **Purpose**: Bradley-Terry comparative ranking for evaluating multiple skills against each other.
 > **Load**: When EVALUATE mode includes pairwise ranking request.
-> **Main doc**: `claude/skill-framework.md §8`
+> **Main doc**: `claude/skill-writer.md §8`
 
 ---
 

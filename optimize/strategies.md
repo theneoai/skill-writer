@@ -1,8 +1,8 @@
 # Optimization Strategies
 
 > **Purpose**: 7-dimension strategy catalog for the 9-step OPTIMIZE loop.
-> **Load**: When §9 (OPTIMIZE Mode) of `claude/skill-framework.md` is accessed.
-> **Main doc**: `claude/skill-framework.md §9`
+> **Load**: When §9 (OPTIMIZE Mode) of `claude/skill-writer.md` is accessed.
+> **Main doc**: `claude/skill-writer.md §9`
 
 ---
 
@@ -263,7 +263,7 @@ Targeted fixes are less efficient than a clean rebuild.
 **Steps**:
 1. Extract salvageable content: identity description, domain knowledge, any good examples.
 2. Select fresh template from `claude/templates/` matching the skill type.
-3. Run CREATE mode (§5 of skill-framework.md) with extracted content as pre-filled answers.
+3. Run CREATE mode (§5 of skill-writer.md) with extracted content as pre-filled answers.
 4. Port salvaged content into new template draft.
 5. Run LEAN eval immediately. If LEAN PASS → full EVALUATE.
 6. Version: if original never delivered → keep v1.0.0. If delivered → bump minor: v1.1.0.

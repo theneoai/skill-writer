@@ -272,7 +272,7 @@ Minimum: F1 ≥ 0.90, MRR ≥ 0.85, Trigger Accuracy ≥ 0.90.
 
 **Root Cause**: Requirements gathering skipped or rushed (Inversion pattern not applied).
 
-**Fix**: Return to requirement elicitation (§6 of skill-framework.md). Extract measurable criteria:
+**Fix**: Return to requirement elicitation (§6 of skill-writer.md). Extract measurable criteria:
 ```
 BAD:  "The skill should return good weather data."
 GOOD: "The skill returns temperature ±1°C of ground truth for 90% of test locations."

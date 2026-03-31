@@ -21,7 +21,7 @@
 
 ## Overview
 
-OPTIMIZE mode is the continuous improvement engine of the skill-framework. It transforms underperforming or evolving skills into higher-quality versions through systematic, measurable iteration.
+OPTIMIZE mode is the continuous improvement engine of the skill-writer. It transforms underperforming or evolving skills into higher-quality versions through systematic, measurable iteration.
 
 ### Key Features
 
@@ -667,7 +667,7 @@ Optimize a skill that failed evaluation:
 
 ```bash
 # CLI usage
-skill-framework optimize --file skills/my-skill.md --target-tier SILVER
+skill-writer optimize --file skills/my-skill.md --target-tier SILVER
 
 # Programmatic usage
 from skill_framework import optimize
@@ -739,7 +739,7 @@ print(f"Convergence: {result.convergence_state}")
 Optimize with specific constraints:
 
 ```bash
-skill-framework optimize \
+skill-writer optimize \
   --file skills/my-skill.md \
   --target-tier GOLD \
   --max-rounds 15 \
@@ -760,7 +760,7 @@ skill-framework optimize \
 Resume optimization from a previous run:
 
 ```bash
-skill-framework optimize \
+skill-writer optimize \
   --file skills/my-skill.md \
   --resume opt-20260331-001 \
   --additional-rounds 10
@@ -773,7 +773,7 @@ skill-framework optimize \
 Preview what changes would be made without applying them:
 
 ```bash
-skill-framework optimize \
+skill-writer optimize \
   --file skills/my-skill.md \
   --dry-run \
   --rounds 3
@@ -803,7 +803,7 @@ No changes applied (dry run mode)
 Optimize multiple skills:
 
 ```bash
-skill-framework optimize \
+skill-writer optimize \
   --batch "skills/*.md" \
   --min-tier SILVER \
   --parallel 4 \
@@ -872,7 +872,7 @@ jobs:
       - name: Evaluate Current Skills
         id: evaluate
         run: |
-          skill-framework evaluate \
+          skill-writer evaluate \
             --batch skills/*.md \
             --output evaluation.json
       
@@ -887,7 +887,7 @@ jobs:
         if: steps.identify.outputs.count > 0
         run: |
           while read skill; do
-            skill-framework optimize \
+            skill-writer optimize \
               --file "$skill" \
               --target-tier ${{ github.event.inputs.target_tier }} \
               --max-rounds 20
@@ -1228,32 +1228,32 @@ else:
 
 ```bash
 # Basic optimization
-skill-framework optimize -f skill.md
+skill-writer optimize -f skill.md
 
 # With target tier
-skill-framework optimize -f skill.md --target-tier GOLD
+skill-writer optimize -f skill.md --target-tier GOLD
 
 # With constraints
-skill-framework optimize \
+skill-writer optimize \
   -f skill.md \
   --max-rounds 15 \
   --focus-dimensions "error_handling,examples"
 
 # Dry run (preview only)
-skill-framework optimize -f skill.md --dry-run
+skill-writer optimize -f skill.md --dry-run
 
 # Resume previous optimization
-skill-framework optimize -f skill.md --resume opt-20260331-001
+skill-writer optimize -f skill.md --resume opt-20260331-001
 
 # Batch optimization
-skill-framework optimize -b "skills/*.md" --parallel 4
+skill-writer optimize -b "skills/*.md" --parallel 4
 ```
 
 ### Webhook Integration
 
 ```bash
 # Trigger optimization via webhook
-curl -X POST https://api.skill-framework.dev/optimize \
+curl -X POST https://api.skill-writer.dev/optimize \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
@@ -1306,7 +1306,7 @@ optimization:
 
 ## References
 
-- **Framework Specification**: `../skill-framework.md`
+- **Framework Specification**: `../skill-writer.md`
 - **CREATE Mode**: `../create/README.md`
 - **EVALUATE Mode**: `../evaluate/README.md`
 - **Dimension Definitions**: `dimensions.yaml`

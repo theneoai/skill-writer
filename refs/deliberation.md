@@ -1,8 +1,8 @@
 # Multi-LLM Deliberation Protocol
 
 > **Purpose**: Full specification for 3-LLM deliberation used in CREATE, EVALUATE, and OPTIMIZE modes.
-> **Load**: When §4 (LoongFlow) or §12 (Multi-LLM) of `claude/skill-framework.md` is accessed.
-> **Main doc**: `claude/skill-framework.md §4, §12`
+> **Load**: When §4 (LoongFlow) or §12 (Multi-LLM) of `claude/skill-writer.md` is accessed.
+> **Main doc**: `claude/skill-writer.md §4, §12`
 
 ---
 

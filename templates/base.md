@@ -2,7 +2,7 @@
 
 > **Type**: base
 > **Use when**: The skill doesn't fit a more specific category (api-integration, data-pipeline, workflow-automation).
-> **Variables**: Replace every `{{PLACEHOLDER}}` with values from the requirement elicitation phase (§6 of skill-framework.md).
+> **Variables**: Replace every `{{PLACEHOLDER}}` with values from the requirement elicitation phase (§6 of skill-writer.md).
 
 ---
 

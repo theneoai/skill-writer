@@ -1,8 +1,8 @@
 # Self-Evolution Specification
 
 > **Purpose**: 3-trigger evolution system, decision thresholds, and continuous improvement logic.
-> **Load**: When §10 (Self-Evolution) of `claude/skill-framework.md` is accessed.
-> **Main doc**: `claude/skill-framework.md §10`
+> **Load**: When §10 (Self-Evolution) of `claude/skill-writer.md` is accessed.
+> **Main doc**: `claude/skill-writer.md §10`
 
 ---
 

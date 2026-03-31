@@ -1,11 +1,11 @@
 blank_issues_enabled: false
 contact_links:
   - name: Skill Framework Documentation
-    url: https://docs.skill-framework.org
+    url: https://docs.skill-writer.org
     about: Check our documentation before creating an issue
   - name: Community Discussions
-    url: https://github.com/your-org/skill-framework/discussions
+    url: https://github.com/your-org/skill-writer/discussions
     about: Ask questions and discuss ideas here
   - name: Security Issues
-    url: https://github.com/your-org/skill-framework/security/advisories/new
+    url: https://github.com/your-org/skill-writer/security/advisories/new
     about: Please report security vulnerabilities here

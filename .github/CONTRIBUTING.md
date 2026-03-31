@@ -56,8 +56,8 @@ Help us improve our documentation.
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/skill-framework.git
-cd skill-framework
+git clone https://github.com/your-org/skill-writer.git
+cd skill-writer
 
 # Install dependencies
 npm install
@@ -111,7 +111,7 @@ examples:
 
 1. **Fork the Repository**
    ```bash
-   git clone https://github.com/your-username/skill-framework.git
+   git clone https://github.com/your-username/skill-writer.git
    ```
 
 2. **Create a Branch**
@@ -160,9 +160,9 @@ All submissions require review before being merged:
 
 ## Getting Help
 
-- Check our [FAQ](https://github.com/your-org/skill-framework/wiki/FAQ)
-- Join our [Discord community](https://discord.gg/skill-framework)
-- Open a [Discussion](https://github.com/your-org/skill-framework/discussions)
+- Check our [FAQ](https://github.com/your-org/skill-writer/wiki/FAQ)
+- Join our [Discord community](https://discord.gg/skill-writer)
+- Open a [Discussion](https://github.com/your-org/skill-writer/discussions)
 
 ## License
 

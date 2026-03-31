@@ -1,7 +1,7 @@
 # Evaluation Benchmarks
 
 > **Purpose**: Test cases for computing F1, MRR, and Trigger Accuracy across skill types.
-> **Load**: During EVALUATE mode, §4 of `claude/skill-framework.md`
+> **Load**: During EVALUATE mode, §4 of `claude/skill-writer.md`
 > **Format**: Each case has an `input`, expected `mode`, and expected `confidence` band.
 
 ---
@@ -17,7 +17,7 @@
 
 ## §1  Skill-Framework Benchmarks
 
-These test the `skill-framework.md` meta-skill's mode router (CREATE / EVALUATE / OPTIMIZE).
+These test the `skill-writer.md` meta-skill's mode router (CREATE / EVALUATE / OPTIMIZE).
 
 ### CREATE Mode — Positive Cases
 
@@ -172,7 +172,7 @@ Template: `claude/templates/workflow-automation.md`
 
 | Skill Type | Min F1 | Min MRR | Min Trigger Accuracy | Min Test Cases |
 |------------|--------|---------|---------------------|----------------|
-| skill-framework | 0.90 | 0.85 | 0.90 | 29 (§1 above) |
+| skill-writer | 0.90 | 0.85 | 0.90 | 29 (§1 above) |
 | api-integration | 0.90 | 0.85 | 0.90 | 13 (§2 above) |
 | data-pipeline | 0.90 | 0.85 | 0.90 | 12 (§3 above) |
 | workflow-automation | 0.90 | 0.85 | 0.90 | 12 (§4 above) |
@@ -183,7 +183,7 @@ A skill may add domain-specific test cases beyond these minimums.
 
 ## §6  Adding Custom Benchmark Cases
 
-When creating a new skill with `skill-framework.md CREATE mode`, add at least:
+When creating a new skill with `skill-writer.md CREATE mode`, add at least:
 - 5 positive cases per mode
 - 2 ambiguous / edge cases per mode
 - 2 negative / anti-trigger cases
