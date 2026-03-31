@@ -116,18 +116,25 @@ template: api-integration
 ```
 Evaluation Report
 =================
-Overall Score: 847/1000 (GOLD Tier)
+Overall Score: 847/1000 (SILVER Tier)
 
-Breakdown:
-- Completeness: 240/250 ✓
-- Clarity: 235/250 ✓
-- Security: 190/200 ✓
-- Usability: 182/200 ✓
-- Maintainability: 100/100 ✓
+Phase Breakdown:
+- Phase 1 Parse & Validate:  88/100
+- Phase 2 Text Quality:      252/300
+    clarity:        42/50
+    completeness:   44/50
+    accuracy:       55/60
+    safety:         55/60
+    maintainability: 32/40
+    usability:       24/40
+- Phase 3 Runtime Testing:   355/400
+- Phase 4 Certification:     152/200
+
+Variance: |252/3 - 355/4| = |84 - 88.75| = 4.75 ✓ (within SILVER limit of 20)
 
 Issues Found:
-1. Missing error handling examples (-10 points)
-2. Unclear trigger description (-5 points)
+1. Missing error handling examples (-10 points, usability)
+2. Unclear trigger description (-5 points, clarity)
 
 Recommendations:
 1. Add try-catch examples
@@ -167,8 +174,8 @@ Overall: Skill needs security improvements before production use.
 ```
 
 **Certification Criteria:**
-- GOLD (850+) or PLATINUM (950+) required
-- No critical security issues
+- GOLD (≥900) or PLATINUM (≥950) required for production
+- No critical security issues (P0 CWE violations → ABORT)
 - All required sections present
 - Clear documentation
 
@@ -177,7 +184,8 @@ Overall: Skill needs security improvements before production use.
 Certification Result
 ====================
 Status: ✓ CERTIFIED - GOLD Tier
-Score: 892/1000
+Score: 912/1000
+Variance: |285/3 - 360/4| = |95 - 90| = 5.0 ✓ (within GOLD limit of 15)
 
 This skill meets production quality standards.
 Certification ID: SW-CERT-2026-001

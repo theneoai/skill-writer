@@ -1,206 +1,321 @@
 id: create_workflow
 name: CREATE Mode Workflow
-description: Complete workflow for creating new components, features, or files from scratch using templates and structured elicitation
+description: >
+  9-phase workflow for creating new skills. Follows skill-framework.md §5.
+  ELICIT (Inversion) must complete before PLAN begins — hard gate.
 
 steps:
+  # ─────────────────────────────────────────────
+  # Phase 1: PARSE — understand intent
+  # ─────────────────────────────────────────────
   - id: parse
     name: Parse Request
-    description: Analyze the user's creation request to understand intent, scope, and requirements
+    description: Analyze user's creation request to extract intent, language (ZH/EN/mixed), and route confidence
     inputs:
       - user_request
       - context
     outputs:
       - parsed_intent
-      - scope_definition
-      - requirements_list
-      - creation_type
+      - detected_language
+      - creation_type_hint
 
-  - id: select_template
-    name: Select Template
-    description: Choose the appropriate template based on parsed intent and creation type
-    inputs:
-      - creation_type
-      - parsed_intent
-      - scope_definition
-    outputs:
-      - selected_template
-      - template_variables
-      - template_metadata
-
+  # ─────────────────────────────────────────────
+  # Phase 2: ELICIT — Inversion Pattern (GATE)
+  # Ask one question at a time. All 6 must be answered before PLAN.
+  # Source: skill-framework.md §7 / core/create/elicitation.yaml
+  # ─────────────────────────────────────────────
   - id: elicit
     name: Elicit Requirements
-    description: Ask clarifying questions to gather missing information needed for creation
+    description: >
+      Inversion Pattern — collect all 6 answers before entering PLAN.
+      Ask exactly one question at a time; wait for answer before next.
+    gate: all_questions_answered
     inputs:
       - parsed_intent
-      - requirements_list
-      - template_variables
     outputs:
       - elicited_answers
-      - filled_placeholders
       - refined_requirements
     questions:
       - id: q1
-        text: What is the primary purpose or goal of what you're creating?
-        category: intent
+        order: 1
+        text_zh: 这个skill要解决什么核心问题？
+        text_en: What core problem does this skill solve?
         required: true
       - id: q2
-        text: Who are the target users or consumers of this creation?
-        category: audience
+        order: 2
+        text_zh: 主要用户是谁，技术水平如何？
+        text_en: Who are the target users and what is their technical level?
         required: true
       - id: q3
-        text: What are the key features or capabilities it must have?
-        category: functionality
+        order: 3
+        text_zh: 输入是什么形式？
+        text_en: What form does the input take?
         required: true
       - id: q4
-        text: Are there any specific constraints, standards, or requirements it must meet?
-        category: constraints
-        required: false
+        order: 4
+        text_zh: 期望的输出是什么？
+        text_en: What is the expected output?
+        required: true
       - id: q5
-        text: What is the expected scale or scope (e.g., number of users, data volume, performance needs)?
-        category: scale
-        required: false
+        order: 5
+        text_zh: 有哪些安全或技术约束？
+        text_en: What security or technical constraints apply?
+        required: true
       - id: q6
-        text: Are there any examples, references, or existing implementations you want to emulate or avoid?
-        category: references
-        required: false
+        order: 6
+        text_zh: 验收标准是什么？
+        text_en: What are the acceptance criteria?
+        required: true
 
+  # ─────────────────────────────────────────────
+  # Phase 3: SELECT TEMPLATE
+  # ─────────────────────────────────────────────
+  - id: select_template
+    name: Select Template
+    description: >
+      Match skill type to template.
+      "calls API / integrates service"          → api-integration
+      "processes / transforms / validates data" → data-pipeline
+      "multi-step workflow / automation"         → workflow-automation
+      anything else                             → base
+    inputs:
+      - refined_requirements
+      - parsed_intent
+    outputs:
+      - selected_template
+      - template_path     # claude/templates/<type>.md
+      - template_metadata
+
+  # ─────────────────────────────────────────────
+  # Phase 4: PLAN — LoongFlow multi-LLM deliberation
+  # Spec: claude/refs/deliberation.md §2
+  # ─────────────────────────────────────────────
+  - id: plan
+    name: Plan (Multi-LLM Deliberation)
+    description: >
+      LoongFlow Plan phase: LLM-1 proposes approach, LLM-2 reviews,
+      LLM-3 arbitrates on divergence > 15 pts. Consensus required before GENERATE.
+    gate: consensus_reached
+    inputs:
+      - refined_requirements
+      - selected_template
+      - template_metadata
+    outputs:
+      - generation_plan
+      - deliberation_consensus   # UNANIMOUS | MAJORITY | SPLIT | UNRESOLVED
+      - filled_placeholders
+    deliberation:
+      ref: claude/refs/deliberation.md
+      timeout_per_llm_s: 30
+      timeout_per_phase_s: 60
+      consensus_rule: "UNANIMOUS → proceed; MAJORITY → proceed with notes; SPLIT → one revision; UNRESOLVED → HUMAN_REVIEW"
+
+  # ─────────────────────────────────────────────
+  # Phase 5: GENERATE
+  # ─────────────────────────────────────────────
   - id: generate
     name: Generate Output
-    description: Create the final output by filling templates with gathered information
+    description: Fill template with elicited answers and plan. No {{PLACEHOLDER}} tokens may remain in output.
+    gate: no_placeholders_remaining
     inputs:
       - selected_template
+      - template_path
       - filled_placeholders
-      - refined_requirements
-      - template_metadata
+      - generation_plan
     outputs:
       - generated_content
       - generation_metadata
-      - file_paths
-    placeholders:
-      - name: PROJECT_NAME
-        description: Name of the project or component
-        example: "my-awesome-service"
-      - name: DESCRIPTION
-        description: Brief description of what is being created
-        example: "A microservice for handling user authentication"
-      - name: AUTHOR
-        description: Name or identifier of the creator
-        example: "developer@example.com"
-      - name: DATE
-        description: Creation date
-        example: "2024-01-15"
-      - name: VERSION
-        description: Version identifier
-        example: "1.0.0"
-      - name: DEPENDENCIES
-        description: List of required dependencies
-        example: "[express, lodash, uuid]"
-      - name: CONFIG_OPTIONS
-        description: Configuration options or parameters
-        example: "port: 3000, env: production"
-      - name: MAIN_FUNCTION
-        description: Primary function or entry point
-        example: "initializeServer"
-      - name: TEST_CASES
-        description: Key test scenarios to include
-        example: "should authenticate valid users"
-      - name: DOCUMENTATION
-        description: Additional documentation or notes
-        example: "See README.md for detailed usage"
 
+  # ─────────────────────────────────────────────
+  # Phase 6: SECURITY SCAN
+  # CWE patterns: claude/refs/security-patterns.md
+  # P0 → ABORT; P1 → score penalty + WARNING
+  # ─────────────────────────────────────────────
   - id: security_scan
     name: Security Scan
-    description: Scan generated content for security vulnerabilities and best practice violations
+    description: >
+      Scan generated content for CWE violations before any delivery.
+      P0 (CWE-798/89/78): ABORT immediately.
+      P1 (CWE-22/306/862): deduct score, log WARNING.
+    gate: no_p0_violations
     inputs:
       - generated_content
-      - file_paths
-      - creation_type
     outputs:
       - security_report
-      - vulnerabilities_found
-      - recommendations
+      - p0_findings
+      - p1_findings
+      - score_penalty
+    patterns_ref: claude/refs/security-patterns.md
     checks:
-      - hardcoded_secrets
-      - injection_vulnerabilities
-      - insecure_dependencies
-      - weak_crypto
-      - access_control_issues
+      - id: CWE-798
+        severity: P0
+        action: ABORT
+      - id: CWE-89
+        severity: P0
+        action: ABORT
+      - id: CWE-78
+        severity: P0
+        action: ABORT
+      - id: CWE-22
+        severity: P1
+        penalty: -50
+      - id: CWE-306
+        severity: P1
+        penalty: -30
+      - id: CWE-862
+        severity: P1
+        penalty: -30
 
+  # ─────────────────────────────────────────────
+  # Phase 7: LEAN EVAL — fast heuristic check (~1s)
+  # Spec: skill-framework.md §6
+  # 500-point scale; maps to estimated 1000-point full score
+  # ─────────────────────────────────────────────
   - id: lean_eval
     name: LEAN Evaluation
-    description: Evaluate generated content against LEAN principles (Legible, Efficient, Accurate, Non-fragile)
+    description: >
+      Rapid 500-point heuristic check on skill document completeness.
+      No LLM calls. Decision determines whether to proceed to FULL EVALUATE.
     inputs:
       - generated_content
       - security_report
-      - refined_requirements
     outputs:
-      - lean_scores
-      - evaluation_summary
-      - improvement_suggestions
-    thresholds:
-      legible:
-        min_score: 7
-        description: Code is readable, well-documented, and follows conventions
-        criteria:
-          - naming_conventions
-          - code_comments
-          - formatting
-          - structure
-      efficient:
-        min_score: 7
-        description: Code is performant and resource-conscious
-        criteria:
-          - time_complexity
-          - space_complexity
-          - resource_usage
-          - algorithm_choice
-      accurate:
-        min_score: 8
-        description: Code correctly implements requirements
-        criteria:
-          - functional_correctness
-          - edge_case_handling
-          - requirement_coverage
-          - logic_validity
-      non_fragile:
-        min_score: 7
-        description: Code is robust and handles errors gracefully
-        criteria:
-          - error_handling
-          - input_validation
-          - exception_safety
-          - maintainability
-    overall_threshold: 7.5
+      - lean_score          # 0-500
+      - lean_decision       # PASS | UNCERTAIN | FAIL
+      - lean_issues
+    checks:
+      - id: yaml_frontmatter
+        description: "YAML frontmatter present with name, version, interface fields"
+        points: 60
+      - id: mode_sections
+        description: "≥ 3 mode sections (## §N) present"
+        points: 60
+      - id: red_lines
+        description: '"Red Lines" / "严禁" text present'
+        points: 50
+      - id: quality_gates
+        description: "Quality Gates table with numeric thresholds present"
+        points: 60
+      - id: usage_examples
+        description: "≥ 2 code-block usage examples present"
+        points: 50
+      - id: trigger_keywords
+        description: "Trigger keywords (EN + ZH) present for each mode (60pts per mode, max 120)"
+        points: 120
+      - id: security_baseline
+        description: "Security Baseline section present"
+        points: 50
+      - id: no_placeholders
+        description: "No {{PLACEHOLDER}} tokens remaining"
+        points: 50
+    decision:
+      pass:      { min_lean_score: 350, condition: "no_placeholders AND security_section_present", next: inject_ute, tag: LEAN_CERT, note: "Schedule full EVALUATE within 24h" }
+      uncertain: { lean_score_range: [300, 349], next: full_evaluate }
+      fail:      { max_lean_score: 299, next: OPTIMIZE, note: "Route to OPTIMIZE with dimension report" }
+    scale_mapping:
+      platinum_proxy: { lean_min: 475, estimated_full: 950 }
+      gold_proxy:     { lean_min: 450, estimated_full: 900 }
+      silver_proxy:   { lean_min: 400, estimated_full: 800 }
+      bronze_proxy:   { lean_min: 350, estimated_full: 700 }
+      uncertain:      { lean_range: [300, 349], action: "escalate to EVALUATE" }
+      fail_proxy:     { lean_max: 299, action: "route to OPTIMIZE" }
 
+  # ─────────────────────────────────────────────
+  # Phase 8: FULL EVALUATE (conditional)
+  # Triggered when LEAN is UNCERTAIN (300-349) or LEAN score requested explicitly
+  # Spec: skill-framework.md §8 / core/evaluate/rubrics.yaml
+  # ─────────────────────────────────────────────
+  - id: full_evaluate
+    name: Full Evaluate (4-Phase Pipeline)
+    description: >
+      Complete 1000-point evaluation. Only runs when LEAN decision = UNCERTAIN.
+      Must reach BRONZE (≥700) before DELIVER. On FAIL → route to OPTIMIZE.
+    condition: lean_decision == UNCERTAIN
+    gate: total_score >= 700
+    inputs:
+      - generated_content
+      - security_report
+      - lean_score
+    outputs:
+      - phase1_score   # /100
+      - phase2_score   # /300
+      - phase3_score   # /400
+      - phase4_score   # /200
+      - total_score    # /1000
+      - variance       # |phase2/3 - phase3/4|
+      - tier           # PLATINUM | GOLD | SILVER | BRONZE | FAIL
+      - eval_issues
+    rubrics_ref: core/evaluate/rubrics.yaml
+    on_fail: route_to_optimize
+
+  # ─────────────────────────────────────────────
+  # Phase 9: INJECT UTE — Use-to-Evolve
+  # Spec: skill-framework.md §15 / claude/refs/use-to-evolve.md
+  # ─────────────────────────────────────────────
+  - id: inject_ute
+    name: Inject Use-to-Evolve (UTE)
+    description: >
+      Append §UTE section to the skill so it self-improves through actual use.
+      If §UTE already exists → UPDATE certified_lean_score and reset last_ute_check.
+      If not → INJECT from template.
+      After injection, run LEAN re-check; if lean_score regresses > 10 pts → revert.
+    inputs:
+      - generated_content
+      - lean_score
+      - skill_name      # from YAML frontmatter
+      - skill_version   # from YAML frontmatter
+    outputs:
+      - final_content   # skill with §UTE appended
+      - ute_lean_score  # post-injection LEAN score
+      - ute_injected    # boolean
+    snippet_ref: claude/templates/use-to-evolve-snippet.md
+    placeholders:
+      SKILL_NAME:           "skill's `name` YAML field"
+      VERSION:              "skill's `version` YAML field"
+      FRAMEWORK_VERSION:    "2.0.0"
+      INJECTION_DATE:       "today ISO-8601"
+      CERTIFIED_LEAN_SCORE: "LEAN score from lean_eval step (or 350 if unknown)"
+    revert_if: "ute_lean_score < lean_score - 10"
+
+  # ─────────────────────────────────────────────
+  # Phase 10: DELIVER
+  # ─────────────────────────────────────────────
   - id: deliver
     name: Deliver Output
-    description: Finalize and deliver the created content to the user
+    description: >
+      Finalize and deliver the skill. Annotate with certification tier and outcome tag.
+      Write audit entry to .skill-audit/framework.jsonl.
     inputs:
-      - generated_content
-      - lean_scores
+      - final_content
+      - lean_score
+      - total_score     # null if full_evaluate was skipped
+      - tier
       - security_report
-      - file_paths
-      - evaluation_summary
+      - deliberation_consensus
     outputs:
-      - delivered_files
-      - delivery_summary
-      - next_steps
+      - delivered_skill
+      - certification_tag   # CERTIFIED | LEAN_CERT | TEMP_CERT | HUMAN_REVIEW | ABORT
+      - audit_entry
+    audit_ref: skill-framework.md §13
     actions:
-      - write_files
-      - generate_manifest
-      - provide_summary
-      - suggest_next_steps
+      - annotate_skill_with_tier
+      - write_audit_jsonl
+      - present_to_user
 
 workflow_metadata:
-  version: "1.0.0"
-  author: "opencode"
-  created: "2024-01-15"
-  description: "CREATE mode workflow for generating new code, files, and components"
-  supported_types:
-    - component
-    - feature
-    - file
-    - project
-    - configuration
-    - documentation
-  estimated_duration: "2-5 minutes"
+  version: "2.0.0"
+  spec_ref: "skill-framework.md §5"
+  author: theneoai
+  updated: "2026-03-31"
+  phase_count: 10
+  hard_gates:
+    - elicit:         "All 6 questions answered"
+    - plan:           "Consensus reached (not UNRESOLVED)"
+    - generate:       "No {{PLACEHOLDER}} tokens remain"
+    - security_scan:  "No P0 violations"
+    - full_evaluate:  "total_score ≥ 700 (BRONZE)"
+  red_lines:
+    - "严禁 deliver any skill without passing BRONZE gate (score ≥ 700)"
+    - "严禁 skip LEAN or EVALUATE security scan before delivery"
+    - "严禁 proceed past ABORT trigger without explicit human sign-off"
+    - "严禁 skip elicitation gate (Inversion) before entering PLAN phase"

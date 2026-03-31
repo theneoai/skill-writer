@@ -338,48 +338,48 @@ certification_tiers:
     name: "Bronze"
     description: "Basic functionality verified"
     requirements:
-      min_score: 600
-      max_variance: 150
+      min_score: 700
+      max_variance: 30
       phase_requirements:
         phase_1: 70    # 70/100 minimum
-        phase_2: 180   # 180/300 minimum
-        phase_3: 240   # 240/400 minimum
+        phase_2: 195   # 195/300 minimum
+        phase_3: 265   # 265/400 minimum
         phase_4: 110   # 110/200 minimum
-      
+
   - tier: silver
     name: "Silver"
     description: "Good quality with solid documentation"
     requirements:
-      min_score: 750
-      max_variance: 100
+      min_score: 800
+      max_variance: 20
       phase_requirements:
         phase_1: 85    # 85/100 minimum
         phase_2: 225   # 225/300 minimum
         phase_3: 300   # 300/400 minimum
         phase_4: 140   # 140/200 minimum
-      
+
   - tier: gold
     name: "Gold"
     description: "High quality with comprehensive testing"
     requirements:
-      min_score: 850
-      max_variance: 75
+      min_score: 900
+      max_variance: 15
       phase_requirements:
         phase_1: 90    # 90/100 minimum
         phase_2: 255   # 255/300 minimum
         phase_3: 340   # 340/400 minimum
         phase_4: 165   # 165/200 minimum
-      
+
   - tier: platinum
     name: "Platinum"
     description: "Excellence in all dimensions"
     requirements:
       min_score: 950
-      max_variance: 50
+      max_variance: 10
       phase_requirements:
         phase_1: 95    # 95/100 minimum
-        phase_2: 285   # 285/300 minimum
-        phase_3: 380   # 380/400 minimum
+        phase_2: 270   # 270/300 minimum
+        phase_3: 360   # 360/400 minimum
         phase_4: 190   # 190/200 minimum
 
 # ============================================================================
@@ -387,35 +387,31 @@ certification_tiers:
 # Measures consistency across evaluation dimensions
 # ============================================================================
 variance_formula:
-  description: "Calculate score variance across phases to ensure balanced quality"
+  description: "Calculate score variance between Phase 2 and Phase 3 to detect skills that look good on paper but fail runtime (or vice versa)"
   formula: |
-    variance = sqrt(sum((phase_score - mean_score)²) / n)
-    
+    variance = | (phase2_score / 3) - (phase3_score / 4) |
+
     Where:
-    - phase_score = (actual_score / max_score) * 100 for each phase
-    - mean_score = average of all normalized phase scores
-    - n = number of phases (4)
-  
+    - phase2_score / 3  normalizes Phase 2 (max 300) to a 0-100 scale
+    - phase3_score / 4  normalizes Phase 3 (max 400) to a 0-100 scale
+    - The absolute difference measures text-vs-runtime imbalance
+
   calculation_steps:
-    - "Normalize each phase score to 0-100 scale"
-    - "Calculate mean of normalized scores"
-    - "Compute squared difference from mean for each phase"
-    - "Average the squared differences"
-    - "Take square root to get standard deviation"
-  
+    - "Normalize Phase 2 score: phase2_score / 3"
+    - "Normalize Phase 3 score: phase3_score / 4"
+    - "Compute absolute difference between the two normalized values"
+
   interpretation:
-    low_variance: "< 50 - Well-balanced skill across all dimensions"
-    medium_variance: "50-100 - Some imbalance, acceptable for lower tiers"
-    high_variance: "> 100 - Significant imbalance, requires improvement"
-  
+    low_variance: "< 10 - Text quality and runtime behavior are well-balanced (PLATINUM)"
+    medium_variance: "10-20 - Acceptable imbalance (GOLD/SILVER)"
+    high_variance: "> 30 - Significant imbalance, requires improvement"
+
   example: |
-    Phase scores: P1=90, P2=85, P3=88, P4=92 (all out of 100 normalized)
-    Mean = (90 + 85 + 88 + 92) / 4 = 88.75
-    Variance = sqrt(((90-88.75)² + (85-88.75)² + (88-88.75)² + (92-88.75)²) / 4)
-             = sqrt((1.56 + 14.06 + 0.56 + 10.56) / 4)
-             = sqrt(26.74 / 4)
-             = sqrt(6.685)
-             = 2.59 (very low variance - excellent balance)
+    Phase 2 = 285/300, Phase 3 = 385/400
+    variance = | 285/3 - 385/4 | = | 95 - 96.25 | = 1.25  → PLATINUM ✓
+
+    Phase 2 = 201/300, Phase 3 = 285/400
+    variance = | 201/3 - 285/4 | = | 67 - 71.25 | = 4.25  → low, consistent failure
 
 # ============================================================================
 # SCORING SUMMARY
@@ -445,10 +441,10 @@ scoring_summary:
       percentage: 20%
   
   passing_thresholds:
-    minimum_total: 600
+    minimum_total: 700
     no_single_phase_below: 50%
     max_variance_by_tier:
-      bronze: 150
-      silver: 100
-      gold: 75
-      platinum: 50
+      bronze: 30
+      silver: 20
+      gold: 15
+      platinum: 10

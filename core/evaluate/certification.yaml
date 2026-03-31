@@ -4,15 +4,15 @@ certification_tiers:
     badge: 🏆
     min_score: 950
     max_variance: 10
-    phase2_min: 475
-    phase3_min: 475
+    phase2_min: 270
+    phase3_min: 360
     description: Exceptional performance with consistent high scores across all evaluation phases. Demonstrates mastery and reliability.
     color: "#E5E4E2"
     requirements:
       - Total score must be at least 950 points
-      - Score variance across phases must be less than 10
-      - Minimum 475 points in Phase 2 (Technical Assessment)
-      - Minimum 475 points in Phase 3 (Practical Evaluation)
+      - Variance (|phase2/3 - phase3/4|) must be less than 10
+      - Minimum 270/300 points in Phase 2 (Text Quality)
+      - Minimum 360/400 points in Phase 3 (Runtime Testing)
       - Demonstrates consistent excellence without significant fluctuations
     use_case: Suitable for senior-level positions, leadership roles, and high-stakes critical systems
 
@@ -21,15 +21,15 @@ certification_tiers:
     badge: 🥇
     min_score: 900
     max_variance: 15
-    phase2_min: 450
-    phase3_min: 450
+    phase2_min: 255
+    phase3_min: 340
     description: Outstanding performance with strong consistency. Shows advanced competency with minor variations.
     color: "#FFD700"
     requirements:
       - Total score must be at least 900 points
-      - Score variance across phases must be less than 15
-      - Minimum 450 points in Phase 2 (Technical Assessment)
-      - Minimum 450 points in Phase 3 (Practical Evaluation)
+      - Variance (|phase2/3 - phase3/4|) must be less than 15
+      - Minimum 255/300 points in Phase 2 (Text Quality)
+      - Minimum 340/400 points in Phase 3 (Runtime Testing)
       - Demonstrates strong skills with acceptable consistency
     use_case: Suitable for mid-to-senior level positions and complex project assignments
 
@@ -38,15 +38,15 @@ certification_tiers:
     badge: 🥈
     min_score: 800
     max_variance: 20
-    phase2_min: 400
-    phase3_min: 400
+    phase2_min: 225
+    phase3_min: 300
     description: Good performance with moderate consistency. Demonstrates solid competency with some variation.
     color: "#C0C0C0"
     requirements:
       - Total score must be at least 800 points
-      - Score variance across phases must be less than 20
-      - Minimum 400 points in Phase 2 (Technical Assessment)
-      - Minimum 400 points in Phase 3 (Practical Evaluation)
+      - Variance (|phase2/3 - phase3/4|) must be less than 20
+      - Minimum 225/300 points in Phase 2 (Text Quality)
+      - Minimum 300/400 points in Phase 3 (Runtime Testing)
       - Shows competent skills with room for improvement in consistency
     use_case: Suitable for standard professional positions and general project work
 
@@ -55,15 +55,15 @@ certification_tiers:
     badge: 🥉
     min_score: 700
     max_variance: 30
-    phase2_min: 350
-    phase3_min: 350
+    phase2_min: 195
+    phase3_min: 265
     description: Acceptable performance with noticeable variance. Demonstrates basic competency but lacks consistency.
     color: "#CD7F32"
     requirements:
       - Total score must be at least 700 points
-      - Score variance across phases must be less than 30
-      - Minimum 350 points in Phase 2 (Technical Assessment)
-      - Minimum 350 points in Phase 3 (Practical Evaluation)
+      - Variance (|phase2/3 - phase3/4|) must be less than 30
+      - Minimum 195/300 points in Phase 2 (Text Quality)
+      - Minimum 265/400 points in Phase 3 (Runtime Testing)
       - Meets minimum standards but shows significant room for improvement
     use_case: Suitable for entry-level positions with additional training and supervision required
 
@@ -125,11 +125,13 @@ variance_interpretation_guide:
     fluctuating capabilities.
   
   calculation_method: |
-    Variance is calculated as the standard deviation of scores across all phases,
-    normalized to a 0-100 scale for interpretability.
-    
-    Formula: variance = sqrt(sum((score - mean)^2) / n)
-    
+    Variance measures text-quality vs runtime imbalance using Phase 2 and Phase 3 only.
+
+    Formula: variance = | (phase2_score / 3) - (phase3_score / 4) |
+
+    Where phase2_score/3 and phase3_score/4 each normalize to a 0-100 scale.
+    High variance means the skill looks good on paper but fails at runtime (or vice versa).
+
   interpretation_scale:
     - range: "0-5"
       rating: "Excellent Consistency"

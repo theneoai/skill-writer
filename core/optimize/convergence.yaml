@@ -26,7 +26,7 @@ convergence_detection:
   plateau:
     description: "Low deltas indicate optimization has plateaued"
     enabled: true
-    window_size: 20  # Number of deltas to analyze
+    window_size: 10  # Number of deltas to analyze (matches refs/convergence.md)
     delta_threshold: 0.5  # Minimum meaningful improvement
     plateau_percentage: 70  # % of deltas below threshold to trigger
     metric: "score_delta"  # Change between consecutive scores
@@ -89,9 +89,9 @@ convergence_detection:
     
     criteria:
       max_iterations:
-        limit: 1000
+        limit: 20   # skill-framework.md §9: max 20 rounds
         action: STOP
-        reason: "Maximum iteration limit reached"
+        reason: "Maximum iteration limit reached (20 rounds)"
         
       max_time_seconds:
         limit: 3600  # 1 hour
@@ -110,7 +110,7 @@ convergence_detection:
         reason: "Target score achieved"
         
       no_improvement:
-        window: 50  # Iterations without improvement
+        window: 10  # Iterations without improvement (matches refs/convergence.md plateau window)
         action: STOP
         reason: "No improvement for {window} iterations"
         
