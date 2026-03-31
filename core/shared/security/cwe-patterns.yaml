@@ -1,0 +1,1056 @@
+# CWE Security Patterns Configuration
+# Security scanning patterns for common vulnerabilities
+# Version: 1.0.0
+
+# Scan settings
+scan_on_delivery: true
+
+# Report format template
+report_format:
+  template: |
+    # Security Scan Report
+    
+    **Scan ID:** {{scan_id}}
+    **Timestamp:** {{timestamp}}
+    **Repository:** {{repository}}
+    **Branch:** {{branch}}
+    **Commit:** {{commit}}
+    
+    ## Summary
+    - Total Files Scanned: {{total_files}}
+    - Total Issues Found: {{total_issues}}
+    - Critical (P0): {{critical_count}}
+    - High (P1): {{high_count}}
+    - Medium (P2): {{medium_count}}
+    - Low (P3): {{low_count}}
+    
+    ## Findings
+    {{#findings}}
+    ### {{cwe_id}} - {{cwe_name}}
+    **Severity:** {{severity}}
+    **File:** {{file_path}}:{{line_number}}
+    **Pattern:** {{matched_pattern}}
+    **Match:** {{matched_text}}
+    **Remediation:** {{remediation}}
+    
+    ---
+    {{/findings}}
+    
+    ## Remediation Guide
+    {{#remediation_summary}}
+    - {{cwe_id}}: {{short_remediation}}
+    {{/remediation_summary}}
+  
+  output_formats:
+    - markdown
+    - json
+    - sarif
+  
+  include_code_snippets: true
+  include_line_numbers: true
+  max_context_lines: 3
+
+# CWE Security Patterns
+patterns:
+  # P0 - Critical Severity
+  
+  - id: CWE-798
+    name: "Hardcoded Credentials"
+    description: "The use of hard-coded credentials may allow an attacker to bypass authentication or gain unauthorized access."
+    severity: P0
+    category: authentication
+    owasp_top10: "A07:2021 – Identification and Authentication Failures"
+    
+    patterns:
+      # Password patterns
+      - regex: '(?i)(password|passwd|pwd)\s*[=:]\s*["\'][^"\']{4,}["\']'
+        description: "Hardcoded password assignment"
+      - regex: '(?i)(password|passwd|pwd)\s*[=:]\s*[`"\'][^`"\']{4,}[`"\']'
+        description: "Hardcoded password with backticks"
+      - regex: '(?i)\.password\s*[=:]\s*["\'][^"\']+["\']'
+        description: "Object password property assignment"
+      
+      # API Key patterns
+      - regex: '(?i)(api[_-]?key|apikey)\s*[=:]\s*["\'][^"\']{8,}["\']'
+        description: "Hardcoded API key"
+      - regex: '(?i)(api[_-]?key|apikey)\s*[=:]\s*[a-zA-Z0-9]{20,}'
+        description: "Hardcoded API key without quotes"
+      
+      # Secret/Token patterns
+      - regex: '(?i)(secret|token|auth[_-]?token)\s*[=:]\s*["\'][^"\']{8,}["\']'
+        description: "Hardcoded secret or token"
+      - regex: '(?i)(private[_-]?key|privatekey)\s*[=:]\s*["\'][^"\']+["\']'
+        description: "Hardcoded private key"
+      
+      # AWS patterns
+      - regex: '(?i)AKIA[0-9A-Z]{16}'
+        description: "AWS Access Key ID"
+      - regex: '(?i)aws[_-]?(secret|access)[_-]?(key|id)\s*[=:]\s*["\'][^"\']+["\']'
+        description: "AWS credential assignment"
+      
+      # Database connection strings with credentials
+      - regex: '(?i)(mongodb|mysql|postgresql|postgres)://[^/\s:@]*:[^/\s:@]*@'
+        description: "Database connection string with embedded credentials"
+      - regex: '(?i)jdbc:[^:]+://[^/\s:@]*:[^/\s:@]*@'
+        description: "JDBC connection string with embedded credentials"
+      
+      # Generic credential patterns
+      - regex: '(?i)(credentials|creds)\s*[=:]\s*["\'][^"\']+["\']'
+        description: "Hardcoded credentials object"
+      - regex: '(?i)(bearer|basic)\s+[a-zA-Z0-9+/]{20,}'
+        description: "Hardcoded authentication token"
+    
+    exceptions:
+      - pattern: '(?i)password\s*[=:]\s*["\']\$\{[^}]+\}["\']'
+        description: "Environment variable interpolation"
+      - pattern: '(?i)password\s*[=:]\s*["\']\$[A-Z_]+["\']'
+        description: "Shell environment variable"
+      - pattern: '(?i)password\s*[=:]\s*["\']\$\([^)]+\)["\']'
+        description: "Command substitution"
+      - pattern: '(?i)password\s*[=:]\s*["\']?\s*(null|nil|none|undefined|empty)\s*["\']?'
+        description: "Null or empty password"
+      - pattern: '(?i)password\s*[=:]\s*["\'][*]+["\']'
+        description: "Masked password"
+      - pattern: '(?i)example|sample|test|dummy|fake|placeholder'
+        description: "Test/example credentials"
+      - pattern: '(?i)process\.env\.'
+        description: "Environment variable access"
+      - pattern: '(?i)os\.getenv|System\.getenv'
+        description: "System environment variable access"
+      - pattern: '(?i)config\.|settings\.|options\.'
+        description: "Configuration object reference"
+      - pattern: '(?i)\.env\.|\.env\b'
+        description: "Dotenv file reference"
+    
+    remediation: |
+      **Immediate Actions:**
+      1. Remove all hardcoded credentials from source code immediately
+      2. Rotate any exposed credentials (passwords, API keys, tokens)
+      3. Audit access logs for unauthorized access using exposed credentials
+      
+      **Secure Alternatives:**
+      - Use environment variables for configuration
+      - Implement a secrets management solution (HashiCorp Vault, AWS Secrets Manager, Azure Key Vault)
+      - Use configuration files outside version control (.env files)
+      - Implement runtime credential injection
+      
+      **Example (Environment Variables):**
+      ```python
+      # Instead of:
+      password = "hardcoded_password123"
+      
+      # Use:
+      import os
+      password = os.environ.get('DB_PASSWORD')
+      ```
+      
+      **Example (Secrets Manager):**
+      ```python
+      import boto3
+      client = boto3.client('secretsmanager')
+      secret = client.get_secret_value(SecretId='prod/db/password')
+      password = secret['SecretString']
+      ```
+    
+    references:
+      - "https://cwe.mitre.org/data/definitions/798.html"
+      - "https://owasp.org/Top10/A07_2021-Identification_and_Authentication_Failures/"
+      - "https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html"
+
+  - id: CWE-89
+    name: "SQL Injection"
+    description: "Improper neutralization of special elements in SQL commands can allow attackers to execute arbitrary SQL commands."
+    severity: P0
+    category: injection
+    owasp_top10: "A03:2021 – Injection"
+    
+    patterns:
+      # String concatenation in SQL
+      - regex: '(?i)(execute|query|exec)\s*\(\s*["\'][^"\']*\$\{[^}]+\}'
+        description: "SQL query with template literal interpolation"
+      - regex: '(?i)(execute|query|exec)\s*\(\s*["\'][^"\']*\+\s*[^+]+\+'
+        description: "SQL query with string concatenation"
+      - regex: '(?i)SELECT\s+.+\s+FROM\s+.+\+\s*[^"\']'
+        description: "SELECT statement with concatenation"
+      - regex: '(?i)INSERT\s+INTO\s+.+\+\s*[^"\']'
+        description: "INSERT statement with concatenation"
+      - regex: '(?i)UPDATE\s+.+SET\s+.+\+\s*[^"\']'
+        description: "UPDATE statement with concatenation"
+      - regex: '(?i)DELETE\s+FROM\s+.+\+\s*[^"\']'
+        description: "DELETE statement with concatenation"
+      
+      # Format string vulnerabilities
+      - regex: '(?i)(execute|query|exec)\s*\(\s*["\'][^"\']*%s'
+        description: "SQL query with format specifier"
+      - regex: '(?i)(execute|query|exec)\s*\(\s*["\'][^"\']*\{[^}]+\}["\']\.format\('
+        description: "SQL query with Python format method"
+      - regex: '(?i)(execute|query|exec)\s*\(\s*f["\'][^"\']*\{[^}]+\}'
+        description: "SQL query with f-string"
+      
+      # Direct user input in SQL
+      - regex: '(?i)(execute|query|exec)\s*\(\s*["\'][^"\']*\$_(GET|POST|REQUEST|COOKIE)'
+        description: "SQL query with direct user input"
+      - regex: '(?i)(execute|query|exec)\s*\(\s*["\'][^"\']*req\.(query|body|params)'
+        description: "SQL query with request object input"
+      - regex: '(?i)(execute|query|exec)\s*\(\s*["\'][^"\']*request\.getParameter'
+        description: "SQL query with request parameter"
+      
+      # ORM bypass patterns
+      - regex: '(?i)\.query\s*\(\s*["\'][^"\']*\$\{[^}]+\}'
+        description: "ORM query with interpolation"
+      - regex: '(?i)\.raw\s*\(\s*["\'][^"\']*\+'
+        description: "Raw SQL query with concatenation"
+      - regex: '(?i)sequelize\.query\s*\([^,]+\+\s*'
+        description: "Sequelize raw query with concatenation"
+      
+      # PHP specific
+      - regex: '(?i)mysql_query\s*\(\s*[^,]*\$'
+        description: "PHP mysql_query with variable"
+      - regex: '(?i)mysqli_query\s*\(\s*[^,]*\$'
+        description: "PHP mysqli_query with variable"
+      - regex: '(?i)pdo->query\s*\(\s*[^,]*\$'
+        description: "PHP PDO query with variable"
+    
+    exceptions:
+      - pattern: '(?i)(execute|query|exec)\s*\(\s*["\'][^"\']*\?'
+        description: "Parameterized query with placeholder"
+      - pattern: '(?i)(execute|query|exec)\s*\(\s*["\'][^"\']*\$\d+'
+        description: "PostgreSQL positional parameter"
+      - pattern: '(?i)(execute|query|exec)\s*\(\s*["\'][^"\']*:[a-zA-Z_]'
+        description: "Named parameter placeholder"
+      - pattern: '(?i)\.prepare\s*\('
+        description: "Prepared statement usage"
+      - pattern: '(?i)parameterized|prepared\s+statement'
+        description: "Explicit prepared statement reference"
+    
+    remediation: |
+      **Immediate Actions:**
+      1. Identify all SQL queries constructed with user input
+      2. Replace with parameterized queries/prepared statements
+      3. Validate and sanitize all user inputs
+      
+      **Secure Alternatives:**
+      - Use parameterized queries (prepared statements)
+      - Use ORM methods that automatically parameterize
+      - Implement input validation with allowlists
+      - Apply least privilege database permissions
+      
+      **Example (Parameterized Query - Python):**
+      ```python
+      # Instead of:
+      cursor.execute("SELECT * FROM users WHERE id = " + user_id)
+      
+      # Use:
+      cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+      ```
+      
+      **Example (Parameterized Query - Node.js):**
+      ```javascript
+      // Instead of:
+      db.query("SELECT * FROM users WHERE id = " + req.params.id)
+      
+      // Use:
+      db.query("SELECT * FROM users WHERE id = ?", [req.params.id])
+      ```
+      
+      **Example (ORM - Safe):**
+      ```javascript
+      // Sequelize:
+      User.findOne({ where: { id: req.params.id } })
+      
+      // Django ORM:
+      User.objects.get(id=user_id)
+      ```
+    
+    references:
+      - "https://cwe.mitre.org/data/definitions/89.html"
+      - "https://owasp.org/Top10/A03_2021-Injection/"
+      - "https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html"
+
+  - id: CWE-78
+    name: "Command Injection"
+    description: "Improper neutralization of special elements in OS commands can allow attackers to execute arbitrary commands."
+    severity: P0
+    category: injection
+    owasp_top10: "A03:2021 – Injection"
+    
+    patterns:
+      # System command execution with variables
+      - regex: '(?i)(system|exec|shell_exec|passthru|proc_open)\s*\(\s*[^)]*\$\{[^}]+\}'
+        description: "Command execution with template literal"
+      - regex: '(?i)(system|exec|shell_exec|passthru|proc_open)\s*\(\s*[^)]*\+\s*[^+]+\+'
+        description: "Command execution with string concatenation"
+      - regex: '(?i)(system|exec|shell_exec|passthru|proc_open)\s*\(\s*[^)]*\$_(GET|POST|REQUEST)'
+        description: "Command execution with direct user input"
+      
+      # Node.js patterns
+      - regex: '(?i)(child_process\.)?exec\s*\(\s*[^)]*\+\s*'
+        description: "Node.js exec with concatenation"
+      - regex: '(?i)(child_process\.)?execSync\s*\(\s*[^)]*\+\s*'
+        description: "Node.js execSync with concatenation"
+      - regex: '(?i)child_process\.exec\s*\(\s*[`"\'][^`"\']*\$\{[^}]+\}'
+        description: "Node.js exec with template literal"
+      - regex: '(?i)child_process\.exec\s*\(\s*[`"\'][^`"\']*\+\s*[^+]+\+'
+        description: "Node.js exec with string concatenation"
+      
+      # Python patterns
+      - regex: '(?i)os\.system\s*\(\s*[^)]*\+\s*'
+        description: "Python os.system with concatenation"
+      - regex: '(?i)os\.system\s*\(\s*f["\'][^"\']*\{[^}]+\}'
+        description: "Python os.system with f-string"
+      - regex: '(?i)subprocess\.call\s*\(\s*[^)]*\+\s*'
+        description: "Python subprocess.call with concatenation"
+      - regex: '(?i)subprocess\.run\s*\(\s*[^)]*shell\s*=\s*True'
+        description: "Python subprocess.run with shell=True"
+      - regex: '(?i)subprocess\.Popen\s*\(\s*[^)]*shell\s*=\s*True'
+        description: "Python subprocess.Popen with shell=True"
+      
+      # Java patterns
+      - regex: '(?i)Runtime\.getRuntime\(\)\.exec\s*\(\s*[^)]*\+\s*'
+        description: "Java Runtime.exec with concatenation"
+      - regex: '(?i)ProcessBuilder\s*\([^)]+\+\s*'
+        description: "Java ProcessBuilder with concatenation"
+      
+      # PHP patterns
+      - regex: '(?i)exec\s*\(\s*[^)]*\$'
+        description: "PHP exec with variable"
+      - regex: '(?i)shell_exec\s*\(\s*[^)]*\$'
+        description: "PHP shell_exec with variable"
+      - regex: '(?i)system\s*\(\s*[^)]*\$'
+        description: "PHP system with variable"
+      - regex: '(?i)popen\s*\(\s*[^)]*\$'
+        description: "PHP popen with variable"
+      - regex: '(?i)proc_open\s*\(\s*[^)]*\$'
+        description: "PHP proc_open with variable"
+      
+      # Backtick execution
+      - regex: '(?i)\$\{[^}]*exec\s+'
+        description: "Template literal with exec"
+      - regex: '(?i)`[^`]*\$\{[^}]+\}[^`]*`'
+        description: "Template literal with variable interpolation"
+    
+    exceptions:
+      - pattern: '(?i)(exec|spawn)\s*\(\s*["\'][^"\']*["\']\s*,\s*\['
+        description: "Command with array arguments (safer)"
+      - pattern: '(?i)subprocess\.run\s*\(\s*\['
+        description: "Python subprocess with list argument"
+      - pattern: '(?i)ProcessBuilder\s*\(\s*Arrays\.asList'
+        description: "Java ProcessBuilder with list"
+      - pattern: '(?i)child_process\.spawn\s*\(\s*["\'][^"\']*["\']\s*,\s*\['
+        description: "Node.js spawn with array arguments"
+      - pattern: '(?i)shell\s*=\s*False'
+        description: "Explicit shell=False"
+    
+    remediation: |
+      **Immediate Actions:**
+      1. Replace all shell command execution with safer alternatives
+      2. Use parameterized APIs that accept arrays instead of strings
+      3. Implement strict input validation if commands must be dynamic
+      
+      **Secure Alternatives:**
+      - Use language-specific safer APIs (spawn vs exec)
+      - Pass arguments as arrays instead of shell strings
+      - Avoid shell=True or equivalent options
+      - Use allowlists for command validation
+      
+      **Example (Python - Safe):**
+      ```python
+      # Instead of:
+      os.system("ls " + user_input)
+      
+      # Use:
+      import subprocess
+      subprocess.run(["ls", user_input], shell=False)
+      ```
+      
+      **Example (Node.js - Safe):**
+      ```javascript
+      // Instead of:
+      exec("ls " + userInput)
+      
+      // Use:
+      const { spawn } = require('child_process');
+      spawn('ls', [userInput])
+      ```
+      
+      **Example (Java - Safe):**
+      ```java
+      // Instead of:
+      Runtime.getRuntime().exec("ls " + userInput);
+      
+      // Use:
+      new ProcessBuilder("ls", userInput).start();
+      ```
+      
+      **Input Validation:**
+      ```python
+      import re
+      # Allowlist approach
+      if re.match(r'^[a-zA-Z0-9_\-\.]+$', user_input):
+          subprocess.run(["ls", user_input])
+      else:
+          raise ValueError("Invalid input")
+      ```
+    
+    references:
+      - "https://cwe.mitre.org/data/definitions/78.html"
+      - "https://owasp.org/Top10/A03_2021-Injection/"
+      - "https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html"
+
+  # P1 - High Severity
+  
+  - id: CWE-22
+    name: "Path Traversal"
+    description: "Improper limitation of a pathname allows attackers to access files outside intended directories."
+    severity: P1
+    category: file_handling
+    owasp_top10: "A01:2021 – Broken Access Control"
+    
+    patterns:
+      # File operations with user input
+      - regex: '(?i)(open|read|write|file)\s*\(\s*[^)]*\$_(GET|POST|REQUEST|COOKIE)'
+        description: "File operation with direct user input"
+      - regex: '(?i)(open|read|write|file)\s*\(\s*[^)]*req\.(query|body|params)'
+        description: "File operation with request object"
+      - regex: '(?i)(open|read|write|file)\s*\(\s*[^)]*request\.getParameter'
+        description: "File operation with request parameter"
+      
+      # Path concatenation
+      - regex: '(?i)(open|read|write|file)\s*\(\s*["\'][^"\']*\+\s*[^+]+\+'
+        description: "File path with concatenation"
+      - regex: '(?i)(open|read|write|file)\s*\(\s*[`"\'][^`"\']*\$\{[^}]+\}'
+        description: "File path with template literal"
+      
+      # Directory traversal patterns
+      - regex: '(?i)\.\.[\\/]'
+        description: "Directory traversal sequence"
+      - regex: '(?i)\$_(GET|POST|REQUEST|COOKIE)\[[^\]]*\]\s*\.\.'
+        description: "User input with directory traversal"
+      
+      # File system operations
+      - regex: '(?i)fs\.readFile\s*\(\s*[^)]*\+\s*'
+        description: "Node.js fs.readFile with concatenation"
+      - regex: '(?i)fs\.writeFile\s*\(\s*[^)]*\+\s*'
+        description: "Node.js fs.writeFile with concatenation"
+      - regex: '(?i)fs\.createReadStream\s*\(\s*[^)]*\+\s*'
+        description: "Node.js createReadStream with concatenation"
+      
+      # Send file patterns
+      - regex: '(?i)res\.sendFile\s*\(\s*[^)]*\+\s*'
+        description: "Express sendFile with concatenation"
+      - regex: '(?i)res\.sendFile\s*\(\s*[^)]*req\.'
+        description: "Express sendFile with request input"
+      
+      # Include/require patterns
+      - regex: '(?i)(include|require|include_once|require_once)\s*\(\s*[^)]*\$'
+        description: "PHP include with variable"
+      - regex: '(?i)(include|require|include_once|require_once)\s*\(\s*[^)]*\$_'
+        description: "PHP include with user input"
+    
+    exceptions:
+      - pattern: '(?i)(path\.join|path\.resolve|os\.path\.join|os\.path\.abspath)'
+        description: "Path normalization functions"
+      - pattern: '(?i)realpath|canonicalize'
+        description: "Path canonicalization"
+      - pattern: '(?i)allowlist|whitelist|sanitiz|validat'
+        description: "Explicit sanitization reference"
+      - pattern: '(?i)\.replace\s*\(\s*["\']\.\.[/\\\\]["\']\s*\)'
+        description: "Directory traversal removal"
+    
+    remediation: |
+      **Immediate Actions:**
+      1. Validate and sanitize all user input used in file paths
+      2. Use path normalization functions
+      3. Implement allowlists for acceptable paths
+      
+      **Secure Alternatives:**
+      - Use path.join() or equivalent to normalize paths
+      - Validate against allowlist of allowed files/directories
+      - Use indirection (file ID mapping instead of direct paths)
+      - Store files outside web root
+      
+      **Example (Node.js - Safe):**
+      ```javascript
+      const path = require('path');
+      
+      // Instead of:
+      fs.readFile('./uploads/' + req.query.filename)
+      
+      // Use:
+      const sanitized = path.normalize(req.query.filename).replace(/^(\.\.(\/|\\|$))+/, '');
+      const fullPath = path.join('./uploads', sanitized);
+      fs.readFile(fullPath)
+      ```
+      
+      **Example (Python - Safe):**
+      ```python
+      import os
+      
+      # Instead of:
+      open('./uploads/' + user_input)
+      
+      # Use:
+      base_path = os.path.abspath('./uploads')
+      full_path = os.path.abspath(os.path.join(base_path, user_input))
+      if full_path.startswith(base_path):
+          open(full_path)
+      ```
+      
+      **Example (Allowlist Approach):**
+      ```javascript
+      const allowedFiles = ['report.pdf', 'data.csv', 'summary.txt'];
+      const filename = req.query.filename;
+      
+      if (allowedFiles.includes(filename)) {
+          fs.readFile('./uploads/' + filename);
+      }
+      ```
+    
+    references:
+      - "https://cwe.mitre.org/data/definitions/22.html"
+      - "https://owasp.org/Top10/A01_2021-Broken_Access_Control/"
+      - "https://cheatsheetseries.owasp.org/cheatsheets/Path_Traversal_Prevention_Cheat_Sheet.html"
+
+  - id: CWE-200
+    name: "Information Exposure"
+    description: "Exposure of sensitive information to unauthorized actors through error messages, logs, or responses."
+    severity: P1
+    category: information_disclosure
+    owasp_top10: "A04:2021 – Insecure Design"
+    
+    patterns:
+      # Error message exposure
+      - regex: '(?i)res\.send\s*\(\s*err\.(message|stack|toString)\s*\)'
+        description: "Express sending error details to client"
+      - regex: '(?i)res\.json\s*\(\s*\{[^}]*error\s*:\s*err'
+        description: "Express sending error object as JSON"
+      - regex: '(?i)echo\s+\$?\w*error'
+        description: "Echoing error information"
+      - regex: '(?i)print\s*\(\s*[^)]*traceback'
+        description: "Printing traceback information"
+      
+      # Stack trace exposure
+      - regex: '(?i)res\.send\s*\(\s*[^)]*stack'
+        description: "Sending stack trace to client"
+      - regex: '(?i)res\.json\s*\(\s*[^)]*stack'
+        description: "Sending stack trace in JSON response"
+      - regex: '(?i)catch\s*\([^)]*\)\s*\{[^}]*res\.send\s*\('
+        description: "Catch block sending error to response"
+      
+      # Debug information
+      - regex: '(?i)console\.log\s*\(\s*[^)]*(password|secret|key|token)'
+        description: "Logging sensitive data to console"
+      - regex: '(?i)print\s*\(\s*[^)]*(password|secret|key|token)'
+        description: "Printing sensitive data"
+      - regex: '(?i)logger\.(debug|info|warn|error)\s*\([^)]*(password|secret|key|token)'
+        description: "Logging sensitive data"
+      
+      # Verbose error pages
+      - regex: '(?i)app\.use\s*\(\s*errorHandler\s*\)'
+        description: "Generic error handler (verify it doesn't leak info)"
+      - regex: '(?i)DEBUG\s*=\s*True'
+        description: "Debug mode enabled (Django/Flask)"
+      - regex: '(?i)APP_DEBUG\s*=\s*true'
+        description: "Debug mode enabled (Laravel)"
+      
+      # Sensitive data in responses
+      - regex: '(?i)res\.json\s*\(\s*[^)]*password'
+        description: "Sending password in JSON response"
+      - regex: '(?i)res\.json\s*\(\s*[^)]*secret'
+        description: "Sending secret in JSON response"
+      - regex: '(?i)res\.json\s*\(\s*[^)]*private[_-]?key'
+        description: "Sending private key in JSON response"
+      
+      # Database error exposure
+      - regex: '(?i)catch\s*\([^)]*\)\s*\{[^}]*res\.send\s*\(\s*["\'][^"\']*SQL'
+        description: "Sending SQL error to client"
+      - regex: '(?i)catch\s*\([^)]*\)\s*\{[^}]*res\.send\s*\(\s*["\'][^"\']*database'
+        description: "Sending database error to client"
+    
+    exceptions:
+      - pattern: '(?i)logger\.(debug|info|warn|error)\s*\([^)]*\*+\*'
+        description: "Logging masked data"
+      - pattern: '(?i)process\.env\.NODE_ENV\s*===?\s*["\']development["\']'
+        description: "Environment-specific debug code"
+      - pattern: '(?i)if\s*\(\s*process\.env\.NODE_ENV'
+        description: "Environment check"
+    
+    remediation: |
+      **Immediate Actions:**
+      1. Review all error handling code
+      2. Remove sensitive data from logs and error responses
+      3. Implement generic error messages for production
+      
+      **Secure Alternatives:**
+      - Use generic error messages for users
+      - Log detailed errors internally only
+      - Implement proper error handling middleware
+      - Sanitize data before logging
+      
+      **Example (Node.js/Express - Safe):**
+      ```javascript
+      // Instead of:
+      app.get('/api/data', (req, res) => {
+        try {
+          // ... code
+        } catch (err) {
+          res.status(500).send(err.stack);  // DON'T DO THIS
+        }
+      });
+      
+      // Use:
+      app.get('/api/data', (req, res) => {
+        try {
+          // ... code
+        } catch (err) {
+          console.error(err);  // Log internally
+          res.status(500).json({ error: 'Internal server error' });
+        }
+      });
+      ```
+      
+      **Example (Error Handler Middleware):**
+      ```javascript
+      app.use((err, req, res, next) => {
+        console.error(err);  // Internal logging
+        
+        if (process.env.NODE_ENV === 'production') {
+          res.status(500).json({ error: 'Something went wrong' });
+        } else {
+          res.status(500).json({ error: err.message });
+        }
+      });
+      ```
+      
+      **Example (Safe Logging):**
+      ```javascript
+      // Instead of:
+      console.log('User login:', user.password);
+      
+      // Use:
+      console.log('User login:', { username: user.username });
+      ```
+    
+    references:
+      - "https://cwe.mitre.org/data/definitions/200.html"
+      - "https://owasp.org/Top10/A04_2021-Insecure_Design/"
+      - "https://cheatsheetseries.owasp.org/cheatsheets/Error_Handling_Cheat_Sheet.html"
+
+  - id: CWE-306
+    name: "Missing Authentication"
+    description: "Critical functionality does not perform authentication, allowing unauthorized access."
+    severity: P1
+    category: authentication
+    owasp_top10: "A07:2021 – Identification and Authentication Failures"
+    
+    patterns:
+      # Express routes without auth middleware
+      - regex: '(?i)app\.(get|post|put|delete|patch)\s*\(\s*["\'][^"\']*(admin|api|internal|private|config|settings|user|account)'
+        description: "Sensitive route without visible auth"
+        requires_follow_up: true
+      - regex: '(?i)router\.(get|post|put|delete|patch)\s*\(\s*["\'][^"\']*(admin|api|internal|private)'
+        description: "Router sensitive route without visible auth"
+        requires_follow_up: true
+      
+      # Admin/sensitive endpoints
+      - regex: '(?i)(@app\.route|@router)\s*\(\s*["\'][^"\']*(admin|config|settings|internal)'
+        description: "Flask/FastAPI sensitive route"
+        requires_follow_up: true
+      - regex: '(?i)@RequestMapping\s*\(\s*["\'][^"\']*(admin|config|settings|internal)'
+        description: "Spring sensitive route"
+        requires_follow_up: true
+      
+      # File upload endpoints without auth
+      - regex: '(?i)app\.(post|put)\s*\(\s*["\'][^"\']*upload'
+        description: "Upload endpoint without visible auth"
+        requires_follow_up: true
+      - regex: '(?i)app\.(post|put)\s*\(\s*["\'][^"\']*file'
+        description: "File endpoint without visible auth"
+        requires_follow_up: true
+      
+      # Database admin endpoints
+      - regex: '(?i)app\.(get|post)\s*\(\s*["\'][^"\']*(db|database|sql|query)'
+        description: "Database endpoint without visible auth"
+        requires_follow_up: true
+      
+      # API endpoints without auth
+      - regex: '(?i)app\.(get|post|put|delete)\s*\(\s*["\']/api/'
+        description: "API endpoint without visible auth"
+        requires_follow_up: true
+      
+      # Delete operations
+      - regex: '(?i)app\.delete\s*\('
+        description: "DELETE endpoint without visible auth"
+        requires_follow_up: true
+      
+      # Admin interfaces
+      - regex: '(?i)(admin|management|console|dashboard)\s*[=:]\s*true'
+        description: "Admin interface enabled"
+      - regex: '(?i)app\.use\s*\(\s*["\'][^"\']*(admin|management)'
+        description: "Admin middleware without auth check"
+    
+    exceptions:
+      - pattern: '(?i)auth|authenticate|verifyToken|checkAuth|requireAuth|isAuthenticated|passport'
+        description: "Authentication middleware present"
+      - pattern: '(?i)jwt|session|oauth|oauth2|sso|saml'
+        description: "Authentication mechanism present"
+      - pattern: '(?i)@login_required|@require_auth|@authenticated'
+        description: "Authentication decorator present"
+      - pattern: '(?i)Security\s*\(|security\s*[=:]'
+        description: "Security configuration present"
+    
+    remediation: |
+      **Immediate Actions:**
+      1. Audit all endpoints to identify missing authentication
+      2. Implement authentication on all sensitive endpoints
+      3. Apply principle of least privilege
+      
+      **Secure Alternatives:**
+      - Implement centralized authentication middleware
+      - Use established authentication libraries/frameworks
+      - Apply authentication at the route level
+      - Implement API keys or OAuth for API access
+      
+      **Example (Express Middleware):**
+      ```javascript
+      // Authentication middleware
+      const authenticate = (req, res, next) => {
+        const token = req.headers.authorization;
+        if (!token) {
+          return res.status(401).json({ error: 'Authentication required' });
+        }
+        // Verify token...
+        next();
+      };
+      
+      // Apply to specific routes
+      app.get('/api/admin/users', authenticate, (req, res) => {
+        // Admin only logic
+      });
+      
+      // Or apply globally with exceptions
+      app.use('/api', authenticate);
+      app.use('/api/public', publicRoutes);  // No auth needed
+      ```
+      
+      **Example (Flask - Python):**
+      ```python
+      from functools import wraps
+      from flask import session, redirect
+      
+      def login_required(f):
+          @wraps(f)
+          def decorated_function(*args, **kwargs):
+              if 'user_id' not in session:
+                  return redirect('/login')
+              return f(*args, **kwargs)
+          return decorated_function
+      
+      @app.route('/admin')
+      @login_required
+      def admin():
+          return render_template('admin.html')
+      ```
+      
+      **Example (Spring Boot - Java):**
+      ```java
+      @Configuration
+      @EnableWebSecurity
+      public class SecurityConfig extends WebSecurityConfigurerAdapter {
+          @Override
+          protected void configure(HttpSecurity http) throws Exception {
+              http
+                  .authorizeRequests()
+                      .antMatchers("/public/**").permitAll()
+                      .antMatchers("/admin/**").authenticated()
+                      .anyRequest().authenticated();
+          }
+      }
+      ```
+    
+    references:
+      - "https://cwe.mitre.org/data/definitions/306.html"
+      - "https://owasp.org/Top10/A07_2021-Identification_and_Authentication_Failures/"
+      - "https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html"
+
+  - id: CWE-862
+    name: "Missing Authorization"
+    description: "The product does not perform an authorization check when an actor attempts to access a resource or perform an action."
+    severity: P1
+    category: authorization
+    owasp_top10: "A01:2021 – Broken Access Control"
+    
+    patterns:
+      # Direct object references
+      - regex: '(?i)(find|get|select|query)\s*\(\s*[^)]*req\.(params|query|body)\.id\s*\)'
+        description: "Direct object reference from user input"
+      - regex: '(?i)(find|get|select|query)\s*\(\s*[^)]*\$_GET\[.*id\]'
+        description: "Direct object reference from GET parameter"
+      - regex: '(?i)(find|get|select|query)\s*\(\s*[^)]*\$_POST\[.*id\]'
+        description: "Direct object reference from POST parameter"
+      
+      # IDOR patterns
+      - regex: '(?i)WHERE\s+user_id\s*=\s*[^\d]\$'
+        description: "Query without user ownership check"
+      - regex: '(?i)WHERE\s+owner_id\s*=\s*[^\d]\$'
+        description: "Query without ownership verification"
+      - regex: '(?i)findById\s*\(\s*[^)]*\)'
+        description: "Find by ID without authorization check"
+        requires_follow_up: true
+      
+      # Admin checks
+      - regex: '(?i)(admin|role|permission)\s*[=:]\s*false'
+        description: "Admin/role check disabled"
+      - regex: '(?i)skipAuthorization\s*[=:]\s*true'
+        description: "Authorization check skipped"
+      - regex: '(?i)@PreAuthorize|@Secured|@RolesAllowed'
+        description: "Authorization annotation present"
+        inverted: true
+      
+      # Resource access without checks
+      - regex: '(?i)app\.(get|post|put|delete)\s*\(\s*["\'][^"\']*/:id["\']\s*\)'
+        description: "Route with ID parameter without auth check"
+        requires_follow_up: true
+      - regex: '(?i)app\.(get|post|put|delete)\s*\(\s*["\'][^"\']*/\d+["\']\s*\)'
+        description: "Route with numeric ID without auth check"
+        requires_follow_up: true
+      
+      # User data access
+      - regex: '(?i)(user|account|profile)\s*[=:]\s*req\.(params|query)'
+        description: "User data access from request parameters"
+      - regex: '(?i)User\.find\s*\(\s*\{\s*id\s*:\s*req\.'
+        description: "User lookup from request without auth"
+      
+      # File access without ownership check
+      - regex: '(?i)(download|view|open)\s*\(\s*[^)]*req\.(params|query)'
+        description: "File access from request without authorization"
+    
+    exceptions:
+      - pattern: '(?i)userId\s*[=:]\s*req\.(user|session)'
+        description: "Using authenticated user ID"
+      - pattern: '(?i)req\.user\.id|session\.user_id'
+        description: "Using session user ID"
+      - pattern: '(?i)@PreAuthorize|@Secured|@RolesAllowed|@Authorize'
+        description: "Authorization annotation present"
+      - pattern: '(?i)can\w+|hasPermission|isOwner|checkAccess|authorize'
+        description: "Authorization check function"
+      - pattern: '(?i)WHERE\s+user_id\s*=\s*\$\{?req\.user'
+        description: "Query with authenticated user filter"
+      - pattern: '(?i)ACL|access[_-]?control|permission[_-]?check'
+        description: "Access control mechanism"
+    
+    remediation: |
+      **Immediate Actions:**
+      1. Implement authorization checks on all resource access
+      2. Verify users can only access their own resources
+      3. Implement role-based access control (RBAC) where needed
+      
+      **Secure Alternatives:**
+      - Implement authorization middleware
+      - Use resource-level authorization checks
+      - Implement attribute-based access control (ABAC)
+      - Use established authorization libraries
+      
+      **Example (Node.js/Express - Ownership Check):**
+      ```javascript
+      // Instead of:
+      app.get('/api/documents/:id', async (req, res) => {
+        const doc = await Document.findById(req.params.id);
+        res.json(doc);
+      });
+      
+      // Use:
+      app.get('/api/documents/:id', authenticate, async (req, res) => {
+        const doc = await Document.findOne({
+          _id: req.params.id,
+          ownerId: req.user.id  // Ensure user owns the resource
+        });
+        if (!doc) {
+          return res.status(404).json({ error: 'Not found' });
+        }
+        res.json(doc);
+      });
+      ```
+      
+      **Example (Authorization Middleware):**
+      ```javascript
+      const authorize = (resource, action) => {
+        return async (req, res, next) => {
+          const hasPermission = await checkPermission(
+            req.user.id, 
+            resource, 
+            action,
+            req.params.id
+          );
+          if (!hasPermission) {
+            return res.status(403).json({ error: 'Forbidden' });
+          }
+          next();
+        };
+      };
+      
+      app.delete('/api/documents/:id', 
+        authenticate, 
+        authorize('document', 'delete'),
+        async (req, res) => {
+          await Document.deleteOne({ _id: req.params.id });
+          res.json({ success: true });
+        }
+      );
+      ```
+      
+      **Example (Spring Security - Java):**
+      ```java
+      @RestController
+      @RequestMapping("/api/documents")
+      public class DocumentController {
+          
+          @GetMapping("/{id}")
+          @PreAuthorize("@documentService.isOwner(#id, authentication.name)")
+          public Document getDocument(@PathVariable Long id) {
+              return documentService.findById(id);
+          }
+          
+          @DeleteMapping("/{id}")
+          @PreAuthorize("hasRole('ADMIN') or @documentService.isOwner(#id, authentication.name)")
+          public void deleteDocument(@PathVariable Long id) {
+              documentService.delete(id);
+          }
+      }
+      ```
+      
+      **Best Practices:**
+      - Always verify resource ownership before access
+      - Use deny-by-default approach
+      - Implement centralized authorization logic
+      - Log authorization failures
+      - Test with different user roles and ownership scenarios
+    
+    references:
+      - "https://cwe.mitre.org/data/definitions/862.html"
+      - "https://owasp.org/Top10/A01_2021-Broken_Access_Control/"
+      - "https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html"
+
+# Severity definitions
+severity_levels:
+  P0:
+    name: "Critical"
+    description: "Immediate risk of data breach, system compromise, or unauthorized access"
+    sla_hours: 24
+    requires_immediate_attention: true
+    
+  P1:
+    name: "High"
+    description: "Significant security risk that should be addressed promptly"
+    sla_hours: 72
+    requires_immediate_attention: false
+    
+  P2:
+    name: "Medium"
+    description: "Moderate security risk that should be addressed in next sprint"
+    sla_hours: 168
+    
+  P3:
+    name: "Low"
+    description: "Minor security concern, address as time permits"
+    sla_hours: 336
+
+# Scan configuration
+scan_configuration:
+  file_extensions:
+    include:
+      - .js
+      - .ts
+      - .jsx
+      - .tsx
+      - .py
+      - .java
+      - .php
+      - .rb
+      - .go
+      - .cs
+      - .cpp
+      - .c
+      - .h
+      - .swift
+      - .kt
+      - .scala
+      - .rs
+    exclude:
+      - .min.js
+      - .bundle.js
+      - .spec.js
+      - .test.js
+      - _test.go
+      - _spec.rb
+  
+  directories:
+    exclude:
+      - node_modules/
+      - vendor/
+      - .git/
+      - dist/
+      - build/
+      - coverage/
+      - __pycache__/
+      - .pytest_cache/
+      - target/
+      - bin/
+      - obj/
+  
+  scan_depth:
+    max_file_size_kb: 1024
+    max_lines_per_file: 10000
+    follow_symlinks: false
+  
+  performance:
+    parallel_scans: true
+    max_workers: 4
+    cache_results: true
+
+# Notification settings
+notifications:
+  on_findings:
+    P0:
+      - email
+      - slack
+      - webhook
+    P1:
+      - email
+      - slack
+    P2:
+      - email
+    P3:
+      - digest_only
+  
+  channels:
+    email:
+      recipients:
+        - security-team@example.com
+    slack:
+      webhook_url: "${SLACK_SECURITY_WEBHOOK}"
+      channel: "#security-alerts"
+    webhook:
+      url: "${SECURITY_WEBHOOK_URL}"
+      headers:
+        Authorization: "Bearer ${SECURITY_WEBHOOK_TOKEN}"
+
+# Integration settings
+integrations:
+  ci_cd:
+    fail_on_findings:
+      - P0
+      - P1
+    allow_bypass_with_approval: true
+    
+  sast_tools:
+    - semgrep
+    - codeql
+    - sonarqube
+    
+  issue_tracking:
+    create_tickets: true
+    ticket_template: "security-finding"
+    auto_assign:
+      P0: "security-oncall"
+      P1: "security-team"

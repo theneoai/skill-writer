@@ -1,0 +1,64 @@
+validators:
+  semver:
+    name: semver
+    description: Validates semantic version strings (e.g., 1.2.3, 2.0.0-beta.1)
+    pattern: '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$'
+
+  date_iso:
+    name: date_iso
+    description: Validates ISO 8601 date strings (e.g., 2024-01-15, 2024-01-15T10:30:00Z)
+    pattern: '^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])(?:T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d))?$'
+
+  yaml_frontmatter:
+    name: yaml_frontmatter
+    description: Validates YAML frontmatter block at the start of a document
+    pattern: '^---\s*\n([\s\S]*?)\n---\s*\n'
+
+  no_placeholders:
+    name: no_placeholders
+    description: Checks that content contains no placeholder strings like TODO, FIXME, XXX, or bracketed placeholders
+    pattern: '(?i)(TODO|FIXME|XXX|\{\{[^}]+\}\}|\[\[?[^\]]+\]\]?|<[^>]+>)'
+
+scoring:
+  calculate_variance:
+    name: calculate_variance
+    description: Calculates the variance of a set of numeric scores
+    formula: |
+      function calculate_variance(scores) {
+        if (!scores || scores.length === 0) return 0;
+        const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
+        const squaredDiffs = scores.map(score => Math.pow(score - mean, 2));
+        return squaredDiffs.reduce((a, b) => a + b, 0) / scores.length;
+      }
+
+  normalize_score:
+    name: normalize_score
+    description: Normalizes a score to a 0-100 scale given min and max bounds
+    formula: |
+      function normalize_score(score, min, max) {
+        if (max === min) return 100;
+        const normalized = ((score - min) / (max - min)) * 100;
+        return Math.max(0, Math.min(100, normalized));
+      }
+
+formatters:
+  report_table:
+    name: report_table
+    description: Formats data as a markdown table with headers and aligned columns
+    template: |
+      function report_table(headers, rows) {
+        if (!headers || headers.length === 0) return '';
+        
+        const headerRow = '| ' + headers.join(' | ') + ' |';
+        const separatorRow = '| ' + headers.map(() => '---').join(' | ') + ' |';
+        
+        const dataRows = rows.map(row => {
+          const cells = headers.map((header, index) => {
+            const value = row[header] || row[index] || '';
+            return String(value).replace(/\|/g, '\\|');
+          });
+          return '| ' + cells.join(' | ') + ' |';
+        });
+        
+        return [headerRow, separatorRow, ...dataRows].join('\n');
+      }
