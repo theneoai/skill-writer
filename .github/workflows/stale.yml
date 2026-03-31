@@ -1,0 +1,57 @@
+name: Mark stale issues and pull requests
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # 每天午夜运行 / Run daily at midnight
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    
+    steps:
+    - uses: actions/stale@v9
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        
+        # Issue 配置 / Issue configuration
+        stale-issue-message: |
+          此 Issue 已被标记为过时，因为 60 天内没有活动。
+          如果此问题仍然存在，请在 7 天内添加评论，否则将被关闭。
+          
+          This issue has been marked as stale because it has been open for 60 days with no activity.
+          If this issue is still relevant, please comment within 7 days or it will be closed.
+        close-issue-message: |
+          此 Issue 因 60 天无活动且 7 天内无响应而被关闭。
+          如有需要，请重新打开。
+          
+          This issue was closed due to 60 days of inactivity and no response within 7 days.
+          Please reopen if needed.
+        
+        # PR 配置 / PR configuration
+        stale-pr-message: |
+          此 PR 已被标记为过时，因为 60 天内没有活动。
+          如果此 PR 仍然有效，请在 7 天内添加评论，否则将被关闭。
+          
+          This PR has been marked as stale because it has been open for 60 days with no activity.
+          If this PR is still valid, please comment within 7 days or it will be closed.
+        close-pr-message: |
+          此 PR 因 60 天无活动且 7 天内无响应而被关闭。
+          如有需要，请重新打开。
+          
+          This PR was closed due to 60 days of inactivity and no response within 7 days.
+          Please reopen if needed.
+        
+        # 时间配置 / Time configuration
+        days-before-stale: 60
+        days-before-close: 7
+        
+        # 排除标签 / Exempt labels
+        exempt-issue-labels: 'pinned,security,help wanted'
+        exempt-pr-labels: 'pinned,security,help wanted'
+        
+        # 其他选项 / Other options
+        remove-stale-when-updated: true
+        operations-per-run: 100
