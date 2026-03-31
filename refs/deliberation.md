@@ -1,95 +1,187 @@
-# Multi-LLM Deliberation Protocol Reference
+# Multi-LLM Deliberation Protocol
 
-> **Purpose**: Complete deliberation protocol specification
-> **Load**: When §2.0 Multi-LLM Deliberation is accessed
-> **Full doc**: SKILL.md §2.0
-
----
-
-## §2.1 Protocol Overview
-
-The Multi-LLM Deliberation Protocol defines how three independent LLM instances collaborate to produce high-quality skill artifacts. Each LLM operates as a specialized role with distinct responsibilities. The protocol uses a **hierarchical** structure where LLM-3 (Arbiter) sits at the top tier to review and override LLM-1 and LLM-2 outputs when consensus cannot be reached, ensuring final decisions respect security constraints and quality rules.
-
-### §2.2 LLM Role Definitions
-
-| LLM | Role | Responsibility | Output Format |
-|-----|------|----------------|---------------|
-| LLM-1 | Generator | Produce initial draft from requirements | Structured SKILL.md template |
-| LLM-2 | Reviewer | Security and quality audit | Severity-tagged issue list |
-| LLM-3 | Arbiter | Cross-validate and arbitrate | Consensus matrix + final judgment |
-
-### §2.3 Message Exchange Format
-
-
-```
-PHASE: [PARALLEL|SEQUENTIAL]
-TIMEOUT: [30s|60s]
-TURN: [1-N]
-
-MSG-LLM1: [content]
-MSG-LLM2: [content]
-MSG-LLM3: [content]
-
-CONSENSUS: [UNANIMOUS|MAJORITY|SPLIT|UNRESOLVED]
-ARBITRATION_NEEDED: [true|false]
-```
-
-**Message Types**:
-- `CONTRIBUTION`: LLM provides its independent output
-- `REVIEW`: LLM comments on another LLM's output
-- `CHALLENGE`: LLM disputes a claim or suggestion
-- `ARBITRATION`: LLM-3 resolves a dispute
-- `FINAL`: Consensus reached, artifact approved
+> **Purpose**: Full specification for 3-LLM deliberation used in CREATE, EVALUATE, and OPTIMIZE modes.
+> **Load**: When §4 (LoongFlow) or §12 (Multi-LLM) of `claude/skill-framework.md` is accessed.
+> **Main doc**: `claude/skill-framework.md §4, §12`
 
 ---
 
-## §2.4 DELIBERATION ERROR RECOVERY
+## §1  LoongFlow — Plan-Execute-Summarize
 
-| Error Condition | Recovery Action | Escalation Path |
-|-----------------|-----------------|-----------------|
-| LLM-1 timeout | Retry with exponential backoff (1s, 2s, 4s) | 3 failures → HUMAN_REVIEW |
-| LLM-2 timeout | Skip audit, apply baseline checklist only | 3 failures → ABORT delivery |
-| LLM-3 timeout | Use majority vote from LLM-1 and LLM-2 | 2 failures → HUMAN_REVIEW |
-| Disagreement on CRITICAL | Immediate arbitration required | LLM-3 must resolve within 60s |
-| Disagreement on WARNING | Majority vote decides | 2 rounds unresolved → HUMAN_REVIEW |
-| No consensus after 2 rounds | Escalate entire artifact to HUMAN_REVIEW | Log all inputs for audit |
-| Hallucinated content detected | Reject output, retry from last checkpoint | 2 hallucinations → ABORT |
-
-**Consensus Matrix Format**:
+**Architecture**: Replaces rigid 9-step state machines with a flexible 3-phase cognitive loop.
 
 ```
-DECISION_MATRIX:
-  | Item          | LLM-1  | LLM-2  | LLM-3  | Consensus |
-  |---------------|--------|--------|--------|-----------|
-  | Structure     | PASS   | PASS   | PASS   | UNANIMOUS |
-  | Security      | PASS   | FAIL   | PASS   | SPLIT     |
-  | Completeness  | PASS   | WARN   | PASS   | MAJORITY  |
+PLAN
+  ├── LLM-1 proposes approach
+  ├── LLM-2 audits approach (security + quality risks)
+  ├── LLM-3 arbitrates → builds cognitive graph of steps
+  └── Output: consensus plan or HUMAN_REVIEW
 
-RESOLUTION: [Accept LLM-2 security finding, refactor, retry Step 5]
+EXECUTE
+  ├── Follow cognitive graph step by step
+  ├── Hard checkpoint after each step
+  ├── Error recovery active (§4 below)
+  └── Output: completed artifact or partial + recovery log
+
+SUMMARIZE
+  ├── LLM-3 cross-validates artifact against requirements
+  ├── Update evolution memory (invocation count, result, latency)
+  ├── Produce consensus matrix
+  └── Route: CERTIFIED | TEMP_CERT | HUMAN_REVIEW | ABORT
 ```
-
-### §2.5 Timeout Handling
-
-- **Per-LLM Timeout**: 30 seconds for single turn
-- **Phase Timeout**: 60 seconds for parallel LLMs
-- **Total Deliberation Timeout**: 180 seconds (6 turns maximum)
-- **Graceful Degradation**: If any LLM exceeds timeout, apply single-LLM deliberation mode with increased validation
 
 ---
 
-## §2.6 Failure Modes (Anti-Patterns)
+## §2  Role Specifications
 
-- **Hardcoded Credentials** (CWE-798): API keys or passwords in skill output → ABORT
-- **SQL Injection** (CWE-89): Unsanitized user input in queries → ABORT
-- **Hallucinated Function Calls**: LLM generates non-existent tool names → Reject and retry
-- **Incomplete Requirements**: Proceeding to Step 4 without full requirements → Block and gather more info
-- **Single Point of Failure**: No fallback when LLM-1 or LLM-2 fails → Requires degraded mode activation
-- **Context Window Overflow**: Input exceeds LLM context limit → Split/chunk large documents into smaller segments, process each chunk with reference tracking to maintain cross-reference integrity across chunks
-- **Mode Routing Ambiguity**: Multiple modes with equal keyword match count → Default to CREATE, request clarification
-- **Circular Deliberation**: LLM-1 output fed back to LLM-1 for "review" → Strict role separation enforced
-- **Premature Delivery**: Skipping quality gates for "urgent" requests → TEMP_CERT only, 72hr review mandatory
-- **Golden Path Dependency**: Assuming past success predicts future quality → Each delivery re-evaluated independently
-- **Constraint Violation**: Ignoring defined security rules or quality constraints → All constraints must pass verification before delivery
-- **Rule**: Hardcoded credentials (CWE-798) and SQL injection (CWE-89) are absolute rules that cannot be bypassed
-- **Constraint**: Parallel LLM execution must respect timeout constraints
-- **Rule**: All deliberation outputs must be validated against established quality rules before delivery
+| Role | LLM | Responsibility | Authority |
+|------|-----|----------------|-----------|
+| **Generator** | LLM-1 | Produce initial draft / score / fix proposal | Proposes only |
+| **Reviewer** | LLM-2 | Security + quality audit; severity-tagged issue list | Can block (ERROR) |
+| **Arbiter** | LLM-3 | Cross-validate; resolve SPLIT; produce consensus matrix | Can override LLM-1 and LLM-2 |
+
+**LLM-3 Override Conditions** (Arbiter may override):
+- LLM-2 flags ERROR but LLM-1 disagrees and LLM-3 agrees with LLM-2 → LLM-3 wins
+- Security red line detected by any LLM → LLM-3 calls ABORT regardless of other votes
+- Score divergence > 15 points between LLM-1 and LLM-2 → LLM-3 casts deciding score
+
+---
+
+## §3  Message Exchange Protocol
+
+### Timing
+
+| Scope | Timeout | Retry |
+|-------|---------|-------|
+| Per-LLM turn | 30 s | Up to 3× with exponential backoff (1s, 2s, 4s) |
+| Per-phase | 60 s | If phase exceeds 60 s → degrade to majority vote |
+| Total deliberation | 180 s | Max 6 turns total |
+
+### Turn Structure
+
+```
+PHASE [PARALLEL | SEQUENTIAL]
+TURN N / max-6
+LLM-K: <role> | <output>
+```
+
+**Parallel phases**: LLM-1 and LLM-2 work simultaneously; LLM-3 waits for both.
+**Sequential phases**: LLM-1 draft → LLM-2 review → LLM-3 arbitrate.
+
+---
+
+## §4  Consensus Matrix
+
+After every deliberation phase, LLM-3 produces a consensus matrix:
+
+```
+| Item               | LLM-1   | LLM-2   | LLM-3   | Consensus   |
+|--------------------|---------|---------|---------|-------------|
+| Structure          | PASS    | PASS    | PASS    | UNANIMOUS   |
+| Trigger Coverage   | PASS    | FAIL    | PASS    | SPLIT       |
+| Security CWE-89    | PASS    | FAIL    | FAIL    | MAJORITY    |
+| Output Clarity     | PASS    | PASS    | PASS    | UNANIMOUS   |
+```
+
+**Consensus rules**:
+
+| Result | Condition | Action |
+|--------|-----------|--------|
+| UNANIMOUS | All 3 agree | Proceed with full confidence |
+| MAJORITY | 2 of 3 agree | Proceed; log minority view |
+| SPLIT | Each has different position | One revision cycle; re-deliberate |
+| UNRESOLVED | No majority after 2 rounds | Escalate to HUMAN_REVIEW |
+
+---
+
+## §5  Error Recovery Paths
+
+### LLM Timeout
+
+| Failure | Recovery |
+|---------|---------|
+| LLM-1 timeout (≤3×) | Retry with backoff → if 3× fail → use LLM-2 draft as fallback |
+| LLM-2 timeout (≤3×) | Skip audit, apply baseline security checklist only → flag WARNING |
+| LLM-2 timeout (>3×) | ABORT delivery; require human review of security |
+| LLM-3 timeout (≤2×) | Use majority vote from LLM-1 + LLM-2 |
+| LLM-3 timeout (>2×) | Escalate entire artifact to HUMAN_REVIEW |
+
+### Content Failures
+
+| Failure | Recovery |
+|---------|---------|
+| Hallucinated content detected | Reject output; retry from last checkpoint (max 2×) |
+| Hallucination on 3rd attempt | ABORT with `{"abort_reason": "repeated_hallucination"}` |
+| Disagreement on CRITICAL item | Immediate LLM-3 arbitration required (60 s SLA) |
+| Disagreement on WARNING item | Majority vote; if still SPLIT after 2 rounds → HUMAN_REVIEW |
+| No consensus after 2 full rounds | Escalate entire artifact to HUMAN_REVIEW |
+
+### Phase Timeout
+
+```
+Phase exceeds 60 s:
+  → Degrade to majority vote on all pending items
+  → Increase checkpoint strictness by 50% for remaining phases
+  → Log: {"phase_timeout": true, "degraded_mode": "majority_vote"}
+```
+
+---
+
+## §6  Chunked Processing (Context Overflow)
+
+When input exceeds LLM context limit:
+
+### Chunk Protocol
+
+```
+1. SPLIT input into chunks of ≤ 2000 tokens each
+2. Assign each chunk a reference ID: chunk-001, chunk-002, ...
+3. For each chunk:
+   a. Process with full deliberation
+   b. Record cross-chunk references (e.g. "chunk-002 depends on chunk-001 §3")
+   c. Validate chunk result before proceeding to next chunk
+4. MERGE: LLM-3 merges chunk outputs
+5. VALIDATE: Check cross-reference integrity across all chunks
+6. If any chunk validation fails → reprocess that chunk only (not full restart)
+```
+
+**严禁**: Skip chunk validation when processing segmented documents.
+
+### Reference Tracking Format
+
+```json
+{
+  "chunk_id": "chunk-002",
+  "depends_on": ["chunk-001"],
+  "cross_refs": [
+    {"from": "chunk-002 §3", "to": "chunk-001 §1.2", "type": "inherits"}
+  ],
+  "validation_status": "PASS"
+}
+```
+
+---
+
+## §7  Deliberation Log Entry
+
+Every deliberation appends to `.skill-audit/deliberation.jsonl`:
+
+```json
+{
+  "timestamp": "<ISO-8601>",
+  "mode": "<mode>",
+  "skill_name": "<name>",
+  "phase": "<phase_name>",
+  "turns": 0,
+  "llm1_output_hash": "<sha256>",
+  "llm2_issues_count": 0,
+  "llm2_severity": {"ERROR": 0, "WARNING": 0, "INFO": 0},
+  "llm3_consensus": "UNANIMOUS|MAJORITY|SPLIT|UNRESOLVED",
+  "consensus_matrix": {},
+  "override_invoked": false,
+  "override_reason": null,
+  "duration_ms": 0,
+  "phase_timeout": false,
+  "degraded_mode": null
+}
+```
