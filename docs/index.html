@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skill Framework - 让 AI 技能像软件一样可测试、可迭代</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Hero Section -->
+    <header class="hero">
+        <nav class="navbar">
+            <div class="container">
+                <a href="#" class="logo">
+                    <span class="logo-icon">🏆</span>
+                    <span class="logo-text">Skill Framework</span>
+                </a>
+                <ul class="nav-links">
+                    <li><a href="#features">特性</a></li>
+                    <li><a href="#examples">示例</a></li>
+                    <li><a href="#docs">文档</a></li>
+                    <li><a href="https://github.com/theneoai/skill" target="_blank">GitHub</a></li>
+                </ul>
+                <a href="https://github.com/theneoai/skill" class="btn btn-primary">Get Started</a>
+            </div>
+        </nav>
+
+        <div class="hero-content">
+            <div class="container">
+                <div class="hero-badge">
+                    <span class="badge">🎉 v1.0.0 正式发布</span>
+                </div>
+                <h1 class="hero-title">
+                    让 AI 技能像软件一样<br>
+                    <span class="gradient-text">可测试、可迭代</span>
+                </h1>
+                <p class="hero-subtitle">
+                    生产级 AI 技能的 CI/CD 系统。通过 1000 分评估体系、多 LLM 审议机制和自进化系统，
+                    将你的 Prompt 从"能跑"变成"可靠"。
+                </p>
+                <div class="hero-badges">
+                    <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License">
+                    <img src="https://img.shields.io/badge/Framework-PLATINUM-brightgreen" alt="Framework">
+                    <img src="https://img.shields.io/badge/version-1.0.0-blue" alt="Version">
+                </div>
+                <div class="hero-cta">
+                    <a href="#quickstart" class="btn btn-primary btn-large">快速开始</a>
+                    <a href="https://github.com/theneoai/skill" class="btn btn-secondary btn-large" target="_blank">
+                        <svg class="icon" viewBox="0 0 24 24" width="20" height="20">
+                            <path fill="currentColor" d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                        </svg>
+                        GitHub
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="hero-stats">
+            <div class="container">
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-number">1000</div>
+                        <div class="stat-label">分评估体系</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">938</div>
+                        <div class="stat-label">平均认证分数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">3</div>
+                        <div class="stat-label">认证示例技能</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">4</div>
+                        <div class="stat-label">工作模式</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">核心特性</h2>
+                <p class="section-subtitle">行业领先的 AI 技能质量保障体系</p>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3 class="feature-title">1000分评估体系</h3>
+                    <p class="feature-desc">4阶段深度评测：结构验证 → 文本质量 → 运行时测试 → 综合认证，量化每一个技能的质量。</p>
+                    <ul class="feature-list">
+                        <li>Phase 1: 结构完整性 (100分)</li>
+                        <li>Phase 2: 文本质量分析 (300分)</li>
+                        <li>Phase 3: 运行时测试 (400分)</li>
+                        <li>Phase 4: 综合认证 (200分)</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🤖</div>
+                    <h3 class="feature-title">多LLM审议机制</h3>
+                    <p class="feature-desc">借鉴司法陪审团制度，3个LLM独立评分后交叉验证，消除单一模型的偏见和幻觉。</p>
+                    <ul class="feature-list">
+                        <li><strong>Generator:</strong> 生成初稿</li>
+                        <li><strong>Reviewer:</strong> 安全审计</li>
+                        <li><strong>Arbiter:</strong> 仲裁分歧</li>
+                        <li>共识矩阵确保公正</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <h3 class="feature-title">自进化系统</h3>
+                    <p class="feature-desc">3触发器自动监控技能质量，发现问题自动优化，无需人工干预。</p>
+                    <ul class="feature-list">
+                        <li><strong>Threshold:</strong> 质量阈值监控</li>
+                        <li><strong>Time:</strong> 新鲜度检查</li>
+                        <li><strong>Usage:</strong> 使用率分析</li>
+                        <li>7维度9步优化循环</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🌏</div>
+                    <h3 class="feature-title">原生双语支持</h3>
+                    <p class="feature-desc">中英文无缝切换，所有模板内置双语触发词，评估报告双语输出。</p>
+                    <ul class="feature-list">
+                        <li>双语触发词识别</li>
+                        <li>混合语言输入支持</li>
+                        <li>双语评估报告</li>
+                        <li>国际化模板</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Certification Tiers -->
+    <section class="certification">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">认证等级</h2>
+                <p class="section-subtitle">5级认证体系，让质量一目了然</p>
+            </div>
+
+            <div class="tiers-grid">
+                <div class="tier-card platinum">
+                    <div class="tier-badge">🏆</div>
+                    <h3 class="tier-name">PLATINUM</h3>
+                    <div class="tier-score">≥ 950</div>
+                    <p class="tier-desc">卓越品质，各项指标优秀</p>
+                    <ul class="tier-features">
+                        <li>方差 < 10</li>
+                        <li>Phase 2 ≥ 270</li>
+                        <li>Phase 3 ≥ 360</li>
+                    </ul>
+                </div>
+
+                <div class="tier-card gold">
+                    <div class="tier-badge">🥇</div>
+                    <h3 class="tier-name">GOLD</h3>
+                    <div class="tier-score">≥ 900</div>
+                    <p class="tier-desc">高品质，适合生产环境</p>
+                    <ul class="tier-features">
+                        <li>方差 < 15</li>
+                        <li>Phase 2 ≥ 255</li>
+                        <li>Phase 3 ≥ 340</li>
+                    </ul>
+                </div>
+
+                <div class="tier-card silver">
+                    <div class="tier-badge">🥈</div>
+                    <h3 class="tier-name">SILVER</h3>
+                    <div class="tier-score">≥ 800</div>
+                    <p class="tier-desc">良好品质，基本可用</p>
+                    <ul class="tier-features">
+                        <li>方差 < 20</li>
+                        <li>Phase 2 ≥ 225</li>
+                        <li>Phase 3 ≥ 300</li>
+                    </ul>
+                </div>
+
+                <div class="tier-card bronze">
+                    <div class="tier-badge">🥉</div>
+                    <h3 class="tier-name">BRONZE</h3>
+                    <div class="tier-score">≥ 700</div>
+                    <p class="tier-desc">及格品质，需要改进</p>
+                    <ul class="tier-features">
+                        <li>方差 < 30</li>
+                        <li>Phase 2 ≥ 195</li>
+                        <li>Phase 3 ≥ 265</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Examples Section -->
+    <section id="examples" class="examples">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">示例技能</h2>
+                <p class="section-subtitle">平均认证分数 938.3/1000，开箱即用</p>
+            </div>
+
+            <div class="examples-grid">
+                <div class="example-card">
+                    <div class="example-header">
+                        <div class="example-icon">🌐</div>
+                        <div class="example-tier">🏆 PLATINUM 960</div>
+                    </div>
+                    <h3 class="example-name">API Tester</h3>
+                    <p class="example-type">API Integration</p>
+                    <p class="example-desc">HTTP API 测试自动化，支持 TEST/VALIDATE/BATCH 三种模式，自动环境变量注入，完整的错误处理。</p>
+                    <div class="example-code">
+                        <pre><code># 测试单个接口
+skill run api-tester \
+  --input '{"url": "https://api.example.com/users"}'
+
+# 批量测试
+skill run api-tester --mode batch \
+  --input '{"endpoints": [...]}'</code></pre>
+                    </div>
+                    <a href="https://github.com/theneoai/skill/tree/main/examples/api-tester" class="example-link" target="_blank">查看详情 →</a>
+                </div>
+
+                <div class="example-card">
+                    <div class="example-header">
+                        <div class="example-icon">🔍</div>
+                        <div class="example-tier">🥇 GOLD 935</div>
+                    </div>
+                    <h3 class="example-name">Code Reviewer</h3>
+                    <p class="example-type">Workflow Automation</p>
+                    <p class="example-desc">智能代码审查助手，多步骤工作流，安全漏洞检测（CWE-798/89/78/22），自动回滚机制。</p>
+                    <div class="example-code">
+                        <pre><code># 审查代码文件
+skill run code-reviewer \
+  --input './src/main.py'
+
+# 安全扫描
+skill run code-reviewer --mode scan \
+  --input './src/'</code></pre>
+                    </div>
+                    <a href="https://github.com/theneoai/skill/tree/main/examples/code-reviewer" class="example-link" target="_blank">查看详情 →</a>
+                </div>
+
+                <div class="example-card">
+                    <div class="example-header">
+                        <div class="example-icon">📝</div>
+                        <div class="example-tier">🥇 GOLD 920</div>
+                    </div>
+                    <h3 class="example-name">Doc Generator</h3>
+                    <p class="example-type">Data Pipeline</p>
+                    <p class="example-desc">自动化文档生成，ETVF 数据管道，支持 Markdown/JSON/HTML 多格式输出，完整的 Schema 验证。</p>
+                    <div class="example-code">
+                        <pre><code># 生成单文件文档
+skill run doc-generator \
+  --input './src/utils.py'
+
+# 批量生成
+skill run doc-generator --mode batch \
+  --input './src/'</code></pre>
+                    </div>
+                    <a href="https://github.com/theneoai/skill/tree/main/examples/doc-generator" class="example-link" target="_blank">查看详情 →</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Start -->
+    <section id="quickstart" class="quickstart">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">快速开始</h2>
+                <p class="section-subtitle">5分钟上手 Skill Framework</p>
+            </div>
+
+            <div class="quickstart-steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>克隆仓库</h3>
+                        <div class="code-block">
+                            <pre><code>git clone https://github.com/theneoai/skill.git
+cd skill</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>创建技能</h3>
+                        <div class="code-block">
+                            <pre><code>cp templates/base.md my-skill.md
+# 编辑 my-skill.md，填写你的技能定义</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>快速评估</h3>
+                        <div class="code-block">
+                            <pre><code># 运行 LEAN 评估（约1秒）
+./skill-framework.sh lean my-skill.md</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h3>完整评测</h3>
+                        <div class="code-block">
+                            <pre><code># 运行完整评估（4阶段1000分）
+./skill-framework.sh evaluate my-skill.md</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="quickstart-cta">
+                <a href="https://github.com/theneoai/skill#readme" class="btn btn-primary btn-large" target="_blank">查看完整文档</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Documentation -->
+    <section id="docs" class="documentation">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">文档</h2>
+                <p class="section-subtitle">深入了解 Skill Framework</p>
+            </div>
+
+            <div class="docs-grid">
+                <a href="https://github.com/theneoai/skill/blob/main/skill-framework.md" class="doc-card" target="_blank">
+                    <div class="doc-icon">📖</div>
+                    <h3>框架规范</h3>
+                    <p>完整的框架定义和使用指南（582行）</p>
+                </a>
+
+                <a href="https://github.com/theneoai/skill/blob/main/eval/rubrics.md" class="doc-card" target="_blank">
+                    <div class="doc-icon">🎯</div>
+                    <h3>评估标准</h3>
+                    <p>1000分评分细则（237行）</p>
+                </a>
+
+                <a href="https://github.com/theneoai/skill/blob/main/optimize/strategies.md" class="doc-card" target="_blank">
+                    <div class="doc-icon">🔧</div>
+                    <h3>优化策略</h3>
+                    <p>7维度9步优化方法（319行）</p>
+                </a>
+
+                <a href="https://github.com/theneoai/skill/blob/main/refs/deliberation.md" class="doc-card" target="_blank">
+                    <div class="doc-icon">🤖</div>
+                    <h3>审议协议</h3>
+                    <p>多LLM审议流程规范</p>
+                </a>
+
+                <a href="https://github.com/theneoai/skill/blob/main/refs/evolution.md" class="doc-card" target="_blank">
+                    <div class="doc-icon">🔄</div>
+                    <h3>自进化系统</h3>
+                    <p>3触发器自动优化规范</p>
+                </a>
+
+                <a href="https://github.com/theneoai/skill/tree/main/templates" class="doc-card" target="_blank">
+                    <div class="doc-icon">📋</div>
+                    <h3>模板库</h3>
+                    <p>快速开始模板集合</p>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Roadmap -->
+    <section class="roadmap">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">路线图</h2>
+                <p class="section-subtitle">Skill Framework 的未来规划</p>
+            </div>
+
+            <div class="roadmap-timeline">
+                <div class="roadmap-item completed">
+                    <div class="roadmap-marker">✅</div>
+                    <div class="roadmap-content">
+                        <h3>v1.0.0 - 已发布</h3>
+                        <ul>
+                            <li>1000分评估体系</li>
+                            <li>多LLM审议机制</li>
+                            <li>3个认证示例技能</li>
+                            <li>完整GitHub社区配置</li>
+                            <li>双语支持</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="roadmap-item in-progress">
+                    <div class="roadmap-marker">🚧</div>
+                    <div class="roadmap-content">
+                        <h3>v1.1.0 - 进行中</h3>
+                        <ul>
+                            <li>CLI工具 (skill create/evaluate/optimize)</li>
+                            <li>VS Code插件</li>
+                            <li>更多示例技能（5+）</li>
+                            <li>在线评估服务</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="roadmap-item planned">
+                    <div class="roadmap-marker">📅</div>
+                    <div class="roadmap-content">
+                        <h3>v2.0.0 - 计划中</h3>
+                        <ul>
+                            <li>技能市场/注册表</li>
+                            <li>Web IDE</li>
+                            <li>团队协作功能</li>
+                            <li>企业版（SSO、审计日志）</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Community -->
+    <section class="community">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">加入社区</h2>
+                <p class="section-subtitle">与开发者一起成长</p>
+            </div>
+
+            <div class="community-grid">
+                <a href="https://github.com/theneoai/skill/discussions" class="community-card" target="_blank">
+                    <div class="community-icon">💬</div>
+                    <h3>Discussions</h3>
+                    <p>提问、分享想法、交流经验</p>
+                </a>
+
+                <a href="https://github.com/theneoai/skill/issues" class="community-card" target="_blank">
+                    <div class="community-icon">🐛</div>
+                    <h3>Issues</h3>
+                    <p>报告Bug、请求功能</p>
+                </a>
+
+                <a href="https://github.com/theneoai/skill/releases" class="community-card" target="_blank">
+                    <div class="community-icon">🎉</div>
+                    <h3>Releases</h3>
+                    <p>查看最新版本和更新日志</p>
+                </a>
+
+                <a href="https://github.com/theneoai/skill/blob/main/.github/CONTRIBUTING.md" class="community-card" target="_blank">
+                    <div class="community-icon">🤝</div>
+                    <h3>贡献指南</h3>
+                    <p>了解如何参与项目</p>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <span class="logo-icon">🏆</span>
+                    <span class="logo-text">Skill Framework</span>
+                    <p class="footer-tagline">让每一次 Prompt 都值得信赖</p>
+                </div>
+
+                <div class="footer-links">
+                    <div class="footer-column">
+                        <h4>产品</h4>
+                        <ul>
+                            <li><a href="#features">特性</a></li>
+                            <li><a href="#examples">示例</a></li>
+                            <li><a href="#docs">文档</a></li>
+                            <li><a href="#roadmap">路线图</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="footer-column">
+                        <h4>资源</h4>
+                        <ul>
+                            <li><a href="https://github.com/theneoai/skill" target="_blank">GitHub</a></li>
+                            <li><a href="https://github.com/theneoai/skill/blob/main/CHANGELOG.md" target="_blank">更新日志</a></li>
+                            <li><a href="https://github.com/theneoai/skill/issues" target="_blank">问题反馈</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="footer-column">
+                        <h4>社区</h4>
+                        <ul>
+                            <li><a href="https://github.com/theneoai/skill/discussions" target="_blank">讨论区</a></li>
+                            <li><a href="https://github.com/theneoai/skill/blob/main/.github/CONTRIBUTING.md" target="_blank">贡献指南</a></li>
+                            <li><a href="https://github.com/theneoai/skill/blob/main/.github/CODE_OF_CONDUCT.md" target="_blank">行为准则</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>© 2026 Skill Framework. Released under the MIT License.</p>
+                <p>Made with ❤️ by <a href="https://github.com/theneoai" target="_blank">theneoai</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="assets/js/main.js"></script>
+</body>
+</html>
