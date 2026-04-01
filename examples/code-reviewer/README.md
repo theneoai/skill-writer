@@ -1,7 +1,7 @@
 # Code Reviewer Skill
 
-[![Certification](https://img.shields.io/badge/Certification-PLATINUM-00d4aa)](./eval-report.md)
-[![Score](https://img.shields.io/badge/Score-960%2F1000-00d4aa)](./eval-report.md)
+[![Certification](https://img.shields.io/badge/Certification-GOLD-FFD700)](./eval-report.md)
+[![Score](https://img.shields.io/badge/Score-947%2F1000-FFD700)](./eval-report.md)
 [![Type](https://img.shields.io/badge/Type-Workflow%20Automation-blue)](./skill.md)
 
 A comprehensive code review skill with multi-step workflow automation, security scanning, and bilingual support for the Skill Framework.
@@ -106,14 +106,17 @@ categories:
 
 ## Certification
 
-This skill has been evaluated and certified **PLATINUM** with a score of **960/1000**.
+This skill has been evaluated and certified **GOLD** with a score of **947/1000**.
 
 ### Evaluation Highlights
 
-- **Phase 1 (Structure)**: 240/250
-- **Phase 2 (Content)**: 245/250
-- **Phase 3 (Security)**: 250/250
-- **Phase 4 (Usability)**: 225/250
+| Phase | Score | Max |
+|-------|-------|-----|
+| Phase 1 — Parse & Validate | 96 | 100 |
+| Phase 2 — Text Quality | 273 | 300 |
+| Phase 3 — Runtime Testing | 385 | 400 |
+| Phase 4 — Certification | 193 | 200 |
+| **Total** | **947** | **1000** |
 
 See the full [Evaluation Report](./eval-report.md) for detailed breakdown.
 
@@ -128,7 +131,7 @@ examples/code-reviewer/
 
 ## Requirements
 
-- Skill Framework >= 1.0.0
+- Skill Framework >= 2.0.0
 - Workflow Automation template support
 - Bilingual interface capability
 

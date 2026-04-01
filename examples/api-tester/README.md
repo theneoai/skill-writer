@@ -2,7 +2,7 @@
 
 > **Type**: api-integration  
 > **Version**: 1.0.0  
-> **Certification**: GOLD 920/1000  
+> **Certification**: GOLD 930/1000  
 > **Framework**: Skill Framework v2.0.0
 
 ---
@@ -22,20 +22,20 @@
 
 ![GOLD](https://img.shields.io/badge/Certification-GOLD-FFD700?style=for-the-badge)
 
-**总分**: 920 / 1000
+**总分**: 930 / 1000
 
 | 阶段 | 分数 | 满分 |
 |------|------|------|
 | Phase 1 - Parse & Validate | 95 | 100 |
 | Phase 2 - Text Quality | 275 | 300 |
 | Phase 3 - Runtime Testing | 370 | 400 |
-| Phase 4 - Certification | 180 | 200 |
+| Phase 4 - Certification | 190 | 200 |
 
 **质量指标**:
 - F1 Score: 0.92 ✅
 - MRR: 0.88 ✅
 - Trigger Accuracy: 0.93 ✅
-- Variance: 2.5 (< 15) ✅
+- Variance: 0.83 (< 15) ✅
 
 ---
 

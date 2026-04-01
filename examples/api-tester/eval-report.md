@@ -206,7 +206,7 @@ variance = | (phase2_score / 3) - (phase3_score / 4) |
 | SILVER | ≥ 800 | < 20 | ≥ 225 | ≥ 300 | ✅ |
 | BRONZE | ≥ 700 | < 30 | ≥ 195 | ≥ 265 | ✅ |
 
-**判定**: 总分 930 ≥ 900，方差 0.008 < 15，Phase2 275 ≥ 255，Phase3 370 ≥ 340
+**判定**: 总分 930 ≥ 900，方差 0.83 < 15，Phase2 275 ≥ 255，Phase3 370 ≥ 340
 
 **最终认证**: **GOLD**
 
@@ -248,7 +248,7 @@ variance = | (phase2_score / 3) - (phase3_score / 4) |
   "phase3": 370,
   "phase4": 190,
   "total_score": 930,
-  "variance": 2.5,
+  "variance": 0.83,
   "tier": "GOLD",
   "f1": 0.92,
   "mrr": 0.88,
