@@ -1,6 +1,6 @@
 ---
 name: skill-writer
-version: 1.0.0
+version: 2.0.0
 description: Meta-skill for creating, evaluating, and optimizing skills through natural language
 author: skill-writer-builder
 license: MIT
@@ -10,7 +10,11 @@ tags:
   - skill-evaluation
   - skill-optimization
   - automation
-type: skill
+type: meta-framework
+interface:
+  input: user-natural-language
+  output: structured-skill
+  modes: [create, lean, evaluate, optimize]
 ---
 
 # Skill Writer
@@ -75,6 +79,9 @@ cp skill-writer-claude.md ~/.claude/skills/
 
 ### CREATE Mode Triggers
 
+**EN:** create, build, make, generate, write a skill
+**ZH:** 创建, 生成, 写一个技能, 新建技能
+
 **Intent Patterns:**
 - "create a [type] skill"
 - "help me write a skill for [purpose]"
@@ -82,6 +89,8 @@ cp skill-writer-claude.md ~/.claude/skills/
 - "generate a skill to [action]"
 - "build a skill for [task]"
 - "make a skill that [functionality]"
+- "创建一个技能"
+- "帮我写一个[用途]的技能"
 
 **Examples:**
 - "create a data processing skill"
@@ -89,7 +98,22 @@ cp skill-writer-claude.md ~/.claude/skills/
 - "I need a skill that analyzes code quality"
 - "generate a skill to automate deployments"
 
+### LEAN Mode Triggers
+
+**EN:** lean, quick-eval, fast eval, lean check
+**ZH:** 快评, 快速评测, 简评
+
+**Intent Patterns:**
+- "lean evaluate this skill"
+- "quick eval this skill"
+- "run lean check on this skill"
+- "快速评测这个技能"
+- "对这个技能进行快评"
+
 ### EVALUATE Mode Triggers
+
+**EN:** evaluate, assess, score, certify, full eval
+**ZH:** 评测, 评估, 打分, 认证
 
 **Intent Patterns:**
 - "evaluate this skill"
@@ -98,6 +122,8 @@ cp skill-writer-claude.md ~/.claude/skills/
 - "score this skill"
 - "assess this skill"
 - "review this skill"
+- "评测这个技能"
+- "评估技能质量"
 
 **Examples:**
 - "evaluate this skill and tell me what's wrong"
@@ -107,6 +133,9 @@ cp skill-writer-claude.md ~/.claude/skills/
 
 ### OPTIMIZE Mode Triggers
 
+**EN:** optimize, improve, enhance, refine, upgrade
+**ZH:** 优化, 改进, 提升, 改善
+
 **Intent Patterns:**
 - "optimize this skill"
 - "improve my skill"
@@ -114,6 +143,8 @@ cp skill-writer-claude.md ~/.claude/skills/
 - "refine this skill"
 - "enhance this skill"
 - "upgrade this skill"
+- "优化这个技能"
+- "改进技能"
 
 **Examples:**
 - "optimize this skill for better performance"
@@ -177,38 +208,36 @@ When creating a skill, Claude will ask:
 
 ### Scoring Rubric (1000 Points Total)
 
-**Completeness (250 points)**
-- Required sections present
-- All placeholders filled
-- Examples provided
+**Phase 1: Parse & Validate (100 points)**
+- YAML syntax valid
+- Required fields present (name, version, interface, description, author)
+- Semantic versioning format
 
-**Clarity (250 points)**
-- Instructions are clear
-- Language is precise
-- No ambiguity
+**Phase 2: Text Quality (300 points)**
+- Clarity (50 pts): Instructions clear, no ambiguity
+- Completeness (50 pts): All required sections present
+- Accuracy (60 pts): Examples correct and runnable
+- Safety (60 pts): Red Lines / 严禁 present
+- Maintainability (40 pts): Well structured, version controlled
+- Usability (40 pts): Trigger phrases clear, examples adequate
 
-**Security (200 points)**
-- No CWE violations
-- Safe patterns used
-- Input validation
+**Phase 3: Runtime Testing (400 points)**
+- Each mode tested against sample inputs
+- Quality gates validated
+- Security scan (CWE-798/89/78/22) passed
 
-**Usability (200 points)**
-- Easy to understand
-- Good examples
-- Clear triggers
-
-**Maintainability (100 points)**
-- Well structured
-- Documented
-- Version controlled
+**Phase 4: Certification (200 points)**
+- LEAN re-check post-evaluation
+- Variance check: |Phase2/3 − Phase3/4| within tier limit
+- UTE injection verified
 
 ### Certification Tiers
 
-- **PLATINUM (950-1000)**: Exceptional quality
-- **GOLD (850-949)**: Production-ready
-- **SILVER (750-849)**: Good quality
-- **BRONZE (650-749)**: Acceptable
-- **FAIL (<650)**: Needs improvement
+- **PLATINUM (≥950)**: Exceptional; variance < 10
+- **GOLD (≥900)**: Production-ready; variance < 15
+- **SILVER (≥800)**: Good quality; variance < 20
+- **BRONZE (≥700)**: Acceptable minimum for delivery; variance < 30
+- **FAIL (<700)**: Route to OPTIMIZE
 
 ---
 
@@ -239,10 +268,10 @@ When creating a skill, Claude will ask:
 ### Convergence Detection
 
 Optimization stops when:
-- Score improvement < 5 points
-- 3 iterations without significant gain
+- Score improvement < 0.5 points (delta_threshold)
+- Plateau detected: no gain in last 10 iterations (window_size)
 - User requests stop
-- Maximum iterations reached (10)
+- Maximum iterations reached (20)
 
 ---
 

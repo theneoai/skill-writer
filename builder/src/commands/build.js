@@ -116,7 +116,13 @@ async function build(options) {
           extra: {
             modes: ['create', 'evaluate', 'optimize'],
             platforms: ['opencode', 'openclaw', 'claude', 'cursor', 'openai', 'gemini']
-          }
+          },
+          // Security scan summary counts (filled at build time; 0 = clean baseline)
+          p0_count: 0,
+          p1_count: 0,
+          p2_count: 0,
+          p3_count: 0,
+          generated_at: new Date().toISOString()
         };
 
         const enrichedCoreData = {

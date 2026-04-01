@@ -169,7 +169,12 @@ function extractFrontmatter(content) {
  * @returns {string|null} File path or null if not found
  */
 function getBuiltSkillPath(platform) {
+  const ext = platform === 'openai' ? 'json' : 'md';
   const possiblePaths = [
+    // Flat file structure (actual build output)
+    path.join(process.cwd(), 'platforms', `skill-writer-${platform}-dev.${ext}`),
+    path.join(process.cwd(), 'platforms', `skill-writer-${platform}.${ext}`),
+    // Subdirectory structure (legacy)
     path.join(process.cwd(), 'platforms', platform, 'skill-writer.md'),
     path.join(process.cwd(), 'platforms', platform, 'skill.md'),
     path.join(process.cwd(), 'dist', platform, 'skill-writer.md'),
