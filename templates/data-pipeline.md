@@ -47,6 +47,19 @@ pipeline:
   output_schema: "{{OUTPUT_SCHEMA_REF}}"
   max_record_count: {{MAX_RECORDS}}       # safety limit
   chunk_size: {{CHUNK_SIZE}}              # for streaming/large files
+
+use_to_evolve:
+  enabled: true
+  injected_by: "skill-writer v2.0.0"
+  injected_at: "{{DATE}}"
+  check_cadence: {lightweight: 10, full_recompute: 50, tier_drift: 100}
+  micro_patch_enabled: true
+  feedback_detection: true
+  certified_lean_score: null
+  last_ute_check: null
+  pending_patches: 0
+  total_micro_patches_applied: 0
+  cumulative_invocations: 0
 ---
 
 ## §1  Identity
@@ -226,6 +239,22 @@ Quarantine rate: 0.6% ≤ 5% → PASS
 ---
 
 **Triggers**: **transform** | **validate** | **ingest** | **export** | **转换** | **验证** | **导入** | **导出**
+
+---
+
+## §UTE Use-to-Evolve
+
+<!-- Post-invocation hook — auto-managed by skill-writer v2.0.0 -->
+
+After each invocation, increment `use_to_evolve.cumulative_invocations`.
+Run lightweight LEAN check every 10 invocations; full re-score every 50;
+tier-drift detection every 100.
+
+**Fields managed automatically** (do not edit manually):
+- `cumulative_invocations` — incremented each use
+- `last_ute_check` — ISO date of last lightweight check
+- `pending_patches` — count of queued micro-patches
+- `total_micro_patches_applied` — lifetime patch count
 ```
 
 ---
@@ -238,6 +267,8 @@ Quarantine rate: 0.6% ≤ 5% → PASS
 - [ ] Quarantine threshold set (`MAX_QUARANTINE_PCT`) and enforced
 - [ ] Record count safety limit (`MAX_RECORDS`) set with user confirmation gate
 - [ ] PII fields identified and masking policy documented
+- [ ] `use_to_evolve:` block present in YAML frontmatter with all 11 fields
+- [ ] `## §UTE Use-to-Evolve` section present at end of skill
 - [ ] LEAN eval score ≥ 350 and no `{{PLACEHOLDER}}` remaining
 - [ ] Full EVALUATE score ≥ 700 (BRONZE) confirmed
 - [ ] Security scan P0 clear: CWE-89 (query construction), CWE-22 (output path)

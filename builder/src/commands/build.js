@@ -88,7 +88,7 @@ async function build(options) {
         const skillMetadata = {
           TITLE: 'Skill Writer',
           TYPE: 'Meta-Skill',
-          VERSION: '1.0.0',
+          VERSION: '2.0.0',
           DESCRIPTION: 'A meta-skill for creating, evaluating, and optimizing other skills through natural language interaction.',
           TRIGGERS: `
 **CREATE Mode:**
@@ -106,7 +106,7 @@ async function build(options) {
 - "improve my skill"
 - "make this skill better"`,
           name: 'skill-writer',
-          version: '1.0.0',
+          version: '2.0.0',
           description: 'Meta-skill for creating, evaluating, and optimizing skills',
           author: 'skill-writer-builder',
           license: 'MIT',

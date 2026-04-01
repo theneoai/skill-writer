@@ -48,6 +48,19 @@ workflow:
   estimated_duration: "{{DURATION}}"   # e.g. "2–5 minutes"
   idempotent: {{true|false}}
   rollback_supported: {{true|false}}
+
+use_to_evolve:
+  enabled: true
+  injected_by: "skill-writer v2.0.0"
+  injected_at: "{{DATE}}"
+  check_cadence: {lightweight: 10, full_recompute: 50, tier_drift: 100}
+  micro_patch_enabled: true
+  feedback_detection: true
+  certified_lean_score: null
+  last_ute_check: null
+  pending_patches: 0
+  total_micro_patches_applied: 0
+  cumulative_invocations: 0
 ---
 
 ## §1  Identity
@@ -249,6 +262,22 @@ Proceed with RUN? [y/n]
 ---
 
 **Triggers**: **run** | **dry-run** | **status** | **rollback** | **运行** | **预演** | **状态** | **回滚**
+
+---
+
+## §UTE Use-to-Evolve
+
+<!-- Post-invocation hook — auto-managed by skill-writer v2.0.0 -->
+
+After each invocation, increment `use_to_evolve.cumulative_invocations`.
+Run lightweight LEAN check every 10 invocations; full re-score every 50;
+tier-drift detection every 100.
+
+**Fields managed automatically** (do not edit manually):
+- `cumulative_invocations` — incremented each use
+- `last_ute_check` — ISO date of last lightweight check
+- `pending_patches` — count of queued micro-patches
+- `total_micro_patches_applied` — lifetime patch count
 ```
 
 ---
@@ -261,6 +290,8 @@ Proceed with RUN? [y/n]
 - [ ] Retry logic specified: max retries + backoff (1s, 2s, 4s)
 - [ ] Rollback sequence covers ALL mutating steps
 - [ ] DRY-RUN mode implemented and tested
+- [ ] `use_to_evolve:` block present in YAML frontmatter with all 11 fields
+- [ ] `## §UTE Use-to-Evolve` section present at end of skill
 - [ ] LEAN eval score ≥ 350 and no `{{PLACEHOLDER}}` remaining
 - [ ] Full EVALUATE score ≥ 700 (BRONZE) confirmed
 - [ ] Security scan P0 clear: CWE-78 (command injection), CWE-798 (credentials)

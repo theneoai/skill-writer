@@ -17,6 +17,15 @@ const glob = require('glob');
 // Configuration
 const CORE_ENGINE_PATH = path.resolve(__dirname, '../../../core');
 const TEMPLATES_PATH = path.resolve(__dirname, '../../../templates');
+const PLATFORMS_PATH = path.resolve(__dirname, '../../../platforms');
+
+// Required use_to_evolve fields
+const REQUIRED_UTE_FIELDS = [
+  'enabled', 'injected_by', 'injected_at', 'check_cadence',
+  'micro_patch_enabled', 'feedback_detection', 'certified_lean_score',
+  'last_ute_check', 'pending_patches', 'total_micro_patches_applied',
+  'cumulative_invocations',
+];
 
 // Required directory structure
 const REQUIRED_DIRECTORIES = [
@@ -80,6 +89,7 @@ async function validate() {
   await validateYamlFiles(result);
   await validateRequiredFiles(result);
   await validateTemplates(result);
+  await validateGeneratedSkills(result);
 
   // Print summary
   printSummary(result);
@@ -246,14 +256,108 @@ async function validateTemplates(result) {
         console.log(chalk.green(`  ✓ ${relativePath} (${uniquePlaceholders.length} placeholders)`));
       }
 
-      // Check for common template issues
+      // Check for unmodified example placeholder (must be replaced before delivery)
       if (content.includes('{{PLACEHOLDER}}')) {
-        addIssue(result, 'warning', `Template contains unmodified example placeholder: ${relativePath}`);
+        addIssue(result, 'error', `Template contains unmodified {{PLACEHOLDER}} marker: ${relativePath}`);
+        console.log(chalk.red(`  ✗ ${relativePath} (contains {{PLACEHOLDER}})`));
       }
 
     } catch (error) {
       addIssue(result, 'error', `Cannot read template ${relativePath}: ${error.message}`);
       console.log(chalk.red(`  ✗ ${relativePath} (read error)`));
+    }
+  }
+
+  console.log('');
+}
+
+/**
+ * Validate generated platform skill files for structural completeness
+ *
+ * Checks each platforms/*.md for:
+ *  - ≥3 §N sections
+ *  - Red Lines / 严禁 section
+ *  - use_to_evolve: YAML block with all 11 required fields
+ *  - §UTE Use-to-Evolve body section
+ *  - No remaining {{PLACEHOLDER}} tokens
+ *
+ * @param {ValidationResult} result - Validation result object to update
+ */
+async function validateGeneratedSkills(result) {
+  console.log(chalk.cyan('🧪 Validating generated skill files...'));
+
+  let skillFiles;
+  try {
+    skillFiles = glob.sync(path.join(PLATFORMS_PATH, '*.md'));
+  } catch {
+    skillFiles = [];
+  }
+
+  if (skillFiles.length === 0) {
+    addIssue(result, 'warning', 'No generated skill files found in platforms/');
+    console.log(chalk.yellow('  ⚠ No skill files found (run build first)\n'));
+    return;
+  }
+
+  console.log(chalk.gray(`  Found ${skillFiles.length} skill file(s)`));
+
+  for (const filePath of skillFiles) {
+    const fileName = path.basename(filePath);
+    let content;
+
+    try {
+      content = await fs.promises.readFile(filePath, 'utf8');
+    } catch (error) {
+      addIssue(result, 'error', `Cannot read ${fileName}: ${error.message}`);
+      continue;
+    }
+
+    let fileOk = true;
+
+    // Check §N section count (≥3)
+    const sectionMatches = content.match(/^##\s+§\d+\s+\S/gm) || [];
+    if (sectionMatches.length < 3) {
+      addIssue(result, 'error', `${fileName}: fewer than 3 §N sections (found ${sectionMatches.length})`);
+      fileOk = false;
+    }
+
+    // Check Red Lines / 严禁
+    if (!/严禁|Red Lines/i.test(content)) {
+      addIssue(result, 'error', `${fileName}: missing Red Lines (严禁) section`);
+      fileOk = false;
+    }
+
+    // Check use_to_evolve block and all 11 required fields
+    if (!content.includes('use_to_evolve:')) {
+      addIssue(result, 'error', `${fileName}: missing use_to_evolve: YAML block`);
+      fileOk = false;
+    } else {
+      for (const field of REQUIRED_UTE_FIELDS) {
+        if (!content.includes(`${field}:`)) {
+          addIssue(result, 'error', `${fileName}: use_to_evolve missing field '${field}'`);
+          fileOk = false;
+        }
+      }
+    }
+
+    // Check §UTE body section
+    if (!/##\s+§UTE\b/i.test(content)) {
+      addIssue(result, 'error', `${fileName}: missing ## §UTE Use-to-Evolve body section`);
+      fileOk = false;
+    }
+
+    // No remaining {{PLACEHOLDER}} tokens (error)
+    if (/\{\{[A-Z_0-9]+\}\}/.test(content)) {
+      const remaining = (content.match(/\{\{[A-Z_0-9]+\}\}/g) || []);
+      const unique = [...new Set(remaining)];
+      addIssue(result, 'error', `${fileName}: ${unique.length} unreplaced placeholder(s): ${unique.slice(0, 5).join(', ')}`);
+      fileOk = false;
+    }
+
+    if (fileOk) {
+      console.log(chalk.green(`  ✓ ${fileName}`));
+    } else {
+      console.log(chalk.red(`  ✗ ${fileName} (see issues above)`));
     }
   }
 
@@ -320,4 +424,5 @@ module.exports = {
   validateYamlFiles,
   validateRequiredFiles,
   validateTemplates,
+  validateGeneratedSkills,
 };
