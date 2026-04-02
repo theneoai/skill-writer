@@ -60,24 +60,23 @@ The AI will:
 
 ## INSTALL Mode Examples
 
-### Example 1: Install to All Platforms from Release URL
+### Example 1: Install via install.md URL (Recommended)
 
 **User Request:**
 ```
-"read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer.md and install"
+"read https://raw.githubusercontent.com/theneoai/skill-writer/main/install.md and install"
 ```
 
 **Agent Process:**
-1. Fetch file from URL
-2. Verify YAML contains `name: skill-writer`
-3. Confirm: "Install to all 5 local platforms? (yes/no)"
-4. Write to each platform's skills directory
+1. Fetch `install.md` from URL — contains self-contained install instructions
+2. Fetch `skill-framework.md` and all companion files from GitHub raw URLs
+3. Write to each platform's skills directory
 
 **Sample Output:**
 ```
-Installing skill-writer from URL...
+Installing Skill Writer v2.0.0...
+✓ Fetched install.md (8 KB)
 ✓ Fetched skill-framework.md (24 KB)
-✓ Verified: name=skill-writer version=2.0.0
 
 Install plan:
   • ~/.claude/skills/skill-writer.md
@@ -102,13 +101,13 @@ Installed to 5 platforms. Restart each to activate skill-writer.
 
 **User Request:**
 ```
-"read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-claude.md and install to claude"
+"read https://raw.githubusercontent.com/theneoai/skill-writer/main/install.md and install to claude"
 ```
 
 **Sample Output:**
 ```
+✓ Fetched install.md
 ✓ Fetched skill-framework.md
-✓ Verified: name=skill-writer
 
 Install plan: ~/.claude/skills/skill-writer.md  [claude only]
 Proceed? yes
@@ -128,7 +127,7 @@ Installed to 1 platform. Restart Claude to activate skill-writer.
 ```
 
 **Agent Process:**
-Uses the local `skill-framework.md` already on disk (no network required).
+Uses the local `install.md` already on disk (no network required).
 
 ### Example 4: URL Verification Failure
 

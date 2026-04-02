@@ -8,6 +8,93 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ── One-Click Install Section ── */
+        .install-section {
+            padding: 64px 0;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            border-top: 1px solid rgba(255,255,255,.06);
+            border-bottom: 1px solid rgba(255,255,255,.06);
+        }
+        .install-widget {
+            max-width: 760px;
+            margin: 0 auto;
+        }
+        .install-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+        .install-tab {
+            padding: 8px 18px;
+            border-radius: 20px;
+            border: 1.5px solid rgba(255,255,255,.18);
+            background: transparent;
+            color: rgba(255,255,255,.65);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all .2s;
+        }
+        .install-tab:hover {
+            border-color: rgba(255,255,255,.4);
+            color: #fff;
+        }
+        .install-tab.active {
+            background: #6366f1;
+            border-color: #6366f1;
+            color: #fff;
+        }
+        .install-panel { display: none; }
+        .install-panel.active { display: block; }
+        .install-cmd-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255,255,255,.05);
+            border: 1px solid rgba(255,255,255,.1);
+            border-radius: 12px;
+            padding: 16px 20px;
+        }
+        .install-cmd-row code {
+            flex: 1;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 13.5px;
+            color: #a5f3fc;
+            word-break: break-all;
+            background: none;
+        }
+        .copy-btn {
+            flex-shrink: 0;
+            padding: 8px 18px;
+            border-radius: 8px;
+            border: none;
+            background: #6366f1;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background .2s, transform .1s;
+            white-space: nowrap;
+        }
+        .copy-btn:hover { background: #4f46e5; }
+        .copy-btn:active { transform: scale(.96); }
+        .copy-btn.copied { background: #10b981; }
+        .install-hint {
+            margin-top: 12px;
+            font-size: 13px;
+            color: rgba(255,255,255,.45);
+            text-align: center;
+        }
+        .install-hint a { color: #818cf8; text-decoration: none; }
+        .install-hint a:hover { text-decoration: underline; }
+        @media (max-width: 600px) {
+            .install-cmd-row { flex-direction: column; align-items: stretch; }
+            .copy-btn { text-align: center; }
+        }
+    </style>
 </head>
 <body>
     <!-- Hero Section -->
@@ -19,12 +106,13 @@
                     <span class="logo-text">Skill Writer</span>
                 </a>
                 <ul class="nav-links">
+                    <li><a href="#install">安装</a></li>
                     <li><a href="#features">特性</a></li>
                     <li><a href="#examples">示例</a></li>
                     <li><a href="#docs">文档</a></li>
                     <li><a href="https://github.com/theneoai/skill-writer" target="_blank">GitHub</a></li>
                 </ul>
-                <a href="https://github.com/theneoai/skill-writer" class="btn btn-primary">Get Started</a>
+                <a href="#install" class="btn btn-primary">立即安装</a>
             </div>
         </nav>
 
@@ -74,13 +162,81 @@
                         <div class="stat-label">认证示例技能</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-number">4</div>
+                        <div class="stat-number">5</div>
                         <div class="stat-label">工作模式</div>
                     </div>
                 </div>
             </div>
         </div>
     </header>
+
+    <!-- One-Click Install Section -->
+    <section id="install" class="install-section">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">一键安装</h2>
+                <p class="section-subtitle">选择平台，复制命令，粘贴到你的 AI 助手即可</p>
+            </div>
+            <div class="install-widget">
+                <div class="install-tabs">
+                    <button class="install-tab active" data-panel="all">全部平台</button>
+                    <button class="install-tab" data-panel="claude">Claude</button>
+                    <button class="install-tab" data-panel="opencode">OpenCode</button>
+                    <button class="install-tab" data-panel="openclaw">OpenClaw</button>
+                    <button class="install-tab" data-panel="cursor">Cursor</button>
+                    <button class="install-tab" data-panel="gemini">Gemini</button>
+                </div>
+
+                <div class="install-panel active" id="ip-all">
+                    <div class="install-cmd-row">
+                        <code>read https://raw.githubusercontent.com/theneoai/skill-writer/main/install.md and install</code>
+                        <button class="copy-btn" onclick="copyInstall(this)">复制</button>
+                    </div>
+                    <p class="install-hint">安装到本机所有支持的 AI 平台（Claude / OpenCode / OpenClaw / Cursor / Gemini）</p>
+                </div>
+
+                <div class="install-panel" id="ip-claude">
+                    <div class="install-cmd-row">
+                        <code>read https://raw.githubusercontent.com/theneoai/skill-writer/main/install.md and install to claude</code>
+                        <button class="copy-btn" onclick="copyInstall(this)">复制</button>
+                    </div>
+                    <p class="install-hint">安装到 <code>~/.claude/skills/</code>，同时写入 refs / templates / eval / optimize 伴侣文件</p>
+                </div>
+
+                <div class="install-panel" id="ip-opencode">
+                    <div class="install-cmd-row">
+                        <code>read https://raw.githubusercontent.com/theneoai/skill-writer/main/install.md and install to opencode</code>
+                        <button class="copy-btn" onclick="copyInstall(this)">复制</button>
+                    </div>
+                    <p class="install-hint">安装到 <code>~/.config/opencode/skills/</code></p>
+                </div>
+
+                <div class="install-panel" id="ip-openclaw">
+                    <div class="install-cmd-row">
+                        <code>read https://raw.githubusercontent.com/theneoai/skill-writer/main/install.md and install to openclaw</code>
+                        <button class="copy-btn" onclick="copyInstall(this)">复制</button>
+                    </div>
+                    <p class="install-hint">安装到 <code>~/.openclaw/skills/</code></p>
+                </div>
+
+                <div class="install-panel" id="ip-cursor">
+                    <div class="install-cmd-row">
+                        <code>read https://raw.githubusercontent.com/theneoai/skill-writer/main/install.md and install to cursor</code>
+                        <button class="copy-btn" onclick="copyInstall(this)">复制</button>
+                    </div>
+                    <p class="install-hint">安装到 <code>~/.cursor/skills/</code></p>
+                </div>
+
+                <div class="install-panel" id="ip-gemini">
+                    <div class="install-cmd-row">
+                        <code>read https://raw.githubusercontent.com/theneoai/skill-writer/main/install.md and install to gemini</code>
+                        <button class="copy-btn" onclick="copyInstall(this)">复制</button>
+                    </div>
+                    <p class="install-hint">安装到 <code>~/.gemini/skills/</code></p>
+                </div>
+            </div>
+        </div>
+    </section>
 
     <!-- Features Section -->
     <section id="features" class="features">
@@ -286,11 +442,11 @@ skill run doc-generator --mode batch \
                 <div class="step">
                     <div class="step-number">1</div>
                     <div class="step-content">
-                        <h3>克隆仓库</h3>
+                        <h3>安装 Skill Writer</h3>
                         <div class="code-block">
-                            <pre><code>git clone https://github.com/theneoai/skill-writer.git
-cd skill</code></pre>
+                            <pre><code>read https://raw.githubusercontent.com/theneoai/skill-writer/main/install.md and install</code></pre>
                         </div>
+                        <p style="margin-top:8px;font-size:13px;opacity:.7">将上方命令粘贴到你的 AI 助手中即可。</p>
                     </div>
                 </div>
 
@@ -299,8 +455,8 @@ cd skill</code></pre>
                     <div class="step-content">
                         <h3>创建技能</h3>
                         <div class="code-block">
-                            <pre><code>cp templates/base.md my-skill.md
-# 编辑 my-skill.md，填写你的技能定义</code></pre>
+                            <pre><code>"创建一个 GitHub Issue 管理技能"
+"Create a weather API skill"</code></pre>
                         </div>
                     </div>
                 </div>
@@ -310,8 +466,8 @@ cd skill</code></pre>
                     <div class="step-content">
                         <h3>快速评估</h3>
                         <div class="code-block">
-                            <pre><code># 运行 LEAN 评估（约1秒）
-./skill-framework.sh lean my-skill.md</code></pre>
+                            <pre><code>"快评这个技能"
+"lean evaluate"</code></pre>
                         </div>
                     </div>
                 </div>
@@ -319,10 +475,10 @@ cd skill</code></pre>
                 <div class="step">
                     <div class="step-number">4</div>
                     <div class="step-content">
-                        <h3>完整评测</h3>
+                        <h3>完整评测 &amp; 优化</h3>
                         <div class="code-block">
-                            <pre><code># 运行完整评估（4阶段1000分）
-./skill-framework.sh evaluate my-skill.md</code></pre>
+                            <pre><code>"评测这个技能"
+"优化这个技能"</code></pre>
                         </div>
                     </div>
                 </div>
@@ -533,5 +689,46 @@ cd skill</code></pre>
     </footer>
 
     <script src="assets/js/main.js"></script>
+    <script>
+        // ── Install section tab switching ──
+        document.querySelectorAll('.install-tab').forEach(function(tab) {
+            tab.addEventListener('click', function() {
+                var panel = this.dataset.panel;
+                document.querySelectorAll('.install-tab').forEach(function(t) { t.classList.remove('active'); });
+                document.querySelectorAll('.install-panel').forEach(function(p) { p.classList.remove('active'); });
+                this.classList.add('active');
+                document.getElementById('ip-' + panel).classList.add('active');
+            });
+        });
+
+        // ── Copy install command ──
+        function copyInstall(btn) {
+            var code = btn.previousElementSibling.textContent.trim();
+            navigator.clipboard.writeText(code).then(function() {
+                btn.textContent = '已复制 ✓';
+                btn.classList.add('copied');
+                setTimeout(function() {
+                    btn.textContent = '复制';
+                    btn.classList.remove('copied');
+                }, 2000);
+            }).catch(function() {
+                // fallback for older browsers
+                var ta = document.createElement('textarea');
+                ta.value = code;
+                ta.style.position = 'fixed';
+                ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                btn.textContent = '已复制 ✓';
+                btn.classList.add('copied');
+                setTimeout(function() {
+                    btn.textContent = '复制';
+                    btn.classList.remove('copied');
+                }, 2000);
+            });
+        }
+    </script>
 </body>
 </html>

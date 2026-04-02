@@ -131,8 +131,8 @@ cp skill-framework.md ~/.gemini/skills/skill-writer.md
 
 **Install skill-writer (agent-driven):**
 ```
-"read https://raw.githubusercontent.com/theneoai/skill-writer/main/skill-framework.md and install"
-"read https://raw.githubusercontent.com/theneoai/skill-writer/main/skill-framework.md and install to claude"
+"read https://raw.githubusercontent.com/theneoai/skill-writer/main/install.md and install"
+"read https://raw.githubusercontent.com/theneoai/skill-writer/main/install.md and install to claude"
 "安装 skill-writer"
 ```
 
