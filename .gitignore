@@ -76,6 +76,7 @@ htmlcov/
 
 # Generated platform files (keep directory but not files)
 !platforms/.gitkeep
+builder/platforms/
 
 # Test installations
 ~/.config/opencode/skills/skill-writer.md
