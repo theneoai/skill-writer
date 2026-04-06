@@ -5,53 +5,17 @@
  * template placeholders, and generated skill files.
  *
  * @module builder/src/commands/validate
- * @version 2.0.0
+ * @version 2.1.0 - Updated to use centralized config
  */
 
 const fs = require('fs');
 const path = require('path');
 const chalk = require('chalk');
 const glob = require('glob');
+const config = require('../config');
 
-// Configuration — Single Source of Truth paths
-const PROJECT_ROOT = path.resolve(__dirname, '../../..');
-const TEMPLATES_PATH = path.join(PROJECT_ROOT, 'templates');
-const REFS_PATH = path.join(PROJECT_ROOT, 'refs');
-const EVAL_PATH = path.join(PROJECT_ROOT, 'eval');
-const OPTIMIZE_PATH = path.join(PROJECT_ROOT, 'optimize');
-const PLATFORMS_PATH = path.join(PROJECT_ROOT, 'platforms');
-
-// Required use_to_evolve fields
-const REQUIRED_UTE_FIELDS = [
-  'enabled', 'injected_by', 'injected_at', 'check_cadence',
-  'micro_patch_enabled', 'feedback_detection', 'certified_lean_score',
-  'last_ute_check', 'pending_patches', 'total_micro_patches_applied',
-  'cumulative_invocations',
-];
-
-// Required companion files (Markdown — Single Source of Truth)
-const REQUIRED_FILES = [
-  // Refs
-  { path: path.join(REFS_PATH, 'self-review.md'), label: 'refs/self-review.md' },
-  { path: path.join(REFS_PATH, 'use-to-evolve.md'), label: 'refs/use-to-evolve.md' },
-  { path: path.join(REFS_PATH, 'security-patterns.md'), label: 'refs/security-patterns.md' },
-  { path: path.join(REFS_PATH, 'evolution.md'), label: 'refs/evolution.md' },
-  { path: path.join(REFS_PATH, 'convergence.md'), label: 'refs/convergence.md' },
-  // Eval
-  { path: path.join(EVAL_PATH, 'rubrics.md'), label: 'eval/rubrics.md' },
-  { path: path.join(EVAL_PATH, 'benchmarks.md'), label: 'eval/benchmarks.md' },
-  // Optimize
-  { path: path.join(OPTIMIZE_PATH, 'strategies.md'), label: 'optimize/strategies.md' },
-  { path: path.join(OPTIMIZE_PATH, 'anti-patterns.md'), label: 'optimize/anti-patterns.md' },
-  // Templates
-  { path: path.join(TEMPLATES_PATH, 'base.md'), label: 'templates/base.md' },
-  { path: path.join(TEMPLATES_PATH, 'use-to-evolve-snippet.md'), label: 'templates/use-to-evolve-snippet.md' },
-  // Main skill
-  { path: path.join(PROJECT_ROOT, 'skill-framework.md'), label: 'skill-framework.md' },
-];
-
-// Placeholder pattern for templates
-const PLACEHOLDER_PATTERN = /\{\{[A-Z_0-9]+\}\}/g;
+// Use configuration from centralized config
+const { PATHS, REQUIRED_FILES, REQUIRED_UTE_FIELDS, PLACEHOLDERS } = config;
 
 /**
  * Main validate function
@@ -100,7 +64,7 @@ async function validateRequiredFiles(result) {
 async function validateTemplates(result) {
   console.log(chalk.cyan('🎨 Validating templates...'));
 
-  const templatePattern = path.join(TEMPLATES_PATH, '*.md');
+  const templatePattern = path.join(PATHS.templates, '*.md');
   const templateFiles = glob.sync(templatePattern);
 
   if (templateFiles.length === 0) {
@@ -112,7 +76,7 @@ async function validateTemplates(result) {
   console.log(chalk.gray(`  Found ${templateFiles.length} template file(s)`));
 
   for (const filePath of templateFiles) {
-    const relativePath = path.relative(PROJECT_ROOT, filePath);
+    const relativePath = path.relative(PATHS.root, filePath);
 
     try {
       const content = await fs.promises.readFile(filePath, 'utf8');
@@ -123,7 +87,7 @@ async function validateTemplates(result) {
         continue;
       }
 
-      const placeholders = content.match(PLACEHOLDER_PATTERN);
+      const placeholders = content.match(PLACEHOLDERS.standard);
 
       if (!placeholders || placeholders.length === 0) {
         // use-to-evolve-snippet.md legitimately has placeholders, others may not
@@ -154,7 +118,7 @@ async function validateGeneratedSkills(result) {
 
   let skillFiles;
   try {
-    skillFiles = glob.sync(path.join(PLATFORMS_PATH, '*.md'));
+    skillFiles = glob.sync(path.join(PATHS.platforms, '*.md'));
   } catch {
     skillFiles = [];
   }

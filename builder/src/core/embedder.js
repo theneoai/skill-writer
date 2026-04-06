@@ -11,6 +11,7 @@
 const fs = require('fs');
 const path = require('path');
 const yaml = require('js-yaml');
+const config = require('../config');
 
 // Platform-specific formatting configurations
 const PLATFORM_CONFIGS = {
@@ -79,16 +80,23 @@ function getPlatformConfig(platform) {
  * Replace placeholders in template with data
  * @param {string} template - Template string
  * @param {Object} data - Data to replace placeholders
- * @param {Object} config - Platform configuration
+ * @param {Object} platformConfig - Platform configuration
+ * @param {Object} [options] - Options for replacement
+ * @param {boolean} [options.strict=false] - If true, throw error when placeholder is missing
  * @returns {string} Processed template
+ * @throws {Error} When strict mode is enabled and placeholder is not found
  */
-function replacePlaceholders(template, data, config) {
+function replacePlaceholders(template, data, platformConfig, options = {}) {
+  const { strict = false } = options;
   let result = template;
   
   // Replace all placeholders
-  result = result.replace(config.placeholderPattern, (match, key) => {
+  result = result.replace(platformConfig.placeholderPattern, (match, key) => {
     const value = data[key];
     if (value === undefined || value === null) {
+      if (strict) {
+        throw new Error(`[${config.ERROR_CODES.MISSING_PLACEHOLDER}] Placeholder "${key}" not found in data`);
+      }
       console.warn(`Placeholder ${key} not found in data`);
       return match; // Keep original placeholder
     }

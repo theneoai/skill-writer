@@ -47,5 +47,8 @@
   "homepage": "https://github.com/theneoai/skill-writer#readme",
   "engines": {
     "node": ">=16.0.0"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.1"
   }
 }

@@ -3,14 +3,14 @@
  *
  * Reads companion Markdown files for the skill-writer-builder.
  * Sources: refs/, templates/, eval/, optimize/ (Single Source of Truth)
+ * 
+ * @version 2.1.0 - Updated to use centralized config
  */
 
 const fs = require('fs-extra');
 const path = require('path');
 const { glob } = require('glob');
-
-// Project root directory (reader is at builder/src/core/)
-const PROJECT_ROOT = path.resolve(__dirname, '../../..');
+const config = require('../config');
 
 /**
  * Parse a Markdown or JSON file
@@ -38,7 +38,7 @@ async function parseFile(filePath) {
  * @returns {Object} - CREATE mode data
  */
 async function readCreateMode() {
-  const templatesDir = path.join(PROJECT_ROOT, 'templates');
+  const templatesDir = config.PATHS.templates;
   const data = {
     templates: {}
   };
@@ -65,18 +65,17 @@ async function readCreateMode() {
  * @returns {Object} - EVALUATE mode data
  */
 async function readEvaluateMode() {
-  const evalDir = path.join(PROJECT_ROOT, 'eval');
   const data = {
     rubrics: null,
     benchmarks: null
   };
 
-  const rubricsPath = path.join(evalDir, 'rubrics.md');
+  const rubricsPath = path.join(config.PATHS.eval, 'rubrics.md');
   if (await fs.pathExists(rubricsPath)) {
     data.rubrics = await parseFile(rubricsPath);
   }
 
-  const benchmarksPath = path.join(evalDir, 'benchmarks.md');
+  const benchmarksPath = path.join(config.PATHS.eval, 'benchmarks.md');
   if (await fs.pathExists(benchmarksPath)) {
     data.benchmarks = await parseFile(benchmarksPath);
   }
@@ -89,25 +88,23 @@ async function readEvaluateMode() {
  * @returns {Object} - OPTIMIZE mode data
  */
 async function readOptimizeMode() {
-  const optimizeDir = path.join(PROJECT_ROOT, 'optimize');
-  const refsDir = path.join(PROJECT_ROOT, 'refs');
   const data = {
     strategies: null,
     antiPatterns: null,
     convergence: null
   };
 
-  const strategiesPath = path.join(optimizeDir, 'strategies.md');
+  const strategiesPath = path.join(config.PATHS.optimize, 'strategies.md');
   if (await fs.pathExists(strategiesPath)) {
     data.strategies = await parseFile(strategiesPath);
   }
 
-  const antiPatternsPath = path.join(optimizeDir, 'anti-patterns.md');
+  const antiPatternsPath = path.join(config.PATHS.optimize, 'anti-patterns.md');
   if (await fs.pathExists(antiPatternsPath)) {
     data.antiPatterns = await parseFile(antiPatternsPath);
   }
 
-  const convergencePath = path.join(refsDir, 'convergence.md');
+  const convergencePath = path.join(config.PATHS.refs, 'convergence.md');
   if (await fs.pathExists(convergencePath)) {
     data.convergence = await parseFile(convergencePath);
   }
@@ -116,42 +113,82 @@ async function readOptimizeMode() {
 }
 
 /**
- * Read shared resources (security patterns)
+ * Read shared resources from refs/
  * @returns {Object} - Shared resources data
  */
 async function readSharedResources() {
-  const refsDir = path.join(PROJECT_ROOT, 'refs');
   const data = {
-    security: null
+    securityPatterns: null,
+    selfReview: null,
+    evolution: null,
+    useToEvolve: null,
   };
 
-  const securityPath = path.join(refsDir, 'security-patterns.md');
+  // Read security patterns (always required)
+  const securityPath = path.join(config.PATHS.refs, 'security-patterns.md');
   if (await fs.pathExists(securityPath)) {
-    data.security = await parseFile(securityPath);
+    data.securityPatterns = await parseFile(securityPath);
+  }
+
+  // Read self-review protocol
+  const selfReviewPath = path.join(config.PATHS.refs, 'self-review.md');
+  if (await fs.pathExists(selfReviewPath)) {
+    data.selfReview = await parseFile(selfReviewPath);
+  }
+
+  // Read evolution spec
+  const evolutionPath = path.join(config.PATHS.refs, 'evolution.md');
+  if (await fs.pathExists(evolutionPath)) {
+    data.evolution = await parseFile(evolutionPath);
+  }
+
+  // Read use-to-evolve spec
+  const useToEvolvePath = path.join(config.PATHS.refs, 'use-to-evolve.md');
+  if (await fs.pathExists(useToEvolvePath)) {
+    data.useToEvolve = await parseFile(useToEvolvePath);
   }
 
   return data;
 }
 
 /**
- * Read all data at once
- * @returns {Object} - Complete data for building
+ * Read all core data from source files
+ * @returns {Object} - Complete core data object
  */
 async function readAllCoreData() {
+  const [create, evaluate, optimize, shared] = await Promise.all([
+    readCreateMode(),
+    readEvaluateMode(),
+    readOptimizeMode(),
+    readSharedResources()
+  ]);
+
   return {
-    create: await readCreateMode(),
-    evaluate: await readEvaluateMode(),
-    optimize: await readOptimizeMode(),
-    shared: await readSharedResources()
+    create,
+    evaluate,
+    optimize,
+    shared,
+    metadata: {
+      readAt: new Date().toISOString(),
+      version: require('../../package.json').version
+    }
   };
 }
 
+/**
+ * Get list of files that must be embedded (mustEmbed: true)
+ * @returns {Array} - List of file configs that must be embedded
+ */
+function getMustEmbedFiles() {
+  return config.REQUIRED_FILES.filter(f => f.mustEmbed);
+}
+
 module.exports = {
+  parseFile,
   readCreateMode,
   readEvaluateMode,
   readOptimizeMode,
   readSharedResources,
   readAllCoreData,
-  parseFile,
-  PROJECT_ROOT
+  getMustEmbedFiles,
 };
