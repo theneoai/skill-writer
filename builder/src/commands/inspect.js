@@ -13,6 +13,7 @@ const fs = require('fs');
 const path = require('path');
 const chalk = require('chalk');
 const { getPlatform, getSupportedPlatforms } = require('../platforms');
+const config = require('../config');
 
 /**
  * Format file size in human-readable format
@@ -75,25 +76,29 @@ function extractSections(content) {
 
 /**
  * Check for placeholders in content
+ * Uses config.PLACEHOLDERS.extended to catch all placeholder formats
+ * ({{KEY}}, {{OUTER-KEY}}, {{outer.key}}, ${KEY})
  * @param {string} content - File content
  * @returns {Array<{placeholder: string, line: number}>} Placeholders found
  */
 function findPlaceholders(content) {
   const placeholders = [];
   const lines = content.split('\n');
-  const pattern = /\{\{(\w+)\}\}/g;
-  
+
   for (let i = 0; i < lines.length; i++) {
+    // Reset lastIndex since we reuse the regex across lines
+    const extendedPattern = new RegExp(config.PLACEHOLDERS.extended.source, 'g');
+    const cursorPattern = new RegExp(config.PLACEHOLDERS.cursor.source, 'g');
     let match;
-    while ((match = pattern.exec(lines[i])) !== null) {
-      placeholders.push({
-        placeholder: match[0],
-        name: match[1],
-        line: i + 1
-      });
+
+    while ((match = extendedPattern.exec(lines[i])) !== null) {
+      placeholders.push({ placeholder: match[0], name: match[1], line: i + 1 });
+    }
+    while ((match = cursorPattern.exec(lines[i])) !== null) {
+      placeholders.push({ placeholder: match[0], name: match[1], line: i + 1 });
     }
   }
-  
+
   return placeholders;
 }
 
@@ -165,30 +170,28 @@ function extractFrontmatter(content) {
 
 /**
  * Get built skill file path for platform
+ * Uses config.PATHS.platforms as the canonical output directory (SSOT).
  * @param {string} platform - Platform name
  * @returns {string|null} File path or null if not found
  */
 function getBuiltSkillPath(platform) {
   const ext = platform === 'openai' ? 'json' : 'md';
+  const platformsDir = config.PATHS.platforms;
+
   const possiblePaths = [
-    // Flat file structure (actual build output)
-    path.join(process.cwd(), 'platforms', `skill-writer-${platform}-dev.${ext}`),
-    path.join(process.cwd(), 'platforms', `skill-writer-${platform}.${ext}`),
-    // Subdirectory structure (legacy)
-    path.join(process.cwd(), 'platforms', platform, 'skill-writer.md'),
-    path.join(process.cwd(), 'platforms', platform, 'skill.md'),
-    path.join(process.cwd(), 'dist', platform, 'skill-writer.md'),
-    path.join(process.cwd(), 'dist', platform, 'skill.md'),
-    path.join(process.cwd(), 'build', platform, 'skill-writer.md'),
-    path.join(process.cwd(), 'build', platform, 'skill.md'),
+    // Primary: canonical build output under config.PATHS.platforms
+    path.join(platformsDir, `skill-writer-${platform}-dev.${ext}`),
+    path.join(platformsDir, `skill-writer-${platform}.${ext}`),
+    path.join(platformsDir, platform, 'skill-writer.md'),
+    path.join(platformsDir, platform, 'skill.md'),
   ];
-  
+
   for (const filePath of possiblePaths) {
     if (fs.existsSync(filePath)) {
       return filePath;
     }
   }
-  
+
   return null;
 }
 

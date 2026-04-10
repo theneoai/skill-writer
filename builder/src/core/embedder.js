@@ -13,51 +13,9 @@ const path = require('path');
 const yaml = require('js-yaml');
 const config = require('../config');
 
-// Platform-specific formatting configurations
-const PLATFORM_CONFIGS = {
-  opencode: {
-    placeholderPattern: /\{\{(\w+)\}\}/g,
-    sectionPrefix: '##',
-    codeBlockLang: 'yaml',
-    supportsFrontmatter: true,
-    triggerFormat: 'markdown',
-  },
-  openclaw: {
-    placeholderPattern: /\{\{(\w+)\}\}/g,
-    sectionPrefix: '##',
-    codeBlockLang: 'yaml',
-    supportsFrontmatter: true,
-    triggerFormat: 'markdown',
-  },
-  claude: {
-    placeholderPattern: /\{\{(\w+)\}\}/g,
-    sectionPrefix: '##',
-    codeBlockLang: 'yaml',
-    supportsFrontmatter: true,
-    triggerFormat: 'markdown',
-  },
-  cursor: {
-    placeholderPattern: /\$\{(\w+)\}/g,
-    sectionPrefix: '##',
-    codeBlockLang: 'yaml',
-    supportsFrontmatter: false,
-    triggerFormat: 'json',
-  },
-  openai: {
-    placeholderPattern: /\{\{(\w+)\}\}/g,
-    sectionPrefix: '##',
-    codeBlockLang: 'json',
-    supportsFrontmatter: true,
-    triggerFormat: 'json',
-  },
-  gemini: {
-    placeholderPattern: /\{\{(\w+)\}\}/g,
-    sectionPrefix: '##',
-    codeBlockLang: 'yaml',
-    supportsFrontmatter: true,
-    triggerFormat: 'markdown',
-  },
-};
+// Canonical platform configurations come from centralized config (SSOT).
+// Local alias kept for backward compatibility; do not add platform entries here.
+const PLATFORM_CONFIGS = config.PLATFORMS;
 
 // Default configuration
 const DEFAULT_CONFIG = PLATFORM_CONFIGS.opencode;
@@ -68,12 +26,12 @@ const DEFAULT_CONFIG = PLATFORM_CONFIGS.opencode;
  * @returns {Object} Platform configuration
  */
 function getPlatformConfig(platform) {
-  const config = PLATFORM_CONFIGS[platform.toLowerCase()];
-  if (!config) {
+  const platformConfig = config.PLATFORMS[platform.toLowerCase()];
+  if (!platformConfig) {
     console.warn(`Unknown platform: ${platform}. Using default configuration.`);
     return DEFAULT_CONFIG;
   }
-  return config;
+  return platformConfig;
 }
 
 /**
@@ -715,19 +673,26 @@ function validateEmbeddedContent(content) {
 
 /**
  * Extract placeholders from template
+ * Returns all occurrences including duplicates (use Set on result to deduplicate).
  * @param {string} template - Template string
- * @returns {string[]} Array of placeholder names
+ * @param {Object} [platformConfig] - Optional platform config with placeholderPattern
+ * @returns {string[]} Array of placeholder names (with duplicates)
  */
-function extractPlaceholders(template) {
-  const placeholders = new Set();
-  const pattern = /\{\{(\w+)\}\}/g;
+function extractPlaceholders(template, platformConfig) {
+  const placeholders = [];
+  // Use extended pattern by default so {{OUTER-KEY}} and {{outer.key}} are captured
+  const sourcePattern = platformConfig && platformConfig.placeholderPattern
+    ? platformConfig.placeholderPattern
+    : config.PLACEHOLDERS.extended;
+  // Clone regex to avoid shared lastIndex state
+  const pattern = new RegExp(sourcePattern.source, 'g');
   let match;
-  
+
   while ((match = pattern.exec(template)) !== null) {
-    placeholders.add(match[1]);
+    placeholders.push(match[1]);
   }
-  
-  return Array.from(placeholders);
+
+  return placeholders;
 }
 
 /**
@@ -822,11 +787,14 @@ module.exports = {
   // Utility functions
   getPlatformConfig,
   replacePlaceholders,
+  extractPlaceholders,
   formatSectionHeader,
   formatCodeBlock,
   formatFrontmatter,
-  
-  // Constants
+  validateEmbeddedContent,
+  applyPlatformTransforms,
+
+  // Constants (PLATFORM_CONFIGS is an alias to config.PLATFORMS for backward compat)
   PLATFORM_CONFIGS,
   DEFAULT_CONFIG,
 };

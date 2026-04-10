@@ -93,11 +93,13 @@ const SECTIONS = {
 
 /**
  * Platform configurations
+ * Uses PLACEHOLDERS.extended so {{OUTER-KEY}} and {{outer.key}} are matched.
+ * Cursor uses its own ${KEY} syntax.
  */
 const PLATFORMS = {
   opencode: {
     name: 'opencode',
-    placeholderPattern: PLACEHOLDERS.standard,
+    placeholderPattern: PLACEHOLDERS.extended,
     sectionPrefix: '##',
     codeBlockLang: 'yaml',
     supportsFrontmatter: true,
@@ -105,7 +107,7 @@ const PLATFORMS = {
   },
   openclaw: {
     name: 'openclaw',
-    placeholderPattern: PLACEHOLDERS.standard,
+    placeholderPattern: PLACEHOLDERS.extended,
     sectionPrefix: '##',
     codeBlockLang: 'yaml',
     supportsFrontmatter: true,
@@ -113,7 +115,7 @@ const PLATFORMS = {
   },
   claude: {
     name: 'claude',
-    placeholderPattern: PLACEHOLDERS.standard,
+    placeholderPattern: PLACEHOLDERS.extended,
     sectionPrefix: '##',
     codeBlockLang: 'yaml',
     supportsFrontmatter: true,
@@ -129,7 +131,7 @@ const PLATFORMS = {
   },
   openai: {
     name: 'openai',
-    placeholderPattern: PLACEHOLDERS.standard,
+    placeholderPattern: PLACEHOLDERS.extended,
     sectionPrefix: '##',
     codeBlockLang: 'json',
     supportsFrontmatter: true,
@@ -137,16 +139,31 @@ const PLATFORMS = {
   },
   gemini: {
     name: 'gemini',
-    placeholderPattern: PLACEHOLDERS.standard,
+    placeholderPattern: PLACEHOLDERS.extended,
     sectionPrefix: '##',
     codeBlockLang: 'yaml',
     supportsFrontmatter: true,
     triggerFormat: 'markdown',
   },
+  mcp: {
+    name: 'mcp',
+    placeholderPattern: PLACEHOLDERS.extended,
+    sectionPrefix: '##',
+    codeBlockLang: 'json',
+    supportsFrontmatter: false,
+    triggerFormat: 'json',
+  },
 };
 
 /**
- * Scoring configuration
+ * Unified 7-dimension scoring specification.
+ *
+ * Design goal: LEAN, EVALUATE, and OPTIMIZE all operate on the same 7 dimensions.
+ * - LEAN: each dimension scored 0–50 pt  → max 350 pt (×2 → reported as /700 on 1000-scale)
+ * - EVALUATE: each dimension scored at full weight → max 1000 pt
+ * - OPTIMIZE: tracks per-dimension deltas; lowest-scoring dimension drives strategy selection
+ *
+ * Enforcement level: [ENFORCED] for dimension names & weights; [ASPIRATIONAL] for cross-session aggregation.
  */
 const SCORING = {
   lean: {
@@ -168,6 +185,58 @@ const SCORING = {
     silver: 20,
     bronze: 30,
   },
+  /**
+   * Unified 7-dimension schema used across LEAN, EVALUATE, and OPTIMIZE.
+   * weight: fraction of total 1000-pt score allocated to this dimension.
+   * leanMax: maximum LEAN points for this dimension (sum = 500).
+   * strategies: OPTIMIZE strategy IDs that target this dimension.
+   */
+  dimensions: {
+    systemDesign: {
+      label: 'System Design',
+      weight: 0.20,
+      leanMax: 100,
+      strategies: ['S1', 'S2'],
+    },
+    domainKnowledge: {
+      label: 'Domain Knowledge',
+      weight: 0.20,
+      leanMax: 100,
+      strategies: ['S3', 'S4'],
+    },
+    workflow: {
+      label: 'Workflow',
+      weight: 0.15,
+      leanMax: 75,
+      strategies: ['S5'],
+    },
+    errorHandling: {
+      label: 'Error Handling',
+      weight: 0.15,
+      leanMax: 75,
+      strategies: ['S6'],
+    },
+    examples: {
+      label: 'Examples',
+      weight: 0.15,
+      leanMax: 75,
+      strategies: ['S7'],
+    },
+    security: {
+      label: 'Security',
+      weight: 0.10,
+      leanMax: 50,
+      strategies: ['S8'],
+    },
+    metadata: {
+      label: 'Metadata',
+      weight: 0.05,
+      leanMax: 25,
+      strategies: ['S9'],
+    },
+  },
+  /** Minimum EVALUATE score delta required to declare convergence in OPTIMIZE loop */
+  convergenceThreshold: 5,
 };
 
 /**

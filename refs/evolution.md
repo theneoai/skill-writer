@@ -6,6 +6,20 @@
 
 ---
 
+> ### Enforcement Level Guide
+>
+> | Tag | Meaning |
+> |-----|---------|
+> | `[ENFORCED]` | Executes fully within a single session; no external persistence required |
+> | `[ASPIRATIONAL]` | Requires cross-session audit logs, persistent counters, or external schedulers |
+> | `[ENFORCED — needs external trigger]` | Logic is clear and executable, but activation depends on external cron/scheduler |
+>
+> **For `[ASPIRATIONAL]` items**: AI applies the described logic where possible within the
+> current session; cross-session tracking requires an optional external backend
+> (see §4 of this document).
+
+---
+
 ## §1  Three-Trigger System
 
 Skills are monitored continuously. Any of three independent triggers can initiate evolution.
@@ -21,12 +35,14 @@ Skills are monitored continuously. Any of three independent triggers can initiat
 | Error rate | > 10% per 100 calls | Immediate HUMAN_REVIEW escalation |
 | Tier downgrade | Drops 1+ tier | Investigate root cause → OPTIMIZE |
 
-**Detection method**: Score tracked in `.skill-audit/framework.jsonl`.
+**Detection method** `[ASPIRATIONAL]`: Score tracked in `.skill-audit/framework.jsonl`.
 Check after every invocation. Compare rolling 30-invocation average.
+> **`[ASPIRATIONAL]`**: Persistent `.skill-audit/` log and rolling 30-invocation counter require
+> external storage. LLM sessions are stateless — cross-session tracking needs an optional backend.
 
 ---
 
-### Trigger 2 — Time-Based (Staleness Prevention)
+### Trigger 2 — Time-Based (Staleness Prevention) `[ENFORCED — needs external trigger]`
 
 | Condition | Threshold | Action |
 |-----------|-----------|--------|
@@ -36,18 +52,21 @@ Check after every invocation. Compare rolling 30-invocation average.
 
 **Detection method**: Compare `updated` field in YAML frontmatter to current date.
 Run daily cron check (or on each invocation if cron unavailable).
+> **`[ENFORCED — needs external trigger]`**: The comparison logic is straightforward and
+> AI-executable (current date vs. frontmatter `updated` field). The 30-day *automatic* trigger
+> requires an external scheduler; on-invocation checks are fully `[ENFORCED]`.
 
 ---
 
-### Trigger 3 — Usage-Based (Relevance Check)
+### Trigger 3 — Usage-Based (Relevance Check) `[ASPIRATIONAL]`
 
 | Condition | Threshold | Action |
 |-----------|-----------|--------|
-| Invocations | < 5 in 90 days | Present: deprecate | maintain | refocus |
+| Invocations | < 5 in 90 days | Present: deprecate \| maintain \| refocus |
 | Invocations | 0 in 60 days | Auto-deprecate candidate (pending human confirmation) |
 | Invocations | < 10 in 90 days AND tier < SILVER | Deprecate or refocus |
 
-**Metrics tracked** (in `.skill-audit/usage.jsonl`):
+**Metrics tracked** `[ASPIRATIONAL]` (in `.skill-audit/usage.jsonl`):
 ```json
 {
   "skill_name": "<name>",

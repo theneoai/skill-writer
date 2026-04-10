@@ -1,16 +1,16 @@
 ---
 name: skill-writer
-version: "2.1.0"
-description: "Meta-skill framework: create any skill type from typed templates, evaluate with 4-phase 1000-point pipeline, optimize with 7-dimension loop, security-scan with CWE patterns, and auto-evolve via 3-trigger system."
+version: "2.2.0"
+description: "Meta-skill framework: create any skill type from typed templates, evaluate with 4-phase 1000-point pipeline, optimize with 7-dimension loop, security-scan with CWE patterns, auto-evolve via 3-trigger system, and deploy to 7 platforms including MCP."
 description_i18n:
-  en: "Full lifecycle meta-skill framework: CREATE from templates, LEAN fast-eval, EVALUATE 4-phase 1000pt pipeline, OPTIMIZE 7-dim 9-step loop, auto-evolve via threshold/time/usage triggers."
-  zh: "全生命周期元技能框架：从模板CREATE、LEAN快速评测、4阶段1000分EVALUATE、7维9步OPTIMIZE、三触发器自动进化。"
+  en: "Full lifecycle meta-skill framework: CREATE from templates, LEAN fast-eval, EVALUATE 4-phase 1000pt pipeline, OPTIMIZE 7-dim 9-step loop, auto-evolve via threshold/time/usage triggers, deploy to 7 platforms (Claude/OpenCode/OpenClaw/Cursor/OpenAI/Gemini/MCP)."
+  zh: "全生命周期元技能框架：从模板CREATE、LEAN快速评测、4阶段1000分EVALUATE、7维9步OPTIMIZE、三触发器自动进化、部署至7平台（含MCP标准）。"
 
 license: MIT
 author:
   name: theneoai
 created: "2026-03-31"
-updated: "2026-04-04"
+updated: "2026-04-10"
 type: meta-framework
 
 tags:
@@ -26,6 +26,7 @@ interface:
   input: user-natural-language
   output: structured-skill
   modes: [create, lean, evaluate, optimize, install]
+  platforms: [claude, opencode, openclaw, cursor, openai, gemini, mcp]
 
 extends:
   evaluation:
@@ -439,7 +440,12 @@ Full spec: `claude/refs/self-review.md`
 
 ---
 
-## §13  Audit Trail
+## §13  Audit Trail `[ASPIRATIONAL — requires external persistence]`
+
+> **`[ASPIRATIONAL]`**: The audit trail schema below is the canonical output format.
+> Writing to `.skill-audit/framework.jsonl` requires an external file system or backend.
+> In stateless LLM sessions, treat this as an **output specification** — produce the JSON
+> object as part of your response so the user or an integration layer can persist it.
 
 Every operation appends to `.skill-audit/framework.jsonl` (365-day retention):
 
@@ -556,13 +562,14 @@ Snippet: `claude/templates/use-to-evolve-snippet.md`
 
 After injection, the AI follows the UTE protocol to:
 
-| Capability | How It Works |
-|-----------|-----------|
-| Feedback detection | AI observes user corrections, rephrasing, and approvals |
-| Trigger candidate collection | Rephrasing patterns noted; ≥3 similar → micro-patch candidate |
-| Periodic health checks | AI reviews skill performance at ~10/50/100 use intervals |
-| Micro-patch proposals | AI suggests keyword additions; user confirms before apply |
-| OPTIMIZE suggestions | Structural issues flagged for full OPTIMIZE cycle |
+| Capability | Level | How It Works |
+|-----------|-------|-----------|
+| Feedback detection | `[ENFORCED]` | AI observes user corrections, rephrasing, and approvals |
+| Trigger candidate collection | `[ENFORCED]` | Rephrasing patterns noted; ≥3 similar → micro-patch candidate |
+| Micro-patch proposals | `[ENFORCED]` | AI suggests keyword additions; user confirms before apply |
+| OPTIMIZE suggestions | `[ENFORCED]` | Structural issues flagged for full OPTIMIZE cycle |
+| Periodic health checks (every 10/50/100) | `[ASPIRATIONAL]` | Requires persistent `cumulative_invocations` counter |
+| Cadence-gated tier drift detection | `[ASPIRATIONAL]` | Requires cross-session invocation counter |
 
 ### UTE Update (on OPTIMIZE)
 
@@ -590,15 +597,16 @@ from a URL or using local files.  No evaluation or generation — pure deploymen
 
 ### Platform Path Map
 
-| Platform | Install Path | Companion Files |
-|----------|-------------|-----------------|
-| claude   | `~/.claude/skills/skill-writer.md` | refs/, templates/, eval/, optimize/ |
-| opencode | `~/.config/opencode/skills/skill-writer.md` | — |
-| openclaw | `~/.openclaw/skills/skill-writer.md` | — |
-| cursor   | `~/.cursor/skills/skill-writer.md` | — |
-| gemini   | `~/.gemini/skills/skill-writer.md` | — |
-| openai   | see platform docs | — |
-| **all**  | all of the above | — |
+| Platform | Install Path | Output Format | Companion Files |
+|----------|-------------|---------------|-----------------|
+| claude   | `~/.claude/skills/skill-writer.md` | Markdown + YAML frontmatter | refs/, templates/, eval/, optimize/ |
+| opencode | `~/.config/opencode/skills/skill-writer.md` | Markdown + YAML frontmatter | — |
+| openclaw | `~/.openclaw/skills/skill-writer.md` | AgentSkills Markdown | — |
+| cursor   | `~/.cursor/skills/skill-writer.md` | Markdown (no frontmatter) | — |
+| gemini   | `~/.gemini/skills/skill-writer.md` | Markdown + YAML frontmatter | — |
+| openai   | see platform docs | JSON | — |
+| **mcp**  | `~/.mcp/servers/skill-writer/mcp-manifest.json` | MCP JSON Manifest | — |
+| **all**  | all of the above | platform-specific | — |
 
 ### Trigger Patterns
 
@@ -678,6 +686,61 @@ User: "read https://raw.githubusercontent.com/.../skill-framework.md and install
 → ✓ ~/.claude/skills/skill-writer.md  + companion files
 → Installed to 1 platform. Restart Claude to activate.
 ```
+
+---
+
+## §17  Memory Architecture `[ASPIRATIONAL — optional backend required for full capability]`
+
+Skill Writer operates across three memory layers. Only Working Memory is natively available
+in all LLM sessions. Episodic and Semantic Memory require optional external backends.
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  WORKING MEMORY  `[ENFORCED]`                                       │
+│  Session-scoped in-context state                                    │
+│  • Current skill content being processed                            │
+│  • LEAN/EVALUATE scores and dimension breakdown                     │
+│  • OPTIMIZE round history (within this session)                     │
+│  • Self-review draft → reconcile cycle outputs                      │
+│  Cleared on: session end                                            │
+└────────────────────────────────┬────────────────────────────────────┘
+                                 │ optional persistence via backend
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  EPISODIC MEMORY  `[ASPIRATIONAL]`                                  │
+│  Persistent event log across sessions                               │
+│  • Skill invocation history (cumulative_invocations counter)        │
+│  • UTE feedback signals and micro-patch log                         │
+│  • EVALUATE/OPTIMIZE audit trail (.skill-audit/framework.jsonl)     │
+│  • 3-trigger evolution event log                                    │
+│  Backends: SQLite · Redis · GitHub Gist · custom API                │
+└────────────────────────────────┬────────────────────────────────────┘
+                                 │ optional vector indexing
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  SEMANTIC MEMORY  `[ASPIRATIONAL]`                                  │
+│  Vectorized knowledge for retrieval-augmented skill generation      │
+│  • Skill knowledge base (domain patterns, best practices)           │
+│  • Historical optimization strategies and their outcomes            │
+│  • CWE pattern embeddings for fuzzy security matching               │
+│  Backends: ChromaDB · pgvector · Pinecone                           │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Minimum Viable Persistence (no infra required)
+
+For projects without a persistence backend, use **GitHub Gist** as a free
+cross-session episodic memory:
+
+```
+cumulative_invocations  →  update Gist JSON on each invocation
+audit_trail             →  append to Gist JSONL file
+ute_micro_patches       →  store patch candidates in Gist
+```
+
+The skill framework functions fully with Working Memory only. Episodic and
+Semantic Memory unlock cadence-gated UTE health checks and RAG-enhanced
+skill generation respectively.
 
 ---
 

@@ -6,6 +6,25 @@
 
 ---
 
+> ### Enforcement Level Summary
+>
+> | Component | Level | Reason |
+> |-----------|-------|--------|
+> | Feedback signal detection (correction / approval) | `[ENFORCED]` | Observable within a single turn |
+> | Trigger miss detection (user rephrasing) | `[ENFORCED]` | Observable within session |
+> | Micro-patch proposal & user confirmation | `[ENFORCED]` | Single-session action |
+> | LEAN score after micro-patch | `[ENFORCED]` | Computed in same session |
+> | `cumulative_invocations` counter | `[ASPIRATIONAL]` | Resets across LLM sessions |
+> | Cadence checks (every 10/50/100 calls) | `[ASPIRATIONAL]` | Requires persistent counter |
+> | `last_ute_check` / `pending_patches` fields | `[ASPIRATIONAL]` | Cross-session state |
+> | Audit trail in `.skill-audit/` | `[ASPIRATIONAL]` | Requires external file system |
+>
+> **Workaround for `[ASPIRATIONAL]` items**: Treat each invocation as potentially the
+> Nth invocation. Run a lightweight check every invocation if session context is fresh.
+> For true cadence gating, connect an optional persistence backend (see §5).
+
+---
+
 ## §1  Concept
 
 **Use-to-Evolve** (UTE) makes a skill self-improving through actual use.

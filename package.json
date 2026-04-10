@@ -1,7 +1,7 @@
 {
   "name": "skill-writer",
-  "version": "2.1.0",
-  "description": "Cross-platform meta-skill for creating, evaluating, and optimizing AI assistant skills",
+  "version": "2.2.0",
+  "description": "Cross-platform meta-skill for creating, evaluating, and optimizing AI assistant skills (supports 7 platforms including MCP)",
   "main": "builder/src/index.js",
   "scripts": {
     "build": "cd builder && node bin/skill-writer-builder.js build --platform all --output ../platforms",
@@ -11,6 +11,7 @@
     "build:cursor": "cd builder && node bin/skill-writer-builder.js build --platform cursor --output ../platforms",
     "build:openai": "cd builder && node bin/skill-writer-builder.js build --platform openai --output ../platforms",
     "build:gemini": "cd builder && node bin/skill-writer-builder.js build --platform gemini --output ../platforms",
+    "build:mcp": "cd builder && node bin/skill-writer-builder.js build --platform mcp --output ../platforms",
     "dev": "cd builder && node bin/skill-writer-builder.js dev --platform opencode",
     "validate": "cd builder && node bin/skill-writer-builder.js validate",
     "test": "cd builder && npm test",
@@ -19,7 +20,8 @@
     "install:openclaw": "mkdir -p ~/.openclaw/skills && cp platforms/skill-writer-openclaw-dev.md ~/.openclaw/skills/skill-writer.md",
     "install:claude": "bash install-claude.sh",
     "install:cursor": "mkdir -p ~/.cursor/skills && cp platforms/skill-writer-cursor-dev.md ~/.cursor/skills/skill-writer.md",
-    "install:gemini": "mkdir -p ~/.gemini/skills && cp platforms/skill-writer-gemini-dev.md ~/.gemini/skills/skill-writer.md"
+    "install:gemini": "mkdir -p ~/.gemini/skills && cp platforms/skill-writer-gemini-dev.md ~/.gemini/skills/skill-writer.md",
+    "install:mcp": "mkdir -p ~/.mcp/servers/skill-writer && cp platforms/skill-writer-mcp-dev.json ~/.mcp/servers/skill-writer/mcp-manifest.json"
   },
   "keywords": [
     "skill",
@@ -32,6 +34,8 @@
     "cursor",
     "openai",
     "gemini",
+    "mcp",
+    "model-context-protocol",
     "automation",
     "code-generation"
   ],

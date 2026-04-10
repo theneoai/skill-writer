@@ -1,7 +1,8 @@
 /**
  * Embedder Module Tests
- * 
- * Tests for the embedder module with strict mode
+ *
+ * Tests for the embedder module including strict mode, extended regex,
+ * and platform config resolution.
  */
 
 const embedder = require('../../src/core/embedder');
@@ -9,16 +10,19 @@ const config = require('../../src/config');
 
 describe('Embedder Module', () => {
   describe('getPlatformConfig', () => {
-    test('should return config for known platforms', () => {
-      const opencode = embedder.getPlatformConfig('opencode');
-      expect(opencode.name).toBe('opencode');
-      expect(opencode.supportsFrontmatter).toBe(true);
+    test('should return config for all known platforms', () => {
+      const platforms = ['opencode', 'openclaw', 'claude', 'cursor', 'openai', 'gemini', 'mcp'];
+      platforms.forEach(name => {
+        const cfg = embedder.getPlatformConfig(name);
+        expect(cfg).toBeDefined();
+        expect(cfg.name).toBe(name);
+      });
     });
 
     test('should return default config for unknown platforms', () => {
       const unknown = embedder.getPlatformConfig('unknown');
       expect(unknown).toBeDefined();
-      expect(unknown.name).toBe('opencode'); // Default
+      expect(unknown.name).toBe('opencode'); // Default falls back to opencode
     });
 
     test('should be case insensitive', () => {
@@ -26,24 +30,45 @@ describe('Embedder Module', () => {
       const upper = embedder.getPlatformConfig('CLAUDE');
       expect(lower.name).toBe(upper.name);
     });
+
+    test('should reference config.PLATFORMS (no duplication)', () => {
+      // Verify embedder uses canonical config — not a private copy
+      const fromEmbedder = embedder.getPlatformConfig('opencode');
+      const fromConfig = config.PLATFORMS.opencode;
+      expect(fromEmbedder).toBe(fromConfig);
+    });
   });
 
   describe('replacePlaceholders', () => {
-    const mockConfig = {
-      placeholderPattern: /\{\{(\w+)\}\}/g,
-    };
+    const standardConfig = { placeholderPattern: config.PLACEHOLDERS.standard };
+    const extendedConfig = { placeholderPattern: config.PLACEHOLDERS.extended };
+    const cursorConfig = { placeholderPattern: config.PLACEHOLDERS.cursor };
 
-    test('should replace placeholders with data values', () => {
+    test('should replace standard placeholders with data values', () => {
       const template = 'Hello {{NAME}}, version {{VERSION}}';
       const data = { NAME: 'Test', VERSION: '1.0.0' };
-      const result = embedder.replacePlaceholders(template, data, mockConfig);
+      const result = embedder.replacePlaceholders(template, data, standardConfig);
       expect(result).toBe('Hello Test, version 1.0.0');
+    });
+
+    test('should replace extended placeholders ({{OUTER-KEY}}, {{outer.key}})', () => {
+      const template = 'key={{OUTER-KEY}} dot={{outer.key}}';
+      const data = { 'OUTER-KEY': 'value1', 'outer.key': 'value2' };
+      const result = embedder.replacePlaceholders(template, data, extendedConfig);
+      expect(result).toBe('key=value1 dot=value2');
+    });
+
+    test('should replace cursor-style placeholders', () => {
+      const template = 'Hello ${NAME}';
+      const data = { NAME: 'World' };
+      const result = embedder.replacePlaceholders(template, data, cursorConfig);
+      expect(result).toBe('Hello World');
     });
 
     test('should keep original placeholder when value missing (non-strict)', () => {
       const template = 'Hello {{NAME}}, missing {{MISSING}}';
       const data = { NAME: 'Test' };
-      const result = embedder.replacePlaceholders(template, data, mockConfig);
+      const result = embedder.replacePlaceholders(template, data, standardConfig);
       expect(result).toBe('Hello Test, missing {{MISSING}}');
     });
 
@@ -51,77 +76,141 @@ describe('Embedder Module', () => {
       const template = 'Hello {{NAME}}, missing {{MISSING}}';
       const data = { NAME: 'Test' };
       expect(() => {
-        embedder.replacePlaceholders(template, data, mockConfig, { strict: true });
+        embedder.replacePlaceholders(template, data, standardConfig, { strict: true });
       }).toThrow(config.ERROR_CODES.MISSING_PLACEHOLDER);
     });
 
-    test('should include placeholder key in error message', () => {
+    test('should include placeholder key in strict-mode error message', () => {
       const template = 'Missing {{MISSING_KEY}}';
       const data = {};
       expect(() => {
-        embedder.replacePlaceholders(template, data, mockConfig, { strict: true });
+        embedder.replacePlaceholders(template, data, standardConfig, { strict: true });
       }).toThrow('MISSING_KEY');
     });
 
-    test('should handle null values as missing in strict mode', () => {
+    test('should treat null values as missing in strict mode', () => {
       const template = 'Value: {{NULL_VAL}}';
       const data = { NULL_VAL: null };
       expect(() => {
-        embedder.replacePlaceholders(template, data, mockConfig, { strict: true });
+        embedder.replacePlaceholders(template, data, standardConfig, { strict: true });
       }).toThrow(config.ERROR_CODES.MISSING_PLACEHOLDER);
     });
 
-    test('should handle empty string values (not missing)', () => {
+    test('should allow empty string values (not missing)', () => {
       const template = 'Value: {{EMPTY}}';
       const data = { EMPTY: '' };
-      const result = embedder.replacePlaceholders(template, data, mockConfig, { strict: true });
+      const result = embedder.replacePlaceholders(template, data, standardConfig, { strict: true });
       expect(result).toBe('Value: ');
     });
 
     test('should default to non-strict mode', () => {
       const template = 'Missing {{MISSING}}';
       const data = {};
-      // Should not throw
       expect(() => {
-        embedder.replacePlaceholders(template, data, mockConfig);
+        embedder.replacePlaceholders(template, data, standardConfig);
       }).not.toThrow();
     });
   });
 
-  describe('formatFrontmatter', () => {
-    test('should format object as YAML frontmatter', () => {
-      const data = {
-        name: 'test-skill',
-        version: '1.0.0',
-      };
-      const result = embedder.formatFrontmatter(data);
-      expect(result).toContain('---');
-      expect(result).toContain('name: test-skill');
-      expect(result).toContain('version: 1.0.0');
-    });
-
-    test('should handle empty object', () => {
-      const result = embedder.formatFrontmatter({});
-      expect(result).toContain('---');
-      expect(result).toContain('---');
-    });
-  });
-
   describe('extractPlaceholders', () => {
-    test('should extract all placeholders from template', () => {
+    test('should extract all placeholder occurrences including duplicates', () => {
       const template = '{{NAME}} {{VERSION}} {{NAME}}';
-      const config = { placeholderPattern: /\{\{(\w+)\}\}/g };
-      const result = embedder.extractPlaceholders(template, config);
+      const result = embedder.extractPlaceholders(template);
       expect(result).toContain('NAME');
       expect(result).toContain('VERSION');
       expect(result.length).toBe(3); // Includes duplicates
     });
 
-    test('should return empty array for no placeholders', () => {
+    test('should return empty array when no placeholders present', () => {
       const template = 'No placeholders here';
-      const config = { placeholderPattern: /\{\{(\w+)\}\}/g };
-      const result = embedder.extractPlaceholders(template, config);
+      const result = embedder.extractPlaceholders(template);
       expect(result).toEqual([]);
+    });
+
+    test('should accept optional platformConfig with custom pattern', () => {
+      const template = '${KEY1} ${KEY2}';
+      const cursorConfig = { placeholderPattern: config.PLACEHOLDERS.cursor };
+      const result = embedder.extractPlaceholders(template, cursorConfig);
+      expect(result).toContain('KEY1');
+      expect(result).toContain('KEY2');
+      expect(result.length).toBe(2);
+    });
+
+    test('should use extended pattern by default (catches {{OUTER-KEY}})', () => {
+      const template = '{{OUTER-KEY}} {{outer.key}} {{NORMAL}}';
+      const result = embedder.extractPlaceholders(template);
+      expect(result).toContain('OUTER-KEY');
+      expect(result).toContain('outer.key');
+      expect(result).toContain('NORMAL');
+    });
+
+    test('deduplicated set from result should have unique names', () => {
+      const template = '{{NAME}} {{NAME}} {{OTHER}}';
+      const result = embedder.extractPlaceholders(template);
+      const unique = [...new Set(result)];
+      expect(unique).toHaveLength(2);
+      expect(unique).toContain('NAME');
+      expect(unique).toContain('OTHER');
+    });
+  });
+
+  describe('formatFrontmatter', () => {
+    test('should format object as YAML frontmatter', () => {
+      const data = { name: 'test-skill', version: '1.0.0' };
+      const platformConfig = config.PLATFORMS.opencode;
+      const result = embedder.formatFrontmatter(data, platformConfig);
+      expect(result).toContain('---');
+      expect(result).toContain('name: test-skill');
+      expect(result).toContain('version: 1.0.0');
+    });
+
+    test('should return null when platform does not support frontmatter', () => {
+      const data = { name: 'test' };
+      const cursorConfig = config.PLATFORMS.cursor;
+      const result = embedder.formatFrontmatter(data, cursorConfig);
+      expect(result).toBeNull();
+    });
+
+    test('should handle empty object', () => {
+      const result = embedder.formatFrontmatter({}, config.PLATFORMS.opencode);
+      expect(result).toContain('---');
+    });
+  });
+
+  describe('injectUTESection', () => {
+    test('should inject §UTE section when absent', () => {
+      const content = '# Skill\n\nSome content';
+      const result = embedder.injectUTESection(content, { name: 'test', version: '1.0.0' });
+      expect(result).toContain('§UTE Use-to-Evolve');
+      expect(result).toContain('cumulative_invocations');
+    });
+
+    test('should not duplicate §UTE section if already present', () => {
+      const content = '# Skill\n\n## §UTE Use-to-Evolve\n\nAlready here';
+      const result = embedder.injectUTESection(content, { name: 'test' });
+      const count = (result.match(/§UTE/g) || []).length;
+      expect(count).toBe(1);
+    });
+  });
+
+  describe('validateEmbeddedContent', () => {
+    test('should detect unbalanced code blocks', () => {
+      const content = '# Title\n\n```\nopened but not closed';
+      const result = embedder.validateEmbeddedContent(content);
+      expect(result.valid).toBe(false);
+      expect(result.issues.some(i => i.type === 'error')).toBe(true);
+    });
+
+    test('should pass clean content', () => {
+      const content = '# Title\n\n```js\nconst x = 1;\n```\n\nDone.';
+      const result = embedder.validateEmbeddedContent(content);
+      expect(result.valid).toBe(true);
+    });
+
+    test('should warn on remaining placeholders', () => {
+      const content = 'Value: {{UNREPLACED}}';
+      const result = embedder.validateEmbeddedContent(content);
+      expect(result.issues.some(i => i.type === 'warning')).toBe(true);
     });
   });
 });

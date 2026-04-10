@@ -15,6 +15,7 @@ const claude = require('./claude');
 const cursor = require('./cursor');
 const openai = require('./openai');
 const gemini = require('./gemini');
+const mcp = require('./mcp');
 
 /**
  * Registry of all supported platforms
@@ -25,7 +26,8 @@ const platforms = {
   claude,
   cursor,
   openai,
-  gemini
+  gemini,
+  mcp,
 };
 
 /**
@@ -212,6 +214,7 @@ module.exports = {
   cursor,
   openai,
   gemini,
+  mcp,
 
   // Registry functions
   getPlatform,

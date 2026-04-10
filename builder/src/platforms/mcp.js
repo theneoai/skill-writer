@@ -1,0 +1,255 @@
+/**
+ * MCP Platform Adapter
+ *
+ * Adapts skills to the Model Context Protocol (MCP) standard.
+ * MCP is an emerging industry standard for AI tool/skill interoperability,
+ * supported by Claude Desktop, Cursor, VS Code, and other MCP-compatible clients.
+ *
+ * Output format: JSON manifest (mcp-manifest.json) conforming to MCP schema v1.0.
+ *
+ * @module builder/src/platforms/mcp
+ * @version 1.0.0
+ * @see https://modelcontextprotocol.io
+ */
+
+const path = require('path');
+const os = require('os');
+
+const name = 'mcp';
+
+const template = {
+  /**
+   * MCP uses JSON manifests, not YAML frontmatter.
+   * The manifest declares available tools/skills and their input schemas.
+   */
+  manifest: {
+    schema_version: '1.0',
+    name: '{{SKILL_NAME}}',
+    description: '{{SKILL_DESCRIPTION}}',
+    version: '{{VERSION}}',
+    author: '{{AUTHOR}}',
+    tools: [
+      {
+        name: 'invoke',
+        description: 'Invoke the skill in a specific mode',
+        input_schema: {
+          type: 'object',
+          properties: {
+            mode: {
+              type: 'string',
+              enum: ['CREATE', 'LEAN', 'EVALUATE', 'OPTIMIZE', 'INSTALL'],
+              description: 'Operating mode',
+            },
+            input: {
+              type: 'string',
+              description: 'Skill content or description to process',
+            },
+            options: {
+              type: 'object',
+              description: 'Mode-specific options',
+              properties: {
+                platform: {
+                  type: 'string',
+                  enum: ['opencode', 'openclaw', 'claude', 'cursor', 'openai', 'gemini', 'mcp'],
+                  description: 'Target platform (used with INSTALL mode)',
+                },
+                strict: {
+                  type: 'boolean',
+                  description: 'Enable strict validation (throws on missing placeholders)',
+                  default: false,
+                },
+              },
+            },
+          },
+          required: ['mode', 'input'],
+        },
+      },
+      {
+        name: 'evaluate',
+        description: 'Run the 4-phase 1000-point evaluation pipeline on a skill',
+        input_schema: {
+          type: 'object',
+          properties: {
+            skill_content: {
+              type: 'string',
+              description: 'Full skill file content to evaluate',
+            },
+            fast: {
+              type: 'boolean',
+              description: 'Run LEAN (fast) evaluation instead of full EVALUATE',
+              default: false,
+            },
+          },
+          required: ['skill_content'],
+        },
+      },
+      {
+        name: 'optimize',
+        description: 'Run the 7-dimension 9-step OPTIMIZE loop on a skill',
+        input_schema: {
+          type: 'object',
+          properties: {
+            skill_content: {
+              type: 'string',
+              description: 'Full skill file content to optimize',
+            },
+            max_rounds: {
+              type: 'integer',
+              description: 'Maximum optimization rounds (default: 20)',
+              default: 20,
+              minimum: 1,
+              maximum: 50,
+            },
+          },
+          required: ['skill_content'],
+        },
+      },
+    ],
+    resources: [
+      {
+        uri: 'skill://framework',
+        name: 'Skill Framework',
+        description: 'The core skill-writer framework specification',
+        mime_type: 'text/markdown',
+      },
+    ],
+  },
+  sections: [],
+  requiredFields: ['name', 'description', 'version'],
+};
+
+/**
+ * Format skill content for MCP.
+ * MCP uses a JSON manifest rather than Markdown, so this function
+ * converts the skill's YAML frontmatter + content into an MCP manifest.
+ *
+ * @param {string} skillContent - Raw skill content (Markdown with YAML frontmatter)
+ * @returns {string} JSON-formatted MCP manifest
+ */
+function formatSkill(skillContent) {
+  if (!skillContent || typeof skillContent !== 'string') {
+    throw new Error('Invalid skill content provided');
+  }
+
+  // Extract YAML frontmatter if present
+  let skillName = 'unnamed-skill';
+  let skillDescription = '';
+  let skillVersion = '1.0.0';
+  let skillAuthor = '';
+
+  const frontmatterMatch = skillContent.match(/^---\n([\s\S]*?)\n---/);
+  if (frontmatterMatch) {
+    const fm = frontmatterMatch[1];
+    const nameMatch = fm.match(/^name:\s*(.+)$/m);
+    const descMatch = fm.match(/^description:\s*(.+)$/m);
+    const verMatch = fm.match(/^version:\s*(.+)$/m);
+    const authorMatch = fm.match(/^author:\s*(.+)$/m);
+
+    if (nameMatch) skillName = nameMatch[1].trim();
+    if (descMatch) skillDescription = descMatch[1].trim();
+    if (verMatch) skillVersion = verMatch[1].trim();
+    if (authorMatch) skillAuthor = authorMatch[1].trim();
+  }
+
+  // Build MCP manifest with extracted metadata
+  const manifest = {
+    schema_version: '1.0',
+    name: skillName,
+    description: skillDescription,
+    version: skillVersion,
+    author: skillAuthor,
+    generated_by: 'skill-writer-builder',
+    tools: template.manifest.tools,
+    resources: template.manifest.resources,
+    // Embed a compact summary of available modes
+    capabilities: {
+      modes: ['CREATE', 'LEAN', 'EVALUATE', 'OPTIMIZE', 'INSTALL'],
+      platforms: ['opencode', 'openclaw', 'claude', 'cursor', 'openai', 'gemini', 'mcp'],
+      self_evolution: true,
+      security_baseline: 'CWE-aware',
+    },
+  };
+
+  return JSON.stringify(manifest, null, 2);
+}
+
+/**
+ * Get the installation path for MCP skills.
+ * MCP server manifests are typically stored in ~/.mcp/servers/
+ * @returns {string} Installation path
+ */
+function getInstallPath() {
+  return path.join(os.homedir(), '.mcp', 'servers');
+}
+
+/**
+ * Generate MCP-specific metadata
+ * @param {Object} skillData - Skill data object
+ * @returns {Object} Platform metadata
+ */
+function generateMetadata(skillData) {
+  return {
+    platform: name,
+    format: 'MCP JSON Manifest',
+    schema_version: '1.0',
+    version: skillData?.version || '1.0.0',
+    created: new Date().toISOString(),
+    compatibility: {
+      mcp_protocol: '1.0',
+      clients: ['claude-desktop', 'cursor', 'vscode-mcp', 'openai-plugin'],
+    },
+  };
+}
+
+/**
+ * Validate skill structure for MCP output.
+ * Since MCP output is JSON, validation checks JSON structure.
+ *
+ * @param {string} skillContent - Skill content (may be raw Markdown or JSON manifest)
+ * @returns {Object} Validation result
+ */
+function validateSkill(skillContent) {
+  const errors = [];
+  const warnings = [];
+
+  // If the content looks like JSON (MCP manifest), validate its structure
+  const trimmed = skillContent.trim();
+  if (trimmed.startsWith('{')) {
+    try {
+      const manifest = JSON.parse(trimmed);
+
+      if (!manifest.schema_version) errors.push('Missing field: schema_version');
+      if (!manifest.name) errors.push('Missing field: name');
+      if (!manifest.description) errors.push('Missing field: description');
+      if (!manifest.version) errors.push('Missing field: version');
+      if (!Array.isArray(manifest.tools) || manifest.tools.length === 0) {
+        errors.push('MCP manifest must declare at least one tool');
+      }
+      if (!manifest.capabilities) {
+        warnings.push('Missing capabilities block (recommended for discoverability)');
+      }
+    } catch {
+      errors.push('MCP manifest is not valid JSON');
+    }
+    return { valid: errors.length === 0, errors, warnings };
+  }
+
+  // If raw Markdown: check it has enough content to convert
+  if (skillContent.length < 100) {
+    errors.push('Skill content too short to generate a valid MCP manifest');
+  }
+  if (!skillContent.includes('name:') && !skillContent.includes('description:')) {
+    warnings.push('No name or description found; MCP manifest will use defaults');
+  }
+
+  return { valid: errors.length === 0, errors, warnings };
+}
+
+module.exports = {
+  name,
+  template,
+  formatSkill,
+  getInstallPath,
+  generateMetadata,
+  validateSkill,
+};
