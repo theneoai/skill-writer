@@ -14,7 +14,7 @@ const chalk = require('chalk');
 const path = require('path');
 const { readAllCoreData } = require('../core/reader');
 const { generateSkillFile } = require('../core/embedder');
-const { getPlatform, isSupported } = require('../platforms');
+const { getPlatform, isSupported, getSupportedPlatforms } = require('../platforms');
 const fs = require('fs-extra');
 const config = require('../config');
 const { getSkillMetadata } = require('../metadata');
@@ -230,9 +230,11 @@ async function dev(options) {
     }
 
     pendingRebuild = true;
-    debounceTimer = setTimeout(async () => {
+    debounceTimer = setTimeout(() => {
       pendingRebuild = false;
-      await performRebuild(targetPlatform);
+      performRebuild(targetPlatform).catch((err) => {
+        log(`Unhandled rebuild error: ${err.message}`, 'error');
+      });
     }, DEBOUNCE_MS);
   };
 
@@ -276,12 +278,17 @@ async function dev(options) {
     watcher.close().then(() => {
       log('Watcher stopped. Goodbye!', 'info');
       process.exit(0);
+    }).catch((err) => {
+      log(`Error stopping watcher: ${err.message}`, 'error');
+      process.exit(1);
     });
   });
 
   process.on('SIGTERM', () => {
     watcher.close().then(() => {
       process.exit(0);
+    }).catch(() => {
+      process.exit(1);
     });
   });
 

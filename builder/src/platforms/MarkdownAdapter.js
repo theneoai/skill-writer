@@ -121,9 +121,7 @@ tags: {{tags}}
       created: new Date().toISOString(),
       compatibility: {
         minVersion: '2.2.0',
-        testedVersions: [builderVersion].filter(
-          (v, i, arr) => arr.indexOf(v) === i   // deduplicate
-        ),
+        testedVersions: [...new Set([builderVersion])],
       },
     };
   }

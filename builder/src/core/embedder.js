@@ -104,9 +104,9 @@ function formatFrontmatter(data, platformConfig) {
 
   try {
     const yamlContent = yaml.dump(data, {
-      lineWidth: -1,
-      noRefs: true,
-      sortKeys: false,
+      lineWidth: -1,   // disable line wrapping so long strings stay on one line
+      noRefs: true,    // avoid YAML anchors/aliases (&ref/*ref) — keep output portable
+      sortKeys: false, // preserve insertion order for readability
     });
     return `---\n${yamlContent}---\n`;
   } catch (error) {
@@ -471,7 +471,7 @@ function generateSkillFile(platform, coreData) {
         template = getDefaultTemplate(platform);
       }
     } catch (error) {
-      console.warn(`Could not load platform template for ${platform}, using default`);
+      console.warn(`Could not load platform template for ${platform} (${error.message}), using default`);
       template = getDefaultTemplate(platform);
     }
   }

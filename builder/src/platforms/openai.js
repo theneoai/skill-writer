@@ -39,10 +39,14 @@ function formatSkill(skillContent) {
 
   if (frontmatterMatch) {
     try {
-      metadata = yaml.load(frontmatterMatch[1]);
+      const parsed = yaml.load(frontmatterMatch[1]);
+      if (!parsed || typeof parsed !== 'object') {
+        throw new Error('Frontmatter did not parse to an object');
+      }
+      metadata = parsed;
       content = skillContent.replace(frontmatterMatch[0], '');
     } catch (error) {
-      console.warn('Failed to parse frontmatter:', error.message);
+      throw new Error(`Invalid YAML frontmatter: ${error.message}`);
     }
   }
 
