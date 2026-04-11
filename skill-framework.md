@@ -74,14 +74,19 @@ extends:
 
 > **New here?** Pick your scenario below and follow the steps. Full documentation starts at §1.
 
-| Goal | Command | Duration |
-|------|---------|----------|
-| Create a new skill | `/create` + one-sentence description | 2–5 min |
-| Fast quality check | `/lean` + skill content | <5s |
-| Full certification | `/eval` + skill content | ~60s |
-| Improve an existing skill | `/opt` + skill + eval report | 5–20 min |
-| Deploy to platforms | `/install [platform]` | <30s |
-| Record session data | `/collect` | ~10s |
+| Goal | Command (EN) | 中文命令 (ZH) | Duration |
+|------|-------------|--------------|----------|
+| Create a new skill | `/create` + one-sentence description | `/创建` + 一句描述 | 2–5 min |
+| Fast quality check | `/lean` + skill content | `/快评` + 技能内容 | <5s |
+| Full certification | `/eval` + skill content | `/评测` + 技能内容 | ~60s |
+| Improve an existing skill | `/opt` + skill + eval report | `/优化` + 技能 + 评测报告 | 5–20 min |
+| Deploy to platforms | `/install [platform]` | `/安装 [平台]` | <30s |
+| Record session data | `/collect` | `/采集` | ~10s |
+
+> **双语支持 / Bilingual**: All 6 modes work in English and Chinese. The router auto-detects
+> your language — use `/eval` or `评测`, `create a skill` or `创建新技能`, interchangeably.
+> Cursor exception: use keyword phrases, not `/commands` (IDE intercepts `/` key).
+> See §2 Mode Router for the full keyword list in both languages.
 
 ### Workflow A — "I want to create a new skill"
 1. Type `/create` followed by a one-sentence description of what the skill should do
@@ -223,6 +228,12 @@ See `claude/refs/self-review.md §1` for full spec.
 ---
 
 ## §2  Mode Router
+
+> **Cursor users — read this first**: Cursor's IDE command palette intercepts `/` key presses.
+> Do NOT type `/create`, `/lean`, `/eval`, etc. — they will open the IDE command palette,
+> not the skill framework. Instead, use **keyword phrases only**:
+> `create a skill that …` | `lean eval` | `evaluate this skill` | `optimize this skill`
+> See the Platform Feature Matrix in README.md for the full keyword mapping table.
 
 ### Priority 0 — Explicit Slash Commands `[CORE — evaluated first, skip keyword scoring]`
 
@@ -874,7 +885,10 @@ Round N (max 20):
   [User can type /stop → exit loop, output session_best version + final report]
 
 Convergence check (every round):
-  IF volatility OR plateau OR trend=STABLE → STOP early
+  PLATEAU:    no net change in 5 consecutive rounds, OR cumulative_delta < 10 pts total
+  VOLATILITY: score swings > ±30 pts round-to-round for 3+ consecutive rounds
+  STABLE:     3+ consecutive rounds with delta in [+5, +10] range → diminishing returns
+  IF any condition → STOP early; output session_best + convergence reason
   See: claude/refs/convergence.md
 
 Post-loop — Co-Evolutionary VERIFY (Step 10) [NEW in v3.1.0]:
@@ -902,6 +916,23 @@ Post-loop — Co-Evolutionary VERIFY (Step 10) [NEW in v3.1.0]:
 Post-loop — UTE update:
   Update use_to_evolve.certified_lean_score with VERIFY score (more conservative)
   Reset use_to_evolve.last_ute_check to today
+
+Post-loop — Final summary output (always show after loop ends):
+  ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+  OPTIMIZE 完成 / OPTIMIZE Complete
+  轮次 / Rounds: [N completed] / 20 max
+  起始分 / Starting score: [X]/500
+  最终分 / Final score:    [Y]/500  ([+Z] net improvement)
+  VERIFY 分 / Verify score: [M]/500  (independent check)
+  整体趋势 / Trend: [▲ UP / ─ FLAT / ▼ DOWN]
+  收敛原因 / Stop reason: [PLATEAU / VOLATILITY / STABLE / MAX_ROUNDS / USER_STOP]
+
+  下一步 / Next steps:
+  • LEAN score [Y] × 2 ≈ estimated EVALUATE score ~[Y×2]
+  • Estimated tier: [PLATINUM/GOLD/SILVER/BRONZE/FAIL]
+  • Run `/eval` to get authoritative score before registry push
+  • Registry push? See §16 for tier thresholds.
+  ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
 
 Max rounds: 20 → if not BRONZE after round 20 → HUMAN_REVIEW
 ```
@@ -1247,8 +1278,10 @@ determine the appropriate tag and whether to proceed:
 | **BRONZE** | ≥ 700 | Allowed | `experimental` |
 | **FAIL** | < 700 | **Blocked** — fix first | — |
 
-> Use `/eval` for an authoritative score before pushing. A single LEAN score near a tier
-> boundary (±30 pts) is not sufficient — run EVALUATE to confirm.
+> **These thresholds are for EVALUATE (1000-pt) scores.** If you only have a LEAN score
+> from OPTIMIZE, multiply by 2 to estimate: LEAN 375 → estimated ~750 → SILVER tier.
+> This is an estimate (±60 pt variance). Use `/eval` for an authoritative score before
+> pushing, especially if your estimated tier is within ±30 pts of a tier boundary.
 
 ### Error Handling
 

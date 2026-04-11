@@ -66,6 +66,20 @@ Skill Writer is a meta-skill that enables AI assistants to create, evaluate, and
 
 ## Quick Start
 
+### What You Get After Installing
+
+| Features | curl install `[CORE]` | git clone install `[EXTENDED]` |
+|----------|----------------------|-------------------------------|
+| All 6 modes (CREATE, LEAN, EVALUATE, OPTIMIZE, INSTALL, COLLECT) | ✅ | ✅ |
+| LEAN & EVALUATE scoring | ✅ | ✅ (richer detail reports) |
+| OPTIMIZE loop | ✅ | ✅ |
+| COLLECT manual (JSON output to conversation) | ✅ | ✅ |
+| Companion files (refs/, templates/, eval/) for Claude | ❌ | ✅ |
+| COLLECT auto-persist to `~/.skill-artifacts/` | ❌ | ✅ (requires hooks) |
+| UTE Hook-based auto-evolution | ❌ | ✅ |
+
+**tl;dr**: The curl one-liner gives you everything you need to create, evaluate, and optimize skills. The git clone adds richer evaluation reports and automatic persistence.
+
 ### Installation
 
 #### Option 1 — curl one-liner (no git clone required)

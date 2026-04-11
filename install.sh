@@ -319,9 +319,14 @@ for p in "${TARGETS[@]}"; do
       echo "    create a skill that summarises git diffs"
       ;;
     cursor)
-      echo "  [Cursor] Restart Cursor, then try (use keywords — not /slash):"
+      echo "  [Cursor] Restart Cursor, then use KEYWORD phrases (not /slash):"
       echo "    create a skill that summarises git diffs"
-      echo "    lean eval / evaluate / optimize"
+      echo "    lean eval  |  evaluate this skill  |  optimize this skill"
+      echo "    (IDE command palette intercepts / — keywords always work)"
+      echo ""
+      echo "    Note: COLLECT auto-persist requires file system hooks (not"
+      echo "    available in IDE context). Use 'collect session data' to get"
+      echo "    JSON output in the chat, then save manually."
       ;;
     gemini)
       echo "  [Gemini] Restart Gemini, then try:"
