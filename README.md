@@ -155,6 +155,8 @@ cp platforms/skill-writer-openclaw.md ~/.openclaw/skills/skill-writer.md
 # Cursor
 mkdir -p ~/.cursor/skills
 cp platforms/skill-writer-cursor.md ~/.cursor/skills/skill-writer.md
+# ⚠️  Cursor: IDE command palette intercepts /commands — use keywords instead:
+#     "create a skill that ..." (not /create)   "lean eval" (not /lean)
 
 # Gemini
 mkdir -p ~/.gemini/skills

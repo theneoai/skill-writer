@@ -143,7 +143,11 @@ extends:
 │  LEAN    500 pt  速度 <5s   方差 ±20 pt  适用: 迭代中快速检查        │
 │  EVALUATE 1000 pt 速度 ~60s  方差 ±50 pt  适用: 认证/发布/等级声明   │
 │                                                                     │
-│  换算: LEAN分 × 2 ≈ EVALUATE分 (估算值, 误差 ±60 pt)               │
+│  换算估算 / Rough proxy: LEAN × 2 ≈ EVALUATE (±60 pt 误差)          │
+│  ⚠ 这只是粗略估算 — EVALUATE 有独立的 4 阶段计分逻辑                 │
+│  ⚠ Proxy only — EVALUATE uses independent 4-phase scoring;          │
+│    actual score may differ by more than ±60 pt from the proxy.      │
+│    Near a tier boundary? Always run /eval before claiming a tier.   │
 │  认证等级: PLATINUM≥950 | GOLD≥900 | SILVER≥800 | BRONZE≥700 | FAIL │
 │                                                                     │
 │  何时用 LEAN: CREATE后 / OPTIMIZE每轮 / 快速迭代                    │
@@ -289,10 +293,15 @@ User Input
 │           assess,validate,benchmark,check,review]               │
 │ OPTIMIZE [优化,改进,提升,调优,完善,增强 | optimize,improve,      │
 │           enhance,tune,refine,upgrade,evolve]                   │
-│ INSTALL  [安装,部署,读取安装 | install,read.*install,            │
-│           fetch.*install,setup,deploy]                          │
-│ SHARE    [分享,发布,推送,导出技能 | share,push.*skill,export    │
-│           .*skill,publish.*skill,distribute]                    │
+│ INSTALL  [安装,部署,读取安装 | install.*skill-writer,            │
+│           read.*install,fetch.*install,setup,deploy,           │
+│           install skill-writer]                                 │
+│           ⚠ "install MY skill" or "install THIS skill"         │
+│             → SHARE (not INSTALL) — see routing note below     │
+│ SHARE    [分享,发布,推送,导出技能,安装我的技能 |                  │
+│           share,push.*skill,export.*skill,publish.*skill,      │
+│           distribute,install.*my.*skill,install.*this.*skill,  │
+│           deploy.*my.*skill]                                    │
 │ COLLECT  [采集,记录,收集,会话数据 | collect,record,artifact,    │
 │           session-data,session-artifact,export.*log]            │
 │                                                                 │
@@ -300,6 +309,23 @@ User Input
 │ confidence MEDIUM → show "I'll run [MODE] — confirm? (yes/no)"  │
 │ confidence LOW    → show mode menu (see below)                  │
 └─────────────────────────────────────────────────────────────────┘
+```
+
+**INSTALL vs. SHARE disambiguation** (apply before keyword routing):
+```
+IF input matches: "install my skill" | "install this skill" | "deploy my skill"
+                  "install [specific-skill-name].md" (not "skill-writer")
+    → Route to SHARE mode (user wants to package/deploy their own skill)
+IF input matches: "install skill-writer" | "install to claude" | "read [URL] and install"
+    → Route to INSTALL mode (user wants to deploy the framework to a platform)
+```
+
+**Supported languages for keyword routing**:
+```
+EN (English):  full support — all keyword sets
+ZH (Chinese):  full support — all keyword sets
+Other languages: type English or Chinese keywords, or use /slash commands
+  (Korean, Japanese, etc.: type "create a skill" or "/create")
 ```
 
 **Low confidence mode menu** (show when no clear keyword and no context clue):
@@ -487,12 +513,24 @@ Submit skill file via PR with this EVALUATE report attached as context.
 | 1 | **ELICIT** — Inversion pattern, one question at a time (§7) | All Qs answered |
 | 2 | **SELECT TEMPLATE** — match skill type → `claude/templates/<type>.md` | Template chosen |
 | 3 | **PLAN** — multi-pass self-review (`claude/refs/self-review.md §2`) | Plan reviewed |
-| 4 | **GENERATE** — fill template; write Skill Summary (¶1), Negative Boundaries section | Draft complete, no placeholders |
+| 4 | **GENERATE** — fill template; write Skill Summary (¶1), Negative Boundaries section. If Q7 or Q8 was skipped, pause and show auto-filled content for user confirmation before proceeding. | Draft complete, no placeholders |
 | 5 | **SECURITY SCAN** — CWE + OWASP Agentic Top 10 (`claude/refs/security-patterns.md`) | No P0 violations; ASI01 CLEAR |
 | 6 | **LEAN EVAL** — fast heuristic check (§6) | Score ≥ 350; negative boundaries present |
 | 7 | **FULL EVALUATE** — 4-phase pipeline if LEAN uncertain (§8) | Score ≥ 700 BRONZE |
 | 8 | **INJECT UTE** — append `§UTE` section from snippet, fill placeholders (§15) | UTE section present |
 | 9 | **DELIVER** — annotate, certify, write audit entry | CERTIFIED / TEMP_CERT |
+
+> **Phase 4 (GENERATE) — Q7/Q8 skip confirmation gate**:
+> If the user skipped Q7 (negative boundaries) or Q8 (trigger phrases) during elicitation,
+> PAUSE before generating and show the auto-filled defaults for review:
+> ```
+> ⚠ You skipped Q7 (Negative Boundaries). Auto-filled content:
+>   "Do NOT use for: Irreversible actions without explicit confirmation."
+> This is a placeholder. Does it work for your skill, or would you like to edit?
+> → Type "ok" to proceed with this placeholder (you can edit later)
+> → Type your actual negative boundaries to replace it now
+> ```
+> Do NOT silently proceed with placeholder content — require explicit "ok" or replacement.
 
 > **Phase 4 (GENERATE) — mandatory elements** (sourced from SKILL.md Pattern + SkillRouter research):
 > 1. **Skill Summary paragraph** (first content paragraph): ≤5 sentences densely encoding what / when / who / not-for.
@@ -644,12 +682,16 @@ FAIL proxy:     lean < 300  → route to OPTIMIZE
 ```
 lean_score ≥ 350 AND no_placeholders AND security_section_present
     → LEAN PASS — deliver with LEAN_CERT tag
+    → Always append to score output:
+      "ℹ LEAN variance: ±20 pts is normal. If you re-run LEAN and get a different
+       score within ±20 pts, the skill has NOT changed — that's expected variation
+       in the heuristic checks. For a stable score, run /eval (EVALUATE)."
     → Schedule full EVALUATE within 24 h (recommended, not blocking)
 
 lean_score 300–349 (UNCERTAIN)
     → Show escalation notice BEFORE starting EVALUATE (never silent):
 
-      Output exactly this block:
+      Output exactly this block (adapt language to user's detected language):
       ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
       ⚠ 输入 /skip 可跳过并保留 LEAN 结果 / Type /skip to keep LEAN result instead
       ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
@@ -1357,11 +1399,22 @@ URL examples:
                Name: {skill_name}-v{version}.md
 3. STAMP     — compute SHA-256 of skill content; embed as use_to_evolve.content_hash
 4. DELIVER   — output the packaged file to conversation
-5. GUIDE     — show sharing options:
-               (a) GitHub Gist: paste content → gist.github.com → share URL
-               (b) Future registry: [registry URL TBD — v3.2.0 milestone]
-               (c) Team share: copy .md to teammates' platform skills directory
-               (d) Agent install: "read [your-gist-url] and install to claude"
+5. GUIDE     — show tier status + sharing options:
+
+       ─── Registry Push Eligibility ────────────────────────────
+       Skill tier: {TIER}  |  Score: {EVALUATE_SCORE}/1000
+       (If only LEAN score available: LEAN {N} × 2 ≈ {N*2} estimated)
+       Push status: {RECOMMENDED | ALLOWED as beta | ALLOWED as experimental | BLOCKED}
+       To confirm tier before pushing: run /eval
+       ──────────────────────────────────────────────────────────
+
+       Sharing options:
+       (a) Direct install: copy {skill_name}-v{version}.md to
+           ~/.claude/skills/  (or platform skills dir) → restart platform
+       (b) Team share via Agent Install: paste to GitHub Gist, then share:
+           "read [your-gist-url] and install to claude"
+       (c) Future registry: [registry URL TBD — v3.2.0 milestone]
+           Registry push tag: {stable | beta | experimental} (based on tier)
 ```
 
 ### Registry Push Policy
@@ -1444,18 +1497,44 @@ read https://github.com/theneoai/skill-writer/releases/latest/download/skill-wri
 ### After install — team usage
 
 After the MCP manifest is installed, restart your MCP host. Team members can invoke
-skill-writer via MCP calls:
+skill-writer via MCP calls. All 6 modes are available via MCP. Output is returned as structured JSON.
+
+**Testing installation** — run this first to confirm MCP is working:
+```json
+{"tool": "skill-writer", "mode": "lean", "input": "a skill that returns json"}
+```
+Expected response: `{"lean_score": N, "status": "PASS|UNCERTAIN|FAIL", ...}`
+If no response or error → verify `~/.mcp/servers/skill-writer/mcp-manifest.json` exists.
+
+### CREATE mode via MCP (important — read before using)
+
+CREATE uses an 8-question elicitation interview (§7 Inversion). In chat-based platforms
+(Claude, Cursor), questions are asked one at a time interactively. **MCP is stateless**, so
+all 8 answers must be provided in a single call using `elicitation_answers`:
 
 ```json
-// Example MCP invocation
 {
   "tool": "skill-writer",
   "mode": "create",
-  "input": "a skill that validates REST API responses"
+  "input": "a skill that validates REST API responses",
+  "elicitation_answers": {
+    "q1_problem": "Validate JSON structure and status codes in API responses",
+    "q2_users": "Backend developers testing REST integrations",
+    "q3_input": "HTTP response object (status code, headers, JSON body)",
+    "q4_output": "Validation report: PASS/FAIL with specific field errors",
+    "q5_constraints": "Must handle 2xx/4xx/5xx status families; no external calls",
+    "q6_acceptance": "Catches missing required fields, wrong types, unexpected status codes",
+    "q7_negative_boundaries": "Do NOT use for streaming responses; Do NOT validate auth tokens",
+    "q8_trigger_phrases": "validate api response, check response, api assertion, verify response"
+  }
 }
 ```
 
-All 6 modes are available via MCP. Output is returned as structured JSON.
+If `elicitation_answers` is omitted, skill-writer will return a **questionnaire prompt**
+(the 8 questions as text) for the caller to collect and re-submit with answers. This enables
+a two-step MCP flow:
+1. Call CREATE without answers → receive 8 questions
+2. Collect team member's answers → call CREATE again with `elicitation_answers`
 
 ### UTE and COLLECT via MCP
 
@@ -1562,6 +1641,37 @@ collective skill evolution by accumulating usage data across sessions and users.
 **Inspired by**: SkillClaw collective evolution framework (arxiv.org/abs/2604.08377)
 **Full spec**: `claude/refs/session-artifact.md`
 **Edit guard**: `claude/refs/edit-audit.md`
+
+### Session Artifact Schema (inline reference)
+
+```json
+{
+  "timestamp": "2026-04-11T14:32:00Z",
+  "skill_name": "code-reviewer",
+  "skill_version": "1.1.0",
+  "invocation_outcome": "success",        // success | failure | partial
+  "prm_signal": "good",                   // good | ok | poor (user feedback proxy)
+  "lesson_type": "strategic_pattern",     // strategic_pattern | failure_lesson | neutral
+  "lesson_summary": "User triggered with 'review my PR'. Output accepted without corrections. Suggest adding 'review PR' as primary trigger keyword.",
+  "trigger_phrase_used": "review my code",
+  "trigger_matched": true,
+  "output_accepted": true,
+  "dimension_observations": {
+    "trigger_accuracy": "good",
+    "workflow": "good",
+    "errorHandling": "ok",
+    "examples": "good"
+  },
+  "improvement_hints": [
+    "Add 'review PR' as trigger synonym",
+    "Section §5 SCAN mode example is sparse — add one more example"
+  ],
+  "session_id": "sha256-first-8-chars"
+}
+```
+
+> Store artifacts as `~/.skill-artifacts/YYYYMMDD_{skill_name}.jsonl` (append mode)
+> or any JSON store. Send 2+ artifacts to AGGREGATE for ranked improvement priorities.
 
 ### When COLLECT runs
 
