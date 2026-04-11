@@ -128,15 +128,38 @@ User Input
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**Confidence formula** `[ASPIRATIONAL — use as heuristic guide, not literal computation]`:
+**Routing Decision Tree** `[ENFORCED — apply in order, stop at first match]`:
+
 ```
-confidence = primary_match×0.5 + secondary_match×0.2
-           + context_match×0.2 + no_negative×0.1
-language_weight: EN-input→EN×1.0,ZH×0.3 | ZH-input→ZH×1.0,EN×0.3 | mixed→both×1.0
+Step 1 — Primary keyword match (most important signal):
+  Does the input contain a clear mode keyword from the ROUTE table above?
+  YES → confidence = HIGH
+  NO  → continue to Step 2
+
+Step 2 — Context clues:
+  Does the surrounding context (prior conversation, file shared) imply a mode?
+  e.g. user shares a skill.md file + asks to "check it" → EVALUATE implied
+  YES → confidence = MEDIUM
+  NO  → continue to Step 3
+
+Step 3 — Negative signals:
+  Does the input explicitly exclude a mode?
+  e.g. "don't evaluate, just create" → EVALUATE blocked
+  YES (exclusion found) → remove that mode from candidates; re-evaluate
+  NO  → continue to Step 4
+
+Step 4 — Language weight:
+  EN input: EN keywords count 1.0×, ZH keywords count 0.3×
+  ZH input: ZH keywords count 1.0×, EN keywords count 0.3×
+  Mixed:    both count 1.0×
+
+Decision:
+  HIGH confidence (clear keyword match, no ambiguity)     → AUTO-ROUTE
+  MEDIUM confidence (context clue but no direct keyword) → CONFIRM before route
+  LOW confidence (no keyword, weak context, or conflict)  → GRACEFUL DEGRADATION (§3)
+
+Tie-break rule: If two modes score equally, ask the user one clarifying question.
 ```
-> AI uses this formula as a **reasoning scaffold**, not a precise calculation.
-> In practice: if the primary trigger keyword matches clearly → HIGH confidence;
-> if ambiguous → MEDIUM; if the request could mean multiple things → LOW → ask user.
 
 ---
 
@@ -193,15 +216,14 @@ Every mode executes via Plan-Execute-Summarize:
 │  PLAN                                                    │
 │  Multi-pass self-review → consensus on approach           │
 │  Build cognitive graph of steps                          │
-│  See: claude/refs/self-review.md                         │
+│  Extended spec: claude/refs/self-review.md               │
 └──────────────────────────────┬───────────────────────────┘
                                │ plan reviewed
                                ▼
 ┌──────────────────────────────────────────────────────────┐
 │  EXECUTE                                                 │
-│  Implement plan with error recovery fallback             │
+│  Implement plan with error recovery (rules below)        │
 │  Hard checkpoint after each phase                        │
-│  See: claude/refs/self-review.md §4 (error recovery)    │
 └──────────────────────────────┬───────────────────────────┘
                                │ execution complete
                                ▼
@@ -212,6 +234,22 @@ Every mode executes via Plan-Execute-Summarize:
 │  Route: CERTIFIED | TEMP_CERT | HUMAN_REVIEW | ABORT     │
 └──────────────────────────────────────────────────────────┘
 ```
+
+### Inline Error Recovery Rules `[ENFORCED — no companion file required]`
+
+These rules apply regardless of whether `claude/refs/self-review.md` is available:
+
+| Error Type | Recovery Action |
+|-----------|----------------|
+| **Phase output missing** (e.g. GENERATE produced no skill text) | Retry once with explicit output instruction; if still missing → HUMAN_REVIEW |
+| **Security P0 detected mid-phase** | ABORT immediately; halt all subsequent phases |
+| **LEAN score < 300 after GENERATE** | Do NOT deliver; auto-route to targeted OPTIMIZE for lowest dimension |
+| **Checkpoint gate fails** (e.g. placeholders remain after Phase 4) | Re-run the failed phase once; if still failing → flag TEMP_CERT + advisory |
+| **Companion file unavailable** (refs/ not loaded) | Proceed with inline rules only; note "companion file unavailable" in output; do NOT abort |
+| **User provides no answer to elicitation Q** (§7) | Skip with default + WARNING; do NOT block if user skips > 2 questions |
+| **External fetch fails** (INSTALL mode) | Retry once after 2s; if still fails → ask user for local path |
+
+**Escalation rule**: After any two consecutive phase failures → escalate to HUMAN_REVIEW immediately rather than attempting further retries.
 
 ---
 
@@ -399,6 +437,12 @@ Ask **one question at a time**. Wait for answer before next question.
 ```
 variance = | (phase2_score / 3) - (phase3_score / 4) |
 ```
+> **Why divide by 3 and 4?** This normalizes both scores to "points per point available":
+> Phase 2 max = 300, so dividing by 3 gives a value in the 0–100 range.
+> Phase 3 max = 400, so dividing by 4 also gives 0–100 range.
+> The formula then measures the gap between text quality density and runtime density.
+> A skill scoring 270/300 on text (90%) but 280/400 on runtime (70%) has variance = |90 − 70| = 20.
+
 High variance = artifact looks good on paper but fails runtime (or vice versa).
 
 ### Evaluation Workflow
@@ -430,6 +474,15 @@ Full protocol: `claude/refs/self-review.md §2`
 ---
 
 ## §9  OPTIMIZE Mode — 7-Dimension 9-Step Loop
+
+### Scoring Scale in OPTIMIZE Loop
+
+> **OPTIMIZE uses the LEAN 500-point scale for all re-scoring** (Steps 1 and 6).
+> Reason: LEAN is fast and consistent enough for iteration feedback. Full 1000-pt EVALUATE
+> runs only at: (a) loop start if no prior EVALUATE exists, and (b) optionally post-convergence.
+>
+> Conversion: lean_score × 2 = estimated full score. Bronze proxy: lean ≥ 350.
+> The VERIFY step (Step 10) also uses LEAN 500-pt scale.
 
 ### 7 Dimensions (unified with LEAN and EVALUATE)
 

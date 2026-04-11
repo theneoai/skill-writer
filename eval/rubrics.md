@@ -366,7 +366,8 @@ SKILL EVALUATION REPORT
 =======================
 Skill:      <name> v<version>
 Evaluated:  <ISO-8601>
-Evaluator:  skill-writer v2.1.0
+Evaluator:  skill-writer v3.1.0
+Skill Tier: <planning | functional | atomic>   (Phase 2 weights adjusted per rubrics.md §8)
 
 PHASE SCORES
   Phase 1 — Parse & Validate:   XX / 100
