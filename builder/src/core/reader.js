@@ -4,7 +4,7 @@
  * Reads companion Markdown files for the skill-writer-builder.
  * Sources: refs/, templates/, eval/, optimize/ (Single Source of Truth)
  * 
- * @version 2.1.0 - Updated to use centralized config
+ * @version 3.1.0 - Added v3.0 collective evolution refs; v3.1.0 added session-artifact, edit-audit, skill-registry reads
  */
 
 const fs = require('fs-extra');
@@ -84,14 +84,15 @@ async function readEvaluateMode() {
 }
 
 /**
- * Read OPTIMIZE mode files from optimize/ and refs/
+ * Read OPTIMIZE mode files from optimize/
+ * Note: convergence.md is read in readSharedResources() (refs/) to avoid duplication.
  * @returns {Object} - OPTIMIZE mode data
  */
 async function readOptimizeMode() {
   const data = {
     strategies: null,
     antiPatterns: null,
-    convergence: null
+    // convergence is now in shared.convergence (refs/convergence.md)
   };
 
   const strategiesPath = path.join(config.PATHS.optimize, 'strategies.md');
@@ -104,27 +105,29 @@ async function readOptimizeMode() {
     data.antiPatterns = await parseFile(antiPatternsPath);
   }
 
-  const convergencePath = path.join(config.PATHS.refs, 'convergence.md');
-  if (await fs.pathExists(convergencePath)) {
-    data.convergence = await parseFile(convergencePath);
-  }
-
   return data;
 }
 
 /**
  * Read shared resources from refs/
+ * Includes all companion files listed in config.REQUIRED_FILES with mustEmbed: true.
  * @returns {Object} - Shared resources data
  */
 async function readSharedResources() {
   const data = {
+    // Core evaluation and evolution refs
     securityPatterns: null,
     selfReview: null,
     evolution: null,
     useToEvolve: null,
+    convergence: null,
+    // v3.0: collective evolution refs (SkillClaw-compatible)
+    sessionArtifact: null,
+    editAudit: null,
+    skillRegistry: null,
   };
 
-  // Read security patterns (always required)
+  // Read security patterns (includes OWASP Agentic Top 10 since v3.1.0)
   const securityPath = path.join(config.PATHS.refs, 'security-patterns.md');
   if (await fs.pathExists(securityPath)) {
     data.securityPatterns = await parseFile(securityPath);
@@ -136,16 +139,40 @@ async function readSharedResources() {
     data.selfReview = await parseFile(selfReviewPath);
   }
 
-  // Read evolution spec
+  // Read evolution spec (3-trigger system + OWASP/tier-drift triggers since v3.1.0)
   const evolutionPath = path.join(config.PATHS.refs, 'evolution.md');
   if (await fs.pathExists(evolutionPath)) {
     data.evolution = await parseFile(evolutionPath);
   }
 
-  // Read use-to-evolve spec
+  // Read use-to-evolve spec (UTE 2.0 L1/L2)
   const useToEvolvePath = path.join(config.PATHS.refs, 'use-to-evolve.md');
   if (await fs.pathExists(useToEvolvePath)) {
     data.useToEvolve = await parseFile(useToEvolvePath);
+  }
+
+  // Read convergence detection spec
+  const convergencePath = path.join(config.PATHS.refs, 'convergence.md');
+  if (await fs.pathExists(convergencePath)) {
+    data.convergence = await parseFile(convergencePath);
+  }
+
+  // v3.0+: Read session artifact schema (SkillClaw + SkillRL lesson distillation since v3.1.0)
+  const sessionArtifactPath = path.join(config.PATHS.refs, 'session-artifact.md');
+  if (await fs.pathExists(sessionArtifactPath)) {
+    data.sessionArtifact = await parseFile(sessionArtifactPath);
+  }
+
+  // v3.0+: Read edit audit guard spec
+  const editAuditPath = path.join(config.PATHS.refs, 'edit-audit.md');
+  if (await fs.pathExists(editAuditPath)) {
+    data.editAudit = await parseFile(editAuditPath);
+  }
+
+  // v3.0+: Read skill registry spec (SHA-256 IDs, versioning, SHARE protocol)
+  const skillRegistryPath = path.join(config.PATHS.refs, 'skill-registry.md');
+  if (await fs.pathExists(skillRegistryPath)) {
+    data.skillRegistry = await parseFile(skillRegistryPath);
   }
 
   return data;

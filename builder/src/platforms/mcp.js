@@ -8,7 +8,7 @@
  * Output format: JSON manifest (mcp-manifest.json) conforming to MCP schema v1.0.
  *
  * @module builder/src/platforms/mcp
- * @version 1.0.0
+ * @version 3.1.0 - Added skill_tier, triggers extraction; OWASP ASI security_baseline; 10-step optimize description
  * @see https://modelcontextprotocol.io
  */
 
@@ -85,7 +85,7 @@ const template = {
       },
       {
         name: 'optimize',
-        description: 'Run the 7-dimension 9-step OPTIMIZE loop on a skill',
+        description: 'Run the 7-dimension 10-step OPTIMIZE loop on a skill (includes co-evolutionary VERIFY at Step 10)',
         input_schema: {
           type: 'object',
           properties: {
@@ -136,6 +136,8 @@ function formatSkill(skillContent) {
   let skillDescription = '';
   let skillVersion = '1.0.0';
   let skillAuthor = '';
+  let skillTier = null;
+  let skillTriggers = { en: [], zh: [] };
 
   // Try YAML frontmatter first
   const frontmatterMatch = skillContent.match(/^---\n([\s\S]*?)\n---/);
@@ -145,11 +147,23 @@ function formatSkill(skillContent) {
     const descMatch = fm.match(/^description:\s*["']?(.+?)["']?\s*$/m);
     const verMatch = fm.match(/^version:\s*["']?(.+?)["']?\s*$/m);
     const authorMatch = fm.match(/^author:\s*(.+)$/m);
+    // v3.1.0: extract skill_tier (planning|functional|atomic)
+    const tierMatch = fm.match(/^skill_tier:\s*(.+)$/m);
+    // v3.1.0: extract triggers.en and triggers.zh (inline list format only)
+    const triggersEnMatch = fm.match(/triggers:\s*[\s\S]*?en:\s*\[([^\]]*)\]/);
+    const triggersZhMatch = fm.match(/triggers:\s*[\s\S]*?zh:\s*\[([^\]]*)\]/);
 
     if (nameMatch) skillName = nameMatch[1].trim();
     if (descMatch) skillDescription = descMatch[1].trim();
     if (verMatch) skillVersion = verMatch[1].trim();
     if (authorMatch) skillAuthor = authorMatch[1].trim();
+    if (tierMatch) skillTier = tierMatch[1].trim();
+    if (triggersEnMatch) {
+      skillTriggers.en = triggersEnMatch[1].split(',').map(t => t.trim().replace(/^["']|["']$/g, '')).filter(Boolean);
+    }
+    if (triggersZhMatch) {
+      skillTriggers.zh = triggersZhMatch[1].split(',').map(t => t.trim().replace(/^["']|["']$/g, '')).filter(Boolean);
+    }
   }
 
   // Fallback: extract metadata from inline body patterns when there is no
@@ -182,6 +196,9 @@ function formatSkill(skillContent) {
     version: skillVersion,
     author: skillAuthor,
     generated_by: 'skill-writer-builder',
+    // v3.1.0: include skill classification fields
+    ...(skillTier && { skill_tier: skillTier }),
+    ...(skillTriggers.en.length > 0 && { triggers: skillTriggers }),
     tools: template.manifest.tools,
     resources: template.manifest.resources,
     // Embed a compact summary of available modes
@@ -189,7 +206,8 @@ function formatSkill(skillContent) {
       modes: ['CREATE', 'LEAN', 'EVALUATE', 'OPTIMIZE', 'INSTALL'],
       platforms: ['opencode', 'openclaw', 'claude', 'cursor', 'openai', 'gemini', 'mcp'],
       self_evolution: true,
-      security_baseline: 'CWE-aware',
+      // v3.1.0: security baseline now includes OWASP Agentic Skills Top 10 checks
+      security_baseline: 'CWE + OWASP-ASI01-ASI10',
     },
   };
 

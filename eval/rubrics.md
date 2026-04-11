@@ -3,6 +3,10 @@
 > **Purpose**: 4-phase 1000-point scoring pipeline used by EVALUATE mode.
 > **Load**: When §8 (EVALUATE Mode) of `claude/skill-writer.md` is accessed.
 > **Main doc**: `claude/skill-writer.md §8`
+> **SSOT**: `builder/src/config.js SCORING` — canonical dimension weights and thresholds
+> **Note on LEAN vs EVALUATE**: LEAN (§6 skill-framework.md) is a 500-pt heuristic pre-check.
+> EVALUATE is the full 1000-pt pipeline. They share dimension names but NOT point allocations.
+> LEAN leanMax ≠ EVALUATE Phase 2 per-dimension max. See config.js comment for full explanation.
 
 ---
 
@@ -48,15 +52,22 @@ Heuristic checks only. Fast, no LLM.
 | `version` field follows semver | 5 | Pattern: `N.N.N` |
 | `interface.modes` array present | 5 | |
 | `tags` array with ≥ 2 entries | 5 | |
+| `triggers` field present (EN ≥ 3, ZH ≥ 2) | 5 | v3.1.0: trigger phrase coverage required |
+| `skill_tier` declared (planning/functional/atomic) | 5 | v3.1.0: SkillX three-tier hierarchy |
 | ≥ 3 `## §N` sections | 10 | Identity, Loop, at least one mode |
 | Identity section present (name/role/purpose) | 10 | |
 | Red Lines / 严禁 section present | 10 | |
-| Quality Gates section with numeric thresholds | 15 | Thresholds must be numbers |
-| No `{{PLACEHOLDER}}` tokens remaining | 15 | Any remaining = hard deduction |
+| **Negative Boundaries section** present | 10 | v3.1.0: "Do NOT use for" with ≥ 3 anti-cases |
+| Quality Gates section with numeric thresholds | 10 | Thresholds must be numbers |
+| No `{{PLACEHOLDER}}` tokens remaining | 5 | Any remaining = hard deduction |
 | No TODO / FIXME markers | 5 | Advisory |
-| File size reasonable (< 500 lines) | 5 | > 500 lines: advisory warning |
 
-**Hard deduction**: If `{{PLACEHOLDER}}` found → Phase1 score capped at 60, WARNING issued.
+> **v3.1.0 Phase 1 changes**: Added `triggers`, `skill_tier`, and **Negative Boundaries** checks
+> (+15 pts new; Quality Gates reduced from 15→10; no-placeholders reduced from 15→5; file-size
+> advisory removed). Total still 100 pts.
+
+**Hard deduction**: If `{{PLACEHOLDER}}` found → Phase1 score capped at 70, WARNING issued.
+**Hard deduction**: If Negative Boundaries section missing → Phase1 deduct 10 pts, P2 advisory added.
 
 ---
 
@@ -72,12 +83,17 @@ Scored in Pass 1.
 | **Workflow Definition** | 45 | 15% | Phase sequence complete, exit criteria per phase, loop gates explicit |
 | **Error Handling** | 45 | 15% | Recovery paths named, escalation triggers defined, timeout values set |
 | **Examples** | 45 | 15% | ≥ 2 examples, both EN and ZH or bilingual triggers, output shown |
-| **Security Baseline** | 30 | 10% | Security section present, CWE reference, no hardcoded-credential patterns in text |
-| **Metadata Quality** | 15 | 5% | YAML complete, version semver, author, dates, description bilingual |
+| **Security Baseline** | 30 | 10% | Security section present, CWE reference, OWASP ASI01-ASI10 status documented, no hardcoded-credential patterns |
+| **Metadata Quality** | 15 | 5% | YAML complete (incl. `skill_tier`, `triggers`), version semver, author, dates, description bilingual |
 
-> **Note on Security dimension**: Phase 4 (Certification) additionally runs an automated CWE pattern
-> scan. Phase 2 checks whether security *documentation* in the skill text is adequate; Phase 4
-> checks the generated skill content itself. Both deductions are applied independently.
+> **Note on Security dimension (v3.1.0)**: Phase 4 runs automated CWE + OWASP ASI pattern scan.
+> Phase 2 checks whether security *documentation* is adequate (Security Baseline section, OWASP
+> ASI status comments). Phase 4 runs pattern scan against actual skill content. Both deductions
+> applied independently. Full patterns: `claude/refs/security-patterns.md §5 OWASP Agentic Top 10`.
+
+> **Note on Metadata dimension (v3.1.0)**: `skill_tier` and `triggers` are now required YAML
+> fields. Phase 2 Metadata checks for their presence and completeness. Missing `skill_tier` or
+> `triggers.en` (< 3 phrases) → deduct up to 8 pts from Metadata.
 
 ### Scoring Rubric per Sub-Dimension
 

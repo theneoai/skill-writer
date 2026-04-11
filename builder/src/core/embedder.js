@@ -5,7 +5,7 @@
  * Handles template placeholders and platform-specific formatting.
  * 
  * @module builder/src/core/embedder
- * @version 1.0.0
+ * @version 3.1.0
  */
 
 const fs = require('fs');
@@ -508,7 +508,8 @@ function generateSkillFile(platform, coreData) {
   let frontmatter = '';
   if (config.supportsFrontmatter && coreData.metadata && !hasFrontmatter) {
     const today = new Date().toISOString().split('T')[0];
-    const skillVersion = coreData.metadata.version || '2.0.0';
+    const skillVersion = coreData.metadata.version || '3.1.0';
+    const extra = coreData.metadata.extra || {};
     const fmData = {
       name: coreData.metadata.name || 'unnamed-skill',
       version: skillVersion,
@@ -516,9 +517,14 @@ function generateSkillFile(platform, coreData) {
       platform: platform,
       created: today,
       updated: today,
+      // v3.1.0: three-tier hierarchy (SkillX arxiv:2604.04804)
+      // Values: 'planning' | 'functional' | 'atomic' | null (unclassified)
+      skill_tier: extra.skill_tier || null,
+      // v3.1.0: trigger phrases for skill routing (SkillRouter arxiv:2603.22455)
+      // 3–8 EN phrases + 2–5 ZH phrases; decisive routing signal
+      triggers: extra.triggers || { en: [], zh: [] },
       interface: {
-        modes: (coreData.metadata.extra && coreData.metadata.extra.modes) ||
-               coreData.metadata.modes || ['create', 'evaluate', 'optimize'],
+        modes: extra.modes || coreData.metadata.modes || ['create', 'evaluate', 'optimize'],
       },
       use_to_evolve: {
         enabled: true,
@@ -534,7 +540,10 @@ function generateSkillFile(platform, coreData) {
         cumulative_invocations: 0,
       },
       generated_at: new Date().toISOString(),
-      ...(coreData.metadata.extra || {}),
+      // Spread remaining extra fields last (allows overrides)
+      ...Object.fromEntries(
+        Object.entries(extra).filter(([k]) => !['skill_tier', 'triggers', 'modes'].includes(k))
+      ),
     };
     frontmatter = formatFrontmatter(fmData, config);
     if (!frontmatter) {
@@ -578,7 +587,7 @@ function injectUTESection(content, metadata) {
   const version = (metadata && metadata.version) || '2.1.0';
   const today = new Date().toISOString().split('T')[0];
 
-  const uteSection = `\n---\n\n## §UTE Use-to-Evolve\n\n<!-- Post-invocation hook — auto-managed by skill-writer v2.1.0 -->\n<!-- skill: ${name} | version: ${version} | injected: ${today} -->\n\nAfter each invocation, increment \`use_to_evolve.cumulative_invocations\`.\nRun lightweight LEAN check every 10 invocations; full re-score every 50;\ntier-drift detection every 100.\n\n**Fields managed automatically** (do not edit manually):\n- \`cumulative_invocations\` — incremented each use\n- \`last_ute_check\` — ISO date of last lightweight check\n- \`pending_patches\` — count of queued micro-patches\n- \`total_micro_patches_applied\` — lifetime patch count\n`;
+  const uteSection = `\n---\n\n## §UTE Use-to-Evolve\n\n<!-- Post-invocation hook — auto-managed by skill-writer v3.1.0 -->\n<!-- skill: ${name} | version: ${version} | injected: ${today} -->\n\nAfter each invocation, increment \`use_to_evolve.cumulative_invocations\`.\nRun lightweight LEAN check every 10 invocations; full re-score every 50;\ntier-drift detection every 100.\n\n**Fields managed automatically** (do not edit manually):\n- \`cumulative_invocations\` — incremented each use\n- \`last_ute_check\` — ISO date of last lightweight check\n- \`pending_patches\` — count of queued micro-patches\n- \`total_micro_patches_applied\` — lifetime patch count\n`;
 
   return content + uteSection;
 }
