@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2026-04-11
+
+### ✨ Added
+
+- **`RESEARCH-SYNTHESIS-2026.md`** — comprehensive synthesis of 9 academic papers and industry best practices; documents Gap Matrix and improvement rationale for v3.1.0
+- **Co-Evolutionary VERIFY step (§9 OPTIMIZE Step 10)** — independent re-evaluation pass after OPTIMIZE convergence, approximating EvoSkills' Surrogate Verifier (arxiv:2604.01687); detects score inflation (delta > 50 pts → HUMAN_REVIEW)
+- **Mandatory Skill Summary paragraph** — first content paragraph in every generated skill; ≤5 sentences densely encoding domain knowledge; decisive for skill routing (SkillRouter arxiv:2603.22455: 91.7% cross-encoder attention on body)
+- **Mandatory Negative Boundaries section** — required `## Negative Boundaries` in every skill; "Do NOT use for" list with 3+ anti-cases; prevents mis-triggering (SKILL.md Pattern best practice)
+- **OWASP Agentic Skills Top 10 (2026) detection** — 10 new ASI checks in `refs/security-patterns.md §5`; ASI01-ASI04 are P1 (score penalty); ASI05-ASI10 are P2 (advisory); addresses SkillProbe finding that 26.1% of community skills contain vulnerabilities
+- **ASI01 Prompt Injection as P1 pattern** — new `refs/security-patterns.md §1.2`; detection heuristics for goal hijack and external content injection; −50 pts
+- **P2 advisory patterns** — new `refs/security-patterns.md §1.3`: Missing Negative Boundaries + Executable Script Risk (2.12× higher vulnerability per SkillProbe)
+- **SkillRL lesson distillation** — `refs/session-artifact.md` new fields: `lesson_type: strategic_pattern | failure_lesson | neutral` + `lesson_summary` (≤3 sentences); `skill-framework.md §18 COLLECT` new Step 4 CLASSIFY LESSON TYPE
+- **`skill_tier` metadata field** — `templates/base.md` YAML: `planning | functional | atomic` (SkillX three-tier hierarchy, arxiv:2604.04804)
+- **`triggers` metadata field** — `templates/base.md` YAML: 3–8 EN + 2–5 ZH canonical trigger phrases; scored in LEAN metadata dimension
+- **Inversion Q7 + Q8** — two new mandatory elicitation questions: negative scenarios (Q7) and trigger phrase examples (Q8); template-specific follow-up prompts added
+
+### 🔧 Changed
+
+- **`skill-framework.md §6 LEAN` — Metadata dimension**: 25 pts → 40 pts; now includes trigger phrase coverage (15 pts) and negative boundaries presence (10 pts); security dimension: 50 pts → 45 pts (recalibrated)
+- **`skill-framework.md §11 Security`**: Added OWASP Agentic Skills Top 10 table; new Red Lines for ASI01 and executable scripts
+- **`skill-framework.md §9 OPTIMIZE`**: `VERIFY` step renamed from old §6 "VERIFY" (re-score after single fix) to new **Step 10 Co-Evolutionary VERIFY** (post-convergence independent pass); old step renamed to `RE-SCORE`
+- **`refs/security-patterns.md §2`**: Severity table updated to include P2 advisory tier
+- **`refs/security-patterns.md §5`** (previously §5 Scan Report Format): Renumbered; OWASP section inserted as new §5; scan report now §6; log entry now §7
+- **`refs/session-artifact.md`**: Header updated; `lesson_type` + `lesson_summary` fields added to schema
+- **`templates/base.md`**: Full redesign — added Skill Summary, Negative Boundaries, skill_tier, triggers YAML, OWASP ASI checks in Security Baseline, updated checklist
+- **`ARCHITECTURE-REVIEW.md`**: New Section 十一 (11) added: research synthesis and v3.1.0 improvement roadmap with P0/P1/P2/P3 prioritization
+
+### 📋 Background
+
+v3.1.0 is grounded in a systematic literature review of 9 recent papers (April 2026):
+EvoSkills (2604.01687), SkillX (2604.04804), SkillRL (2602.08234), SkillRouter (2603.22455),
+SkillClaw (2604.08377), Skills-in-the-Wild (2604.04323), SkillProbe (2603.21019),
+SoK: Agentic Skills (2602.20867), and Agent Skills Survey (2602.12430).
+Community sources: OWASP Agentic Top 10 (2026), SKILL.md Pattern, agentskills.io spec.
+
+---
+
 ## [3.0.0] - 2026-04-11
 
 ### ✨ Added

@@ -2,8 +2,9 @@
 
 > **Purpose**: Canonical format for session data recorded by COLLECT mode.
 > **Load**: When §17 (COLLECT Mode) of `claude/skill-writer.md` is accessed.
-> **Inspired by**: SkillClaw collective evolution framework (arxiv.org/abs/2604.08377)
+> **Inspired by**: SkillClaw (arxiv:2604.08377) + SkillRL lesson distillation (arxiv:2602.08234)
 > **Main doc**: `claude/skill-writer.md §17`
+> **Last updated**: 2026-04-11 — Added SkillRL-inspired `lesson_type` + `lesson_summary` fields (§2, §3)
 
 ---
 
@@ -62,7 +63,10 @@ The Session Artifact is the atomic unit that enables this.
     "examples":        "strong | adequate | weak | n/a",
     "security":        "strong | adequate | weak | n/a",
     "metadata":        "strong | adequate | weak | n/a"
-  }
+  },
+
+  "lesson_type": "strategic_pattern | failure_lesson | neutral",
+  "lesson_summary": "<≤3 sentences distilling the reusable lesson from this session>"
 }
 ```
 
@@ -130,6 +134,44 @@ The Session Artifact is the atomic unit that enables this.
 
 7-field object mapping each unified dimension (from `builder/src/config.js SCORING.dimensions`)
 to a strength rating for this session. Use `"n/a"` when a dimension wasn't exercised.
+
+### SkillRL Lesson Distillation fields `[ENFORCED]`
+
+Inspired by SkillRL (arxiv:2602.08234): distilling raw trajectories into typed lessons yields
+10-20% token compression while improving reasoning utility in downstream AGGREGATE pipelines.
+
+| Field | Values | Description |
+|-------|--------|-------------|
+| `lesson_type` | `strategic_pattern \| failure_lesson \| neutral` | Type of lesson this session contributes |
+| `lesson_summary` | string (≤3 sentences) | Distilled, reusable lesson — the "takeaway" |
+
+**`lesson_type` classification rules** `[ENFORCED]`:
+
+| Type | Condition | AGGREGATE Use |
+|------|-----------|---------------|
+| `strategic_pattern` | `outcome = success` AND `prm_signal = good` | Feeds General Skills (reusable positive patterns) |
+| `failure_lesson` | `outcome = failure` OR `feedback_signal = correction` | Feeds Task-Specific warnings (concise failure lessons) |
+| `neutral` | `outcome = partial` OR `outcome = ambiguous` | Stored but lower weight in AGGREGATE |
+
+**`lesson_summary` writing rules**:
+- For `strategic_pattern`: "What worked well and why. Which workflow step was most effective. What can be reused in similar skills."
+- For `failure_lesson`: "What failed. Root cause (design flaw / trigger miss / content gap). How to avoid in future skill iterations."
+- For `neutral`: "What happened, what was ambiguous, what additional data would clarify."
+
+**Examples**:
+```
+# strategic_pattern
+"User's request for 'summarize this API doc' triggered correctly on first try. The
+Skill Summary paragraph's dense keyword coverage was decisive. The structured output
+format (table + bullets) earned immediate user approval. Reuse: lead with domain-rich
+Skill Summary + prefer table outputs for comparison tasks."
+
+# failure_lesson  
+"Skill failed to trigger on 'check my PR': user expected code-review skill but
+weather-api skill triggered instead due to overlapping 'check' keyword. Root cause:
+no negative boundaries defined for the weather-api skill. Fix: add 'Do NOT use for
+code review' to negative boundaries section."
+```
 
 ---
 
