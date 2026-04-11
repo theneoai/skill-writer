@@ -1,8 +1,9 @@
 # Self-Evolution Specification
 
-> **Purpose**: 3-trigger evolution system, decision thresholds, and continuous improvement logic.
+> **Purpose**: 5-trigger evolution system, decision thresholds, and continuous improvement logic.
 > **Load**: When §10 (Self-Evolution) of `claude/skill-writer.md` is accessed.
 > **Main doc**: `claude/skill-writer.md §10`
+> **v3.1.0**: Added Trigger 4 (OWASP Pattern Violation) and Trigger 5 (Skill Tier Drift)
 
 ---
 
@@ -20,9 +21,9 @@
 
 ---
 
-## §1  Three-Trigger System
+## §1  Five-Trigger System
 
-Skills are monitored continuously. Any of three independent triggers can initiate evolution.
+Skills are monitored continuously. Any of five independent triggers can initiate evolution.
 
 ### Trigger 1 — Threshold-Based (Quality Degradation)
 
@@ -60,6 +61,7 @@ Run daily cron check (or on each invocation if cron unavailable).
 
 ### Trigger 3 — Usage-Based (Relevance Check) `[ASPIRATIONAL]`
 
+
 | Condition | Threshold | Action |
 |-----------|-----------|--------|
 | Invocations | < 5 in 90 days | Present: deprecate \| maintain \| refocus |
@@ -79,6 +81,43 @@ Run daily cron check (or on each invocation if cron unavailable).
   "last_invoked": "<ISO-8601>"
 }
 ```
+
+---
+
+### Trigger 4 — OWASP Pattern Violation `[ENFORCED]`
+
+> v3.1.0: New trigger. Security scan results now feed directly into evolution decisions.
+> Full patterns: `claude/refs/security-patterns.md §5`
+
+| Condition | Severity | Action |
+|-----------|----------|--------|
+| P0 violation found (CWE-798/89/78) | CRITICAL | ABORT delivery → HUMAN_REVIEW immediately |
+| ASI01 prompt injection pattern detected | P1 ERROR | Flag → queue OPTIMIZE with strategy S8 |
+| ASI02 unvalidated tool chaining detected | P1 WARNING | Flag → queue OPTIMIZE with strategy S8 |
+| ASI05 unconstrained irreversible action | P1 WARNING | Flag → queue OPTIMIZE with strategy S8 |
+| P1 violation added since last version | WARNING | Re-run security scan before next delivery |
+
+**Detection method** `[ENFORCED]`: Triggered by security scan in Phase 4 of EVALUATE,
+or by the ASI01-ASI10 heuristic checks in LEAN. Any P0/P1 finding fires this trigger
+regardless of current tier or score.
+
+---
+
+### Trigger 5 — Skill Tier Drift `[ENFORCED]`
+
+> v3.1.0: New trigger. `skill_tier` (planning/functional/atomic) changes must be validated.
+> Research basis: SkillX arxiv:2604.04804 — tier misclassification degrades composability in multi-tier pipelines.
+
+| Condition | Action |
+|-----------|--------|
+| `skill_tier` changed from previous version | Force full EVALUATE (not just LEAN) |
+| `skill_tier` not declared in YAML frontmatter | Phase 1 deduction; warn + add field |
+| `skill_tier` = "planning" but no sub-skill references | Advisory: verify tier is correct |
+| `skill_tier` = "atomic" but skill calls external tools | Advisory: verify tier is correct |
+
+**Detection method** `[ENFORCED]`: Compare `skill_tier` in current YAML frontmatter
+against registry history (§3 of refs/skill-registry.md). If changed → fire trigger.
+Within a single session: any edit to `skill_tier` field fires this trigger immediately.
 
 ---
 
@@ -118,6 +157,15 @@ TRIGGER FIRED
 │                                                                  │
 │ usage < 5 in 90d                                                 │
 │   → Present options to user: [deprecate | maintain | refocus]   │
+│                                                                  │
+│ P0 security violation found (Trigger 4)                         │
+│   → ABORT → HUMAN_REVIEW immediately; do NOT run OPTIMIZE       │
+│                                                                  │
+│ P1 security violation found (Trigger 4)                         │
+│   → OPTIMIZE with S8 (Security Baseline) first                  │
+│                                                                  │
+│ skill_tier changed (Trigger 5)                                   │
+│   → Force full EVALUATE; log tier change in registry history     │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
@@ -163,7 +211,7 @@ Each evolution cycle appends to `.skill-audit/evolution.jsonl`:
 {
   "timestamp": "<ISO-8601>",
   "skill_name": "<name>",
-  "trigger_type": "threshold|time|usage",
+  "trigger_type": "threshold|time|usage|owasp_scan|tier_drift",
   "trigger_detail": "<specific condition>",
   "pre_evolution_score": 0,
   "pre_evolution_tier": "<tier>",
@@ -235,6 +283,8 @@ UTE Post-Hook fires (inline)
 | 1 | Threshold | F1/MRR breach | OPTIMIZE cycles |
 | 2 | Time | 30-day staleness | LEAN → OPTIMIZE |
 | 3 | Usage | 90-day inactivity | Deprecation review |
+| 4 | OWASP Scan | P0/P1 pattern found | Security remediation (S8 or ABORT) |
+| 5 | Tier Drift | skill_tier changed | Force full EVALUATE |
 
 **Data flow**: UTE usage.jsonl → Tier 1 threshold check reads this same file.
 `compute_rolling_metrics()` in §3 works identically whether data came from

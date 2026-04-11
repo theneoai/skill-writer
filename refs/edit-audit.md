@@ -138,17 +138,47 @@ After an override, the skill MUST pass full EVALUATE (not just LEAN) before deli
 
 ## §7  Integration with OPTIMIZE Loop
 
-In the 9-step loop (§9 of skill-framework.md), the edit guard runs at **Step 5** (IMPLEMENT):
+In the 10-step loop (§9 of skill-framework.md), the edit guard runs at **Step 5** (IMPLEMENT):
 
 ```
 Step 5 — IMPLEMENT (with edit guard):
   a. Generate the proposed change for target dimension
   b. Estimate change fraction
-  c. IF REWRITE class → apply REWRITE guard (§4 above), do NOT apply change
-  d. IF MAJOR class → display warning, await confirmation
-  e. IF MINOR or MICRO → apply change
-  f. Continue to Step 6 (VERIFY)
+  c. SPECIAL CASE: If proposed change includes skill_tier modification →
+       classify as MAJOR regardless of fraction (Tier Change Detection, see below)
+  d. IF REWRITE class → apply REWRITE guard (§4 above), do NOT apply change
+  e. IF MAJOR class → display warning, await confirmation
+  f. IF MINOR or MICRO → apply change
+  g. Continue to Step 6 (RE-SCORE)
+     Note: Step 6 is RE-SCORE (per-round incremental check).
+           Step 10 is VERIFY (post-convergence independent validation pass).
 ```
+
+### Tier Change Detection (v3.1.0)
+
+Any change to `skill_tier` in YAML frontmatter is treated as **MAJOR class** by the edit guard,
+regardless of the content fraction changed, because tier changes affect:
+- Routing behavior in SkillX multi-tier pipelines (planning → functional → atomic)
+- Registry versioning (mandatory MINOR version bump: x.N+1.0)
+- Evolution trigger classification (fires Trigger 5 — see `refs/evolution.md §1 Trigger 5`)
+
+**When skill_tier change is detected**:
+```
+TIER CHANGE DETECTED
+  Old tier: <old_tier>
+  New tier: <new_tier>
+  Classification: MAJOR (forced)
+
+Actions required:
+  1. Confirm tier change is intentional: "yes" / "confirm tier change"
+  2. Bump version: minor increment (e.g. 1.2.0 → 1.3.0)
+  3. Queue full EVALUATE (not just LEAN) before delivery
+  4. Log to audit: {"old_tier": "...", "new_tier": "...", "reason": "..."}
+  5. Fire Trigger 5 in evolution system (refs/evolution.md)
+```
+
+**UTE escalation for tier changes**: UTE micro-patches MUST NOT change `skill_tier`.
+Any UTE analysis revealing an incorrect tier escalates to full OPTIMIZE mode.
 
 ---
 
@@ -157,15 +187,20 @@ Step 5 — IMPLEMENT (with edit guard):
 UTE micro-patches are always MICRO class by definition:
 - Add/modify trigger keywords → MICRO
 - Add ZH equivalent trigger → MICRO
-- Update metadata fields → MICRO
+- Update metadata fields (except `skill_tier`) → MICRO
+
+**Exception**: `skill_tier` changes are ALWAYS MAJOR class, even from UTE.
+UTE MUST NOT modify `skill_tier`. If a UTE analysis reveals an incorrect tier,
+it must escalate to full OPTIMIZE mode with explicit user confirmation.
 
 If a UTE analysis reveals a need for MINOR or larger changes, it must escalate
 to full OPTIMIZE mode — not apply the change itself.
 
 ```
 UTE Escalation Paths:
-  MICRO issues  → apply as micro-patch (§5 of refs/use-to-evolve.md)
-  MINOR issues  → queue in .skill-audit/evolution-queue.jsonl for OPTIMIZE
-  MAJOR issues  → queue + notify user immediately
-  REWRITE       → notify user; suggest CREATE new skill
+  MICRO issues         → apply as micro-patch (§5 of refs/use-to-evolve.md)
+  MINOR issues         → queue in .skill-audit/evolution-queue.jsonl for OPTIMIZE
+  MAJOR issues         → queue + notify user immediately
+  skill_tier mismatch  → queue as MAJOR + notify: "Tier change requires EVALUATE"
+  REWRITE              → notify user; suggest CREATE new skill
 ```

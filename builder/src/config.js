@@ -5,7 +5,7 @@
  * to prevent SSOT (Single Source of Truth) breaks across modules.
  * 
  * @module builder/src/config
- * @version 2.1.0
+ * @version 3.1.0
  */
 
 const path = require('path');
@@ -97,10 +97,33 @@ const PLACEHOLDERS = {
 const AUTHOR_PLACEHOLDERS = new Set([
   // Generic template slots
   'PLACEHOLDER', 'SKILL_NAME', 'WORKFLOW_NAME',
+  // Base template — identity
+  'ONE_LINE_DESCRIPTION', 'EN_DESCRIPTION', 'ZH_DESCRIPTION',
+  'AUTHOR', 'DATE', 'SKILL_TYPE', 'ROLE_DESCRIPTION', 'PURPOSE',
+  'PRINCIPLE_1', 'PRINCIPLE_2', 'PRINCIPLE_3',
+  'RED_LINE_1', 'RED_LINE_2',
+  // Base template — v3.1.0 new fields (skill_tier, triggers, negative boundaries, skill summary)
+  'TIER',
+  'TRIGGER_PHRASE_EN_1', 'TRIGGER_PHRASE_EN_2', 'TRIGGER_PHRASE_EN_3',
+  'TRIGGER_PHRASE_ZH_1', 'TRIGGER_PHRASE_ZH_2',
+  'WHAT_IT_DOES', 'CANONICAL_USE_CASE_1', 'CANONICAL_USE_CASE_2',
+  'TARGET_USERS', 'OUT_OF_SCOPE_TEASER',
+  'ANTI_CASE_1', 'ANTI_CASE_2', 'ANTI_CASE_3',
+  'ANTI_TRIGGER_PHRASE_1', 'ANTI_TRIGGER_PHRASE_2',
+  'ALTERNATIVE_SKILL_1', 'ANTI_CASE_3_DESCRIPTION',
+  // Base template — modes and examples
+  'TAG_1', 'TAG_2', 'MODE_1', 'MODE_2',
+  'MODE_1_TRIGGER_EN', 'MODE_1_TRIGGER_ZH', 'MODE_2_TRIGGER_EN', 'MODE_2_TRIGGER_ZH',
+  'MODE_1_INPUT', 'MODE_1_OUTPUT', 'MODE_1_EXIT',
+  'MODE_2_INPUT', 'MODE_2_OUTPUT', 'MODE_2_EXIT',
+  'STEP_1', 'STEP_2', 'STEP_3',
+  'EXAMPLE_1_TITLE', 'EXAMPLE_1_INPUT', 'EXAMPLE_1_OUTPUT',
+  'EXAMPLE_2_TITLE', 'EXAMPLE_2_INPUT', 'EXAMPLE_2_OUTPUT', 'LANG',
+  // Base template — security baseline
+  'ENV_VAR_NAME', 'TOOLS_USED', 'IRREVERSIBLE_ACTIONS', 'MINIMUM_PERMISSIONS',
   // API integration template
   'API_NAME', 'ENDPOINT_1_PATH', 'AUTH_ENV_VAR', 'PARAM_1',
   'OUTPUT_FIELD_1', 'OUTPUT_FIELD_2', 'TYPE_1', 'TYPE_2', 'TYPE_3',
-  'EXAMPLE_1_OUTPUT', 'EXAMPLE_2_OUTPUT', 'LANG',
   // Data pipeline template
   'INPUT_FORMAT', 'OUTPUT_FORMAT', 'DURATION',
   'OUT_FIELD_1', 'OUT_FIELD_2', 'OUT_FIELD_3',
@@ -110,7 +133,6 @@ const AUTHOR_PLACEHOLDERS = new Set([
   // Workflow automation template
   'STEP_NAME', 'STEP_1_NAME', 'STEP_2_NAME', 'STEP_3_NAME', 'STEP_N_NAME',
   'STEP_COUNT', 'STEP_1_ACTION', 'STEP_2_ACTION', 'STEP_3_ACTION',
-  'MODE_1', 'MODE_2',
 ]);
 
 /**
@@ -205,6 +227,18 @@ const PLATFORMS = {
  *   security        ↔ "Security Baseline"  (10%, 30 pts)
  *   metadata        ↔ "Metadata Quality"   ( 5%, 15 pts)
  *
+ * NOTE on LEAN vs EVALUATE scoring discrepancy:
+ *   LEAN leanMax values do NOT map 1:1 to EVALUATE Phase 2 per-dimension maxes.
+ *   LEAN uses absolute point allocations tuned for fast heuristic checks.
+ *   EVALUATE Phase 2 uses weight × 300 (e.g. security = 0.10 × 300 = 30 pts).
+ *
+ *   v3.1.0 LEAN rebalancing (research basis: SkillRouter arxiv:2603.22455):
+ *     - systemDesign:    100 → 95  (freed 5 pts to metadata)
+ *     - domainKnowledge: 100 → 95  (freed 5 pts to metadata)
+ *     - security:         50 → 45  (freed 5 pts to metadata; OWASP ASI heuristics added)
+ *     - metadata:         25 → 40  (+15 pts; now includes trigger phrase coverage + negative boundaries)
+ *   Total LEAN still = 500 pts. EVALUATE Phase 2 weights unchanged.
+ *
  * Enforcement level: [ENFORCED] for dimension names & weights; [ASPIRATIONAL] for cross-session aggregation.
  */
 const SCORING = {
@@ -231,49 +265,57 @@ const SCORING = {
    * Unified 7-dimension schema used across LEAN, EVALUATE, and OPTIMIZE.
    * weight: fraction of total 1000-pt score allocated to this dimension.
    * leanMax: maximum LEAN points for this dimension (sum = 500).
+   * leanChecks: what the heuristic checks for in LEAN mode (documentation only).
    * strategies: OPTIMIZE strategy IDs that target this dimension.
    */
   dimensions: {
     systemDesign: {
       label: 'System Design',
       weight: 0.20,
-      leanMax: 100,
+      leanMax: 95,  // v3.1.0: was 100 (5 pts redistributed to metadata)
+      leanChecks: ['identity_section_present', 'red_lines_present'],
       strategies: ['S1', 'S2'],
     },
     domainKnowledge: {
       label: 'Domain Knowledge',
       weight: 0.20,
-      leanMax: 100,
+      leanMax: 95,  // v3.1.0: was 100 (5 pts redistributed to metadata)
+      leanChecks: ['template_accurately_used', 'field_specificity_visible', 'skill_summary_present'],
       strategies: ['S3', 'S4'],
     },
     workflow: {
       label: 'Workflow',
       weight: 0.15,
       leanMax: 75,
+      leanChecks: ['min_3_mode_sections', 'quality_gates_table_present'],
       strategies: ['S5'],
     },
     errorHandling: {
       label: 'Error Handling',
       weight: 0.15,
       leanMax: 75,
+      leanChecks: ['error_recovery_section_present', 'escalation_paths_documented'],
       strategies: ['S6'],
     },
     examples: {
       label: 'Examples',
       weight: 0.15,
       leanMax: 75,
+      leanChecks: ['min_2_code_block_examples', 'trigger_keywords_en_zh'],
       strategies: ['S7'],
     },
     security: {
       label: 'Security',
       weight: 0.10,
-      leanMax: 50,
+      leanMax: 45,  // v3.1.0: was 50 (5 pts redistributed to metadata; ASI01 check added)
+      leanChecks: ['security_baseline_section', 'no_hardcoded_secrets', 'asi01_clear'],
       strategies: ['S8'],
     },
     metadata: {
       label: 'Metadata',
       weight: 0.05,
-      leanMax: 25,
+      leanMax: 40,  // v3.1.0: was 25 (+15 pts; now covers trigger phrases + negative boundaries)
+      leanChecks: ['yaml_frontmatter_present', 'trigger_phrases_3_to_8', 'negative_boundaries_section'],
       strategies: ['S9'],
     },
   },

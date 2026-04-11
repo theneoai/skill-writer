@@ -20,7 +20,7 @@
 
 ## §1  Why Convergence Detection
 
-The 9-step optimization loop (§9 of skill-writer.md) runs up to 20 rounds.
+The 10-step optimization loop (§9 of skill-writer.md) runs up to 20 rounds.
 Without convergence detection, it wastes compute on loops where:
 - Scores have stabilized (volatility check)
 - All easy gains are exhausted (plateau check)
@@ -176,11 +176,16 @@ def should_stop(score_history: list[float], current_round: int) -> tuple[bool, s
 
 | Signal | Action |
 |--------|--------|
-| `volatility` | Declare final score; certify at current tier; update audit |
-| `plateau` | Try one final alternative strategy; if no improvement → certify |
-| `trend_stable` | Certify at current tier; log "plateau reached at round N" |
-| `trend_diverging` | **HALT**, roll back to best-score snapshot, escalate HUMAN_REVIEW |
-| `max_rounds` | If score ≥ 700 → certify BRONZE; else → HUMAN_REVIEW |
+| `volatility` | Declare final score; proceed to Step 10 VERIFY; certify at VERIFY tier |
+| `plateau` | Try one final alternative strategy; if no improvement → proceed to Step 10 VERIFY |
+| `trend_stable` | Proceed to Step 10 VERIFY; log "plateau reached at round N" |
+| `trend_diverging` | **HALT**, roll back to best-score snapshot, escalate HUMAN_REVIEW; skip Step 10 |
+| `max_rounds` | If score ≥ 700 → proceed to Step 10 VERIFY; else → HUMAN_REVIEW; skip Step 10 |
+
+**Step 10 VERIFY** (v3.1.0): After any convergence signal (except `trend_diverging` and FAIL),
+the loop proceeds to the co-evolutionary independent verification pass. VERIFY resets context
+and re-scores the final skill independently to eliminate generator bias. The VERIFY score
+(more conservative) becomes the certified score. See `optimize/strategies.md §2 Step 10`.
 
 ---
 
@@ -206,7 +211,15 @@ The optimization loop maintains a score history list:
   "final_score": 732,
   "final_tier": "BRONZE",
   "converged_at_round": 10,
-  "convergence_signal": "volatility"
+  "convergence_signal": "volatility",
+  "verify_score": 728,
+  "verify_delta": 4,
+  "verify_status": "CONSISTENT",
+  "certified_score": 728,
+  "tier_history": [
+    {"round": 0, "skill_tier": "atomic"},
+    {"round": 7, "skill_tier": "functional", "note": "tier promoted — EVALUATE queued"}
+  ]
 }
 ```
 
@@ -214,7 +227,7 @@ The optimization loop maintains a score history list:
 
 ## §8  Curation at Round 10
 
-Every 10 rounds, the optimization loop performs a curation step to prevent context bloat:
+Every 10 rounds, the 10-step optimization loop performs a curation step to prevent context bloat:
 
 ```
 CURATE (round 10, 20):

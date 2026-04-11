@@ -864,3 +864,197 @@ L2 集体 UTE 的 `[ASPIRATIONAL]` 实现路径：
 | 技能 ID | 文件名（任意字符串）| `SHA-256[:12]` of name | 在 YAML frontmatter 新增 `skill_id` 字段 |
 | 版本格式 | semver（`1.2.0`）| semver + history array | 添加 `version_history` 字段到 UTE frontmatter |
 | 存储路径 | 各平台独立路径 | 统一 `skills/` 目录 | SHARE 模式增加路径映射层 |
+
+---
+
+## 十一、学界与社区研究融合：v3.1.0 改进路线图
+
+> **基于**: RESEARCH-SYNTHESIS-2026.md — 覆盖 EvoSkills、SkillX、SkillRL、SkillRouter、
+> SkillClaw、SoK: Agentic Skills、SkillProbe、OWASP Agentic Top 10、SKILL.md Pattern 等。
+> **日期**: 2026-04-11
+> **版本**: v3.1.0（在 v3.0.0 基础上迭代）
+
+---
+
+### 11.1 最高优先级改进（P0 — 已在 v3.1.0 落地）
+
+#### 11.1.1 Skill Body 是决定性路由信号（SkillRouter）
+
+**研究发现**（arxiv:2603.22455）：
+- 移除 skill body 文本导致路由准确率下降 **29~44pp**
+- Cross-encoder 91.7% 注意力集中在 **body 字段**
+- "name+description 足够" 的业界假设被推翻
+
+**v3.1.0 落地变更**：
+- `templates/base.md` — 新增强制 `## Skill Summary` 段（第一个 H2，≤5 句话密集编码领域知识）
+- `skill-framework.md §5 Phase 4` — 新增 Skill Summary 生成要求
+- `skill-framework.md §6 LEAN` — Metadata 维度从 25 分提升到 40 分，新增触发词覆盖率子项
+
+**设计决策**：Skill Summary 置于文档最前（body 首段），而非 metadata-only 字段，因为路由器读取的是完整 body。
+
+#### 11.1.2 负向边界强制要求（SKILL.md Pattern）
+
+**研究发现**（从业者博客 + agentskills.io 最佳实践）：
+- 没有负向边界时，语义相邻的请求会错误触发 skill
+- "Do NOT use for" 声明直接减少误触发率
+
+**v3.1.0 落地变更**：
+- `templates/base.md` — 新增强制 `## Negative Boundaries` 段
+- `skill-framework.md §7 Inversion` — 新增必问问题 Q7（反向场景）
+- `skill-framework.md §6 LEAN` — 缺少负向边界扣 10 分，并触发 P2 advisory
+- `refs/security-patterns.md §1.3` — 新增 P2 模式"Missing Negative Boundaries"
+
+#### 11.1.3 OWASP Agentic Skills Top 10 安全检测（SkillProbe + OWASP 2026）
+
+**研究发现**（SkillProbe arxiv:2603.21019 + OWASP 2026）：
+- 31,132 个 skill 中 26.1% 含漏洞，13.4% 含严重漏洞
+- 含可执行脚本的 skill 漏洞率高 **2.12×**
+- ClawHavoc 活动通过注册表投毒攻击规模化部署恶意 skill
+- 当前 CWE 体系完全未覆盖 **ASI01 Prompt 注入**（最高频漏洞）
+
+**v3.1.0 落地变更**：
+- `refs/security-patterns.md` — 新增 §5 OWASP Agentic Top 10 检测规则（ASI01-ASI10）
+- `refs/security-patterns.md §1.2` — ASI01 Prompt 注入列为 P1（−50 pts）
+- `refs/security-patterns.md §1.3` — 新增 P2 模式（缺少负向边界、可执行脚本风险）
+- `skill-framework.md §11` — Red Lines 新增 ASI01 强制要求
+- `templates/base.md §7 Security Baseline` — 新增 OWASP ASI 检查项
+
+---
+
+### 11.2 高优先级改进（P1 — 已在 v3.1.0 落地）
+
+#### 11.2.1 协同进化验证（EvoSkills Surrogate Verifier）
+
+**研究发现**（EvoSkills arxiv:2604.01687）：
+- 使用独立验证者（不继承生成器偏见）从 32% 基准线提升至 75% Pass Rate
+- 多轮迭代：第 3 轮超越人工精选，第 5 轮达到最高性能
+- 进化后的 skill 跨 6 个模型迁移增益 +35~+44pp
+
+**v3.1.0 落地变更**：
+- `skill-framework.md §9 OPTIMIZE` — 新增 **VERIFY 步骤（Step 10）**，在收敛后执行
+- VERIFY 要求显式重置上下文（"以全新视角审查"），再次评分所有 7 维度
+- 与末轮优化分数比较：delta ≤ 20 pts → 通过；20–50 pts → WARNING；>50 pts → HUMAN_REVIEW
+- UTE `certified_lean_score` 使用 VERIFY 分数（更保守）而非 OPTIMIZE 末轮分数
+
+**设计决策**：在单会话内"重置上下文"是对 Surrogate Verifier 的最佳近似。真正的双会话验证是 `[ASPIRATIONAL]`，但单会话近似已可以有效检测分数膨胀。
+
+#### 11.2.2 三层层级结构（SkillX）
+
+**研究发现**（SkillX arxiv:2604.04804）：
+- 三层层级（Planning / Functional / Atomic）提高可组合性和迁移性
+- 每层有不同的设计约束和优化重点
+- 层级明确的 skill 在跨环境泛化上显著优于平面设计
+
+**v3.1.0 落地变更**：
+- `templates/base.md` YAML — 新增 `skill_tier: planning | functional | atomic` 字段
+- `skill-framework.md §7 Inversion` — 新增 Q8（触发词）问题（已实现）
+- `refs/skill-registry.md`（待更新）— 按 tier 分组查询的支持
+
+**待 v3.2.0 实现**：
+- Inversion Q 新增层级问题（"这个 skill 是高层规划、中层功能还是原子操作？"）
+- LEAN 评分对层级定位清晰度给予额外分值
+
+#### 11.2.3 SkillRL 教训蒸馏（COLLECT 模式增强）
+
+**研究发现**（SkillRL arxiv:2602.08234）：
+- 分别从成功轨迹（战略模式）和失败轨迹（简洁教训）提炼知识
+- 相比原始轨迹存储：token 压缩 10-20%，同时提升推理质量
+- 混淆处理两类轨迹会降低 AGGREGATE 效果
+
+**v3.1.0 落地变更**：
+- `refs/session-artifact.md §2` — 新增 `lesson_type` 和 `lesson_summary` 字段
+- `refs/session-artifact.md §3` — 详细分类规则和写作指南
+- `skill-framework.md §18 COLLECT` — 新增 Step 4 CLASSIFY LESSON TYPE
+
+---
+
+### 11.3 中优先级改进（P2 — 待 v3.2.0 实现）
+
+#### 11.3.1 Inversion 模板自适应问题
+
+**已识别问题**（ARCHITECTURE-REVIEW §2.0.3 + 新研究佐证）：
+- 不同模板类型（api-integration / data-pipeline）应有追加问题
+- 缺少答案验证机制（用户拒答时无 fallback）
+
+**v3.1.0 部分改进**：
+- 已在 §7 末尾新增"Template-specific follow-up"提示
+- Q7（负向边界）+ Q8（触发词）正式添加为必问问题
+
+**待 v3.2.0 实现**：
+- 形式化 `extra_questions` 字段到模板 YAML（允许模板声明追加问题）
+- 答案验证规则：`answer_validation: minimal | standard | strict`
+
+#### 11.3.2 SSOT 缺口修复（已识别，待修复）
+
+**已识别问题**（ARCHITECTURE-REVIEW §3.2）：
+- `validate.js` 检查 12 个 companion 文件，`reader.js` 只嵌入 7 个
+- `refs/self-review.md`、`refs/use-to-evolve.md`、`refs/evolution.md` 未嵌入
+
+**待 v3.2.0 实现**：
+- 扩展 `reader.js` 嵌入所有 companion 文件，或
+- 在 `validate.js` 中区分 `mustEmbed: true | false` 类别
+
+#### 11.3.3 评分体系统一
+
+**已识别问题**（ARCHITECTURE-REVIEW §2.0.4）：
+- 三种评分并存（LEAN 500pt、EVALUATE 1000pt、OPTIMIZE 7维）
+- LEAN 维度分值已在 v3.1.0 中调整（metadata 25→40，security 50→45）
+- `builder/src/config.js SCORING.dimensions` 权重需同步更新
+
+**待 v3.2.0 实现**：
+- 同步更新 `config.js SCORING.dimensions` 的 metadata 权重
+- 在 `eval/rubrics.md` 中统一说明三套评分系统的关系
+
+---
+
+### 11.4 低优先级改进（P3 — 待 v4.0.0）
+
+#### 11.4.1 SkillX 探索性 Skill 扩展
+
+**研究发现**（SkillX）：主动生成并验证超出训练数据的新 skill，扩大覆盖范围。
+
+**待实现**：CREATE 模式新增 EXPLORE 阶段——基于现有 skill 库推断空白覆盖域，主动提议新 skill 候选。
+
+#### 11.4.2 SkillRouter 集成
+
+**研究发现**（SkillRouter）：1.2B 参数模型，13× 参数更少，5.8× 速度更快。
+
+**待实现**：当 skill 库超过 100 个时，为 INSTALL 模式提供检索建议（"您可能还需要这些相关 skill"）。
+
+#### 11.4.3 SkillBench 基准集成
+
+**研究发现**：EvoSkills / SkillRouter 均使用 SkillsBench（84 个真实任务）作为评测基准。
+
+**待实现**：将 SkillsBench 任务子集引入 `eval/benchmarks.md`，作为更严格的实战验证。
+
+---
+
+### 11.5 架构影响总结
+
+| 变更 | 影响层 | 规模 |
+|------|--------|------|
+| Skill Summary + Negative Boundaries | 模板层 + 评估层 | MINOR |
+| OWASP Agentic Top 10 | 安全层 | MINOR |
+| VERIFY 步骤 | OPTIMIZE 流程 | MINOR |
+| lesson_type 分类 | COLLECT / AGGREGATE 层 | MICRO |
+| skill_tier 字段 | 模板层 + 注册表层 | MICRO |
+| LEAN 评分调整 | 评估层 | MICRO |
+
+所有 v3.1.0 变更均为 **MINOR 或 MICRO 级**（Edit Audit Guard 分类），不破坏现有兼容性。
+平台输出文件（`platforms/`）需通过 Builder 重新生成以包含最新模板变更。
+
+---
+
+### 11.6 研究文献引用
+
+| 论文 | arXiv | 主要贡献 | 落地状态 |
+|------|-------|---------|---------|
+| EvoSkills | 2604.01687 | Co-Evolutionary VERIFY | ✅ v3.1.0 |
+| SkillClaw | 2604.08377 | 集体进化 | ✅ v3.0.0 |
+| SkillX | 2604.04804 | 三层层级结构 | ✅ v3.1.0（部分）|
+| SkillRL | 2602.08234 | 教训蒸馏分类 | ✅ v3.1.0 |
+| SkillRouter | 2603.22455 | Skill Body 信号 | ✅ v3.1.0 |
+| Skills in the Wild | 2604.04323 | 内容质量瓶颈 | ✅ v3.1.0（Skill Summary）|
+| SkillProbe | 2603.21019 | 安全审计 | ✅ v3.1.0（OWASP）|
+| SoK: Agentic Skills | 2602.20867 | 分类体系 | 📋 参考 |
+| OWASP Agentic Top 10 | — | 安全框架 | ✅ v3.1.0 |

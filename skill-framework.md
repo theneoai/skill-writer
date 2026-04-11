@@ -1,10 +1,10 @@
 ---
 name: skill-writer
-version: "3.0.0"
+version: "3.1.0"
 description: "Meta-skill framework: CREATE from templates, LEAN/EVALUATE/OPTIMIZE lifecycle, COLLECT mode for collective skill evolution, Edit Audit Guard, Skill Registry for push/pull sharing, UTE 2.0 two-tier self-improvement, and deploy to 7 platforms including MCP."
 description_i18n:
-  en: "Full lifecycle meta-skill framework: CREATE from templates, LEAN fast-eval, EVALUATE 4-phase 1000pt pipeline, OPTIMIZE 7-dim 9-step loop, COLLECT for collective evolution (SkillClaw-compatible), skill registry + SHARE, UTE 2.0 L1/L2, deploy to 7 platforms (Claude/OpenCode/OpenClaw/Cursor/OpenAI/Gemini/MCP)."
-  zh: "全生命周期元技能框架：从模板CREATE、LEAN快速评测、4阶段1000分EVALUATE、7维9步OPTIMIZE、COLLECT集体进化采集（SkillClaw兼容）、技能注册表+共享、UTE 2.0双层自进化、部署至7平台（含MCP标准）。"
+  en: "Full lifecycle meta-skill framework: CREATE from templates (3-tier hierarchy, negative boundaries, Skill Summary), LEAN fast-eval, EVALUATE 4-phase 1000pt pipeline + OWASP Agentic Top 10, OPTIMIZE 7-dim 9-step loop + co-evolutionary VERIFY, COLLECT for collective evolution (SkillClaw + SkillRL-compatible), skill registry + SHARE, UTE 2.0 L1/L2, deploy to 7 platforms."
+  zh: "全生命周期元技能框架：三层层级结构+负向边界+检索优化摘要的CREATE、LEAN快速评测、OWASP Agentic Top 10安全检测的4阶段EVALUATE、加入协同进化VERIFY的OPTIMIZE、SkillRL+SkillClaw兼容COLLECT、技能注册表+共享、UTE 2.0双层自进化、部署至7平台。"
 
 license: MIT
 author:
@@ -224,12 +224,21 @@ Every mode executes via Plan-Execute-Summarize:
 | 1 | **ELICIT** — Inversion pattern, one question at a time (§7) | All Qs answered |
 | 2 | **SELECT TEMPLATE** — match skill type → `claude/templates/<type>.md` | Template chosen |
 | 3 | **PLAN** — multi-pass self-review (`claude/refs/self-review.md §2`) | Plan reviewed |
-| 4 | **GENERATE** — fill template, no placeholders remain | Draft complete |
-| 5 | **SECURITY SCAN** — CWE patterns (`claude/refs/security-patterns.md`) | No P0 violations |
-| 6 | **LEAN EVAL** — fast heuristic check (§6) | Score ≥ 350 (pass lean) |
+| 4 | **GENERATE** — fill template; write Skill Summary (¶1), Negative Boundaries section | Draft complete, no placeholders |
+| 5 | **SECURITY SCAN** — CWE + OWASP Agentic Top 10 (`claude/refs/security-patterns.md`) | No P0 violations; ASI01 CLEAR |
+| 6 | **LEAN EVAL** — fast heuristic check (§6) | Score ≥ 350; negative boundaries present |
 | 7 | **FULL EVALUATE** — 4-phase pipeline if LEAN uncertain (§8) | Score ≥ 700 BRONZE |
 | 8 | **INJECT UTE** — append `§UTE` section from snippet, fill placeholders (§15) | UTE section present |
 | 9 | **DELIVER** — annotate, certify, write audit entry | CERTIFIED / TEMP_CERT |
+
+> **Phase 4 (GENERATE) — mandatory elements** (sourced from SKILL.md Pattern + SkillRouter research):
+> 1. **Skill Summary paragraph** (first content paragraph): ≤5 sentences densely encoding what / when / who / not-for.
+>    Research basis: SkillRouter (arxiv:2603.22455) — skill body content is the **decisive routing signal**
+>    (91.7% of cross-encoder attention); removing body degrades routing accuracy 29–44pp.
+> 2. **Negative Boundaries section**: explicit "Do NOT use for" list. Required before delivery.
+>    Research basis: SKILL.md Pattern (2026) — without boundaries, semantically similar requests
+>    mis-trigger skills. SkillProbe: negation reduces false trigger rate significantly.
+> 3. **Trigger phrases** in metadata: 3–8 canonical phrases users would say to invoke the skill.
 
 ### Template Selection
 
@@ -254,14 +263,21 @@ LEAN checks map directly to the 7 unified dimensions (see `config.SCORING.dimens
 
 | Dimension | LEAN Check | Points |
 |-----------|-----------|--------|
-| **systemDesign** (max 100) | Identity section present + Red Lines / 严禁 text | 60 + 40 |
-| **domainKnowledge** (max 100) | Template accurately used + field specificity visible | 60 + 40 |
+| **systemDesign** (max 95) | Identity section present + Red Lines / 严禁 text | 55 + 40 |
+| **domainKnowledge** (max 95) | Template accurately used + field specificity visible | 55 + 40 |
 | **workflow** (max 75) | ≥ 3 mode sections (`## §N`) + Quality Gates table | 45 + 30 |
 | **errorHandling** (max 75) | Error/recovery section present + escalation paths documented | 45 + 30 |
 | **examples** (max 75) | ≥ 2 code-block usage examples + trigger keywords (EN + ZH) | 45 + 30 |
-| **security** (max 50) | Security Baseline section + no hardcoded secrets pattern | 30 + 20 |
-| **metadata** (max 25) | YAML frontmatter present (name, version, interface) + no `{{PLACEHOLDER}}` tokens | 15 + 10 |
+| **security** (max 45) | Security Baseline section + no hardcoded secrets pattern + ASI01 clear | 25 + 10 + 10 |
+| **metadata** (max 40) | YAML frontmatter (name, version, interface) + trigger phrases (3–8) + Negative Boundaries section | 15 + 15 + 10 |
 | **Total** | | **500** |
+
+> **Metadata weight increase** (from 25→40 pts): Research basis — SkillRouter (arxiv:2603.22455)
+> found that trigger phrase coverage in skill body is the decisive routing signal. Negative
+> Boundaries are now a scored element because they directly prevent mis-triggering.
+
+> **New negative boundaries penalty**: If no "Negative Boundaries" / "Do NOT use for" section
+> is present, deduct 10 from metadata AND add P2 advisory to security scan output.
 
 **Scale mapping** (500 → 1000):
 ```
@@ -295,13 +311,29 @@ lean_score < 300
 **Rule**: Phase 3 (PLAN) MUST NOT begin until all answers are received.
 Ask **one question at a time**. Wait for answer before next question.
 
-### CREATE questions (ask all):
+### CREATE questions (ask all, one at a time):
 1. "这个skill要解决什么核心问题？ / What core problem does this skill solve?"
-2. "主要用户是谁，技术水平如何？ / Who are the target users?"
+2. "主要用户是谁，技术水平如何？ / Who are the target users and their technical level?"
 3. "输入是什么形式？ / What form does the input take?"
 4. "期望的输出是什么？ / What is the expected output?"
 5. "有哪些安全或技术约束？ / What security or technical constraints apply?"
 6. "验收标准是什么？ / What are the acceptance criteria?"
+7. "这个skill在哪些场景下**不**应该触发？ / In which scenarios should this skill NOT trigger? (List 2–5 anti-cases)"
+8. "用户会用什么词或短语来触发这个skill？ / What phrases or keywords would a user say to trigger this skill? (List 3–8 examples)"
+
+> **Questions 7 & 8 are new (v3.1.0)**. Research basis:
+> - Q7 (Negative Boundaries): SKILL.md Pattern — without explicit negation, semantically
+>   adjacent requests mis-trigger the skill. Required before GENERATE phase.
+> - Q8 (Trigger Phrases): SkillRouter (arxiv:2603.22455) — trigger phrase coverage in the
+>   skill body is the decisive routing signal (29–44pp accuracy difference).
+
+> **Answer validation**: Minimal — user must provide at least one example for Q7 and Q8.
+> If user refuses Q7 or Q8, flag with WARNING and continue; add advisory to deliver output.
+
+> **Template-specific follow-up** (ask after Q6 if applicable):
+> - `api-integration`: "Which HTTP methods / authentication mechanism?"
+> - `data-pipeline`: "What is the data schema / transformation rules?"
+> - `workflow-automation`: "What is the maximum acceptable latency / retry policy?"
 
 ### EVALUATE questions (ask all):
 1. "请提供skill文件路径或内容。 / Provide the skill file path or content."
@@ -382,10 +414,10 @@ sub-dimension schema. See `builder/src/config.js SCORING.dimensions` for the can
 | D3 | **workflow** | 15% | S5 | Phase sequence, exit criteria, loop gates |
 | D4 | **errorHandling** | 15% | S6 | Recovery paths, escalation triggers, timeouts |
 | D5 | **examples** | 15% | S7 | Usage examples count, quality, bilingual coverage |
-| D6 | **security** | 10% | S8 | CWE scan, Red Lines, auth/authz checks |
-| D7 | **metadata** | 5% | S9 | YAML frontmatter, versioning, tags, UTE fields |
+| D6 | **security** | 10% | S8 | CWE + ASI scan, Red Lines, auth/authz checks, boundaries |
+| D7 | **metadata** | 5% | S9 | YAML frontmatter, trigger phrases, negative boundaries, UTE fields |
 
-### 9-Step Loop
+### 9-Step Loop + VERIFY
 
 ```
 Pre-loop — UTE bootstrap:
@@ -398,7 +430,7 @@ Round N:
   3. CURATE  — every 10 rounds: consolidate learning, prune stale context
   4. PLAN    — review and select best fix strategy; log decision
   5. IMPLEMENT — apply atomic change (single dimension focus)
-  6. VERIFY  — re-score; if score regressed → rollback; if no improvement → try fix #2
+  6. RE-SCORE  — re-score; if score regressed → rollback; if no improvement → try fix #2
   7. HUMAN_REVIEW — trigger if total_score < 560 after round 10
   8. LOG     — record: round, dimension, delta, confidence, strategy_used
   9. COMMIT  — git commit every 10 rounds; tag with score
@@ -407,8 +439,30 @@ Convergence check (every round):
   IF volatility OR plateau OR trend=STABLE → STOP early
   See: claude/refs/convergence.md
 
+Post-loop — Co-Evolutionary VERIFY (Step 10) [NEW in v3.1.0]:
+  ┌──────────────────────────────────────────────────────────────────┐
+  │ VERIFY — Independent Verification Pass                           │
+  │                                                                  │
+  │ Research basis: EvoSkills (arxiv:2604.01687) — using a Surrogate │
+  │ Verifier (independent LLM session without inheriting generator   │
+  │ biases) increases pass rate from 32% baseline to 75% by round 5. │
+  │                                                                  │
+  │ Implementation (single-session approximation):                   │
+  │ 1. RESET context — explicitly state: "I am now reviewing this    │
+  │    skill as a new reader with no knowledge of the optimization   │
+  │    history or the AI's prior intentions."                        │
+  │ 2. READ the final skill text as a fresh document                 │
+  │ 3. SCORE all 7 LEAN dimensions independently (no prior context)  │
+  │ 4. COMPARE VERIFY score vs. final OPTIMIZE round score:          │
+  │    ├─ delta ≤ 20 pts → scores are consistent → PROCEED          │
+  │    ├─ delta 20–50 pts → flag WARNING; report discrepancy         │
+  │    └─ delta > 50 pts → score inflation suspected → HUMAN_REVIEW  │
+  │ 5. REPORT: "VERIFY SCORE: N/500 | OPTIMIZE SCORE: M/500 |        │
+  │    DELTA: ±D | STATUS: CONSISTENT / WARNING / SUSPECT"           │
+  └──────────────────────────────────────────────────────────────────┘
+
 Post-loop — UTE update:
-  Update use_to_evolve.certified_lean_score with final LEAN score
+  Update use_to_evolve.certified_lean_score with VERIFY score (more conservative)
   Reset use_to_evolve.last_ute_check to today
 
 Max rounds: 20 → if not BRONZE after round 20 → HUMAN_REVIEW
@@ -443,6 +497,9 @@ Full spec: `claude/refs/evolution.md`
 ## §11  Security
 
 Scan every skill on CREATE, EVALUATE, and OPTIMIZE delivery.
+Full patterns + OWASP rules: `claude/refs/security-patterns.md`
+
+### CWE Patterns (Code Security)
 
 | Severity | CWE | Pattern Type | Action |
 |----------|-----|-------------|--------|
@@ -453,8 +510,27 @@ Scan every skill on CREATE, EVALUATE, and OPTIMIZE delivery.
 | **P1** | CWE-306 | Missing auth check | Score −30, WARNING |
 | **P1** | CWE-862 | Missing authz check | Score −30, WARNING |
 
+### OWASP Agentic Skills Top 10 (2026) — New in v3.1.0
+
+| Severity | ID | Risk | Action |
+|----------|----|------|--------|
+| **P1** | ASI01 | Agent Goal Hijack / Prompt Injection | Score −50, WARNING |
+| **P1** | ASI02 | Tool Misuse & Exploitation | Score −30, WARNING |
+| **P1** | ASI03 | Identity & Privilege Abuse | Score −30, WARNING |
+| **P1** | ASI04 | Agentic Supply Chain Vulnerabilities | Score −30, WARNING |
+| **P2** | ASI05 | Excessive Autonomy & Scope Creep | Advisory only |
+| **P2** | ASI06 | Prompt Confidentiality Leakage | Advisory only |
+| **P2** | ASI07 | Insecure Skill Composition | Advisory only |
+| **P2** | ASI08 | Memory & State Poisoning | Advisory only |
+| **P2** | ASI09 | Lack of Human Oversight | Advisory only |
+| **P2** | ASI10 | Audit Trail Gaps | Advisory only |
+
+> **Red Lines (additional)**:
+> - 严禁 deliver any skill that processes untrusted external content as executable instructions (ASI01)
+> - 严禁 deliver skills with executable scripts but no Security Baseline section (SkillProbe: 2.12× vulnerability risk)
+
 ABORT protocol: stop → log → flag → notify → require human sign-off before resume.
-Full regex patterns: `claude/refs/security-patterns.md`
+Detection heuristics for each ASI: `claude/refs/security-patterns.md §5`
 
 ---
 
@@ -815,10 +891,19 @@ never interrupts the main workflow.
    - Any output verbosity / format issues?
    - Any dimension that clearly underperformed?
 
-4. SUMMARIZE — write 8–15 sentence causal-chain summary
+4. CLASSIFY LESSON TYPE (SkillRL-inspired, new in v3.1.0):
+   strategic_pattern → outcome=success AND prm_signal=good
+                        Write lesson_summary as: "What worked, why, what to reuse"
+   failure_lesson    → outcome=failure OR feedback_signal=correction
+                        Write lesson_summary as: "What failed, root cause, how to fix"
+   neutral           → outcome=partial OR outcome=ambiguous
+                        Write lesson_summary as: "What happened, what was ambiguous"
+   (see refs/session-artifact.md §3 for full classification rules)
+
+5. SUMMARIZE — write 8–15 sentence causal-chain summary
    (see refs/session-artifact.md §4 for guidelines)
 
-5. ASSEMBLE — produce complete Session Artifact JSON
+6. ASSEMBLE — produce complete Session Artifact JSON including lesson_type + lesson_summary
    (see refs/session-artifact.md §2 for schema)
 
 6. DELIVER — output the JSON artifact; offer:

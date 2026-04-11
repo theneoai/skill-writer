@@ -4,6 +4,7 @@
 > **Load**: When §16 (INSTALL / SHARE) of `claude/skill-writer.md` is accessed.
 > **Inspired by**: SkillClaw's skill registry with deterministic IDs and version history.
 > **Enforcement**: `[ENFORCED]` for ID generation and format; `[ASPIRATIONAL]` for remote sync.
+> **v3.1.0**: Added `skill_tier` and `triggers` fields to registry entry; schema_version bumped to 1.1.
 
 ---
 
@@ -58,7 +59,7 @@ The registry is stored as `registry.json` in the shared storage root:
 
 ```json
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "registry_updated": "<ISO-8601>",
   "skills": [
     {
@@ -69,6 +70,11 @@ The registry is stored as `registry.json` in the shared storage root:
       "updated_at": "2026-04-10",
       "certified_tier": "GOLD",
       "lean_score": 920,
+      "skill_tier": "functional",
+      "triggers": {
+        "en": ["test api", "call endpoint", "check api response"],
+        "zh": ["测试接口", "调用API"]
+      },
       "platforms": ["claude", "opencode", "openclaw"],
       "tags": ["api", "testing", "http"],
       "history": [
@@ -76,6 +82,7 @@ The registry is stored as `registry.json` in the shared storage root:
           "version": "1.2.0",
           "score": 920,
           "tier": "GOLD",
+          "skill_tier": "functional",
           "date": "2026-04-10",
           "change_summary": "Added retry logic and ZH trigger support",
           "sha256": "<SHA-256 of skill file content>"
@@ -84,6 +91,7 @@ The registry is stored as `registry.json` in the shared storage root:
           "version": "1.1.0",
           "score": 895,
           "tier": "GOLD",
+          "skill_tier": "functional",
           "date": "2026-04-05",
           "change_summary": "Improved error handling section",
           "sha256": "<SHA-256 of skill file content>"
@@ -209,15 +217,28 @@ Skills already using the skill-writer format add `skill_id` as an optional field
 No breaking changes to existing skills.
 
 ```yaml
-# Existing field (required)
+# Existing fields (required)
 name: api-tester
 version: "1.2.0"
 
-# New field (added on first registry push)
+# Registry field (added on first registry push)
 skill_id: "a1b2c3d4e5f6"
+
+# v3.1.0: new classification fields (added on first push for new skills;
+#          added to existing skills on next OPTIMIZE cycle or explicit re-register)
+skill_tier: "functional"          # planning | functional | atomic (SkillX tier)
+triggers:
+  en: ["test api", "call endpoint", "check api response"]
+  zh: ["测试接口", "调用API"]
 ```
 
 **Migration**: Run `skillclaw register` on existing skills to compute and inject `skill_id`.
+For `skill_tier` and `triggers`: populated automatically from YAML frontmatter on push.
+Existing skills without these fields receive an advisory warning; they are not rejected.
+
+**Schema version history**:
+- `1.0`: Original — id, name, version, tier, score, platforms, tags, history
+- `1.1` (v3.1.0): Added `skill_tier`, `triggers` at registry entry level; added `skill_tier` to history entries
 
 ---
 
