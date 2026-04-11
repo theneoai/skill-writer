@@ -84,18 +84,28 @@ function extractSections(content) {
 function findPlaceholders(content) {
   const placeholders = [];
   const lines = content.split('\n');
+  // Use a Set to deduplicate by "line:placeholder" key so a pattern that appears
+  // in both extended ({{K}}) and cursor (${K}) scans is never double-reported.
+  const seen = new Set();
 
   for (let i = 0; i < lines.length; i++) {
-    // Reset lastIndex since we reuse the regex across lines
     const extendedPattern = new RegExp(config.PLACEHOLDERS.extended.source, 'g');
     const cursorPattern = new RegExp(config.PLACEHOLDERS.cursor.source, 'g');
     let match;
 
     while ((match = extendedPattern.exec(lines[i])) !== null) {
-      placeholders.push({ placeholder: match[0], name: match[1], line: i + 1 });
+      const key = `${i + 1}:${match[0]}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        placeholders.push({ placeholder: match[0], name: match[1], line: i + 1 });
+      }
     }
     while ((match = cursorPattern.exec(lines[i])) !== null) {
-      placeholders.push({ placeholder: match[0], name: match[1], line: i + 1 });
+      const key = `${i + 1}:${match[0]}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        placeholders.push({ placeholder: match[0], name: match[1], line: i + 1 });
+      }
     }
   }
 
@@ -168,6 +178,9 @@ function extractFrontmatter(content) {
   return null;
 }
 
+/** Platforms that emit JSON — kept in sync with build.js JSON_OUTPUT_PLATFORMS */
+const JSON_PLATFORMS = new Set(['openai', 'mcp']);
+
 /**
  * Get built skill file path for platform
  * Uses config.PATHS.platforms as the canonical output directory (SSOT).
@@ -175,7 +188,7 @@ function extractFrontmatter(content) {
  * @returns {string|null} File path or null if not found
  */
 function getBuiltSkillPath(platform) {
-  const ext = platform === 'openai' ? 'json' : 'md';
+  const ext = JSON_PLATFORMS.has(platform) ? 'json' : 'md';
   const platformsDir = config.PATHS.platforms;
 
   const possiblePaths = [

@@ -8,7 +8,7 @@
 #   ./install.sh --url <URL>              # download skill-framework.md from URL first
 #   ./install.sh --platform cursor --url <URL>
 #
-# Supported platforms: claude, opencode, openclaw, cursor, gemini, openai (info only)
+# Supported platforms: claude, opencode, openclaw, cursor, gemini, openai (info only), mcp (JSON manifest)
 
 set -euo pipefail
 
@@ -118,6 +118,19 @@ install_platform() {
       echo "  ℹ [openai] OpenAI platform requires manual installation via platform settings."
       return 0
       ;;
+    mcp)
+      # MCP installs a JSON manifest, not a .md file.
+      local mcp_dir="${HOME}/.mcp/servers/skill-writer"
+      local mcp_manifest="${SCRIPT_DIR}/platforms/skill-writer-mcp-dev.json"
+      if [[ ! -f "${mcp_manifest}" ]]; then
+        echo "  ! [mcp] MCP manifest not found: ${mcp_manifest}" >&2
+        echo "  ! [mcp] Run 'npm run build:mcp' first to generate the manifest." >&2
+        return 1
+      fi
+      mkdir -p "${mcp_dir}"
+      cp "${mcp_manifest}" "${mcp_dir}/mcp-manifest.json"
+      echo "  ✓ [mcp] ${mcp_dir}/mcp-manifest.json"
+      ;;
     *)
       echo "  ! Unknown platform: ${p}" >&2
       return 1
@@ -127,7 +140,7 @@ install_platform() {
 }
 
 if [[ "${PLATFORM}" == "all" ]]; then
-  for p in claude opencode openclaw cursor gemini; do
+  for p in claude opencode openclaw cursor gemini openai mcp; do
     install_platform "${p}"
   done
 else

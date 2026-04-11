@@ -14,6 +14,11 @@
 
 const path = require('path');
 const os = require('os');
+const yaml = require('js-yaml');
+const config = require('../config');
+
+// Computed once from config so it stays in sync with the registry (no circular dep).
+const SUPPORTED_PLATFORMS = Object.keys(config.PLATFORMS);
 
 const name = 'mcp';
 
@@ -50,7 +55,7 @@ const template = {
               properties: {
                 platform: {
                   type: 'string',
-                  enum: ['opencode', 'openclaw', 'claude', 'cursor', 'openai', 'gemini', 'mcp'],
+                  enum: SUPPORTED_PLATFORMS,
                   description: 'Target platform (used with INSTALL mode)',
                 },
                 strict: {
@@ -139,30 +144,26 @@ function formatSkill(skillContent) {
   let skillTier = null;
   let skillTriggers = { en: [], zh: [] };
 
-  // Try YAML frontmatter first
+  // Parse YAML frontmatter with js-yaml (handles block scalars, nested objects,
+  // inline and block list styles — the hand-rolled regex approach only handled
+  // inline list format and was fragile with multi-line values).
   const frontmatterMatch = skillContent.match(/^---\n([\s\S]*?)\n---/);
   if (frontmatterMatch) {
-    const fm = frontmatterMatch[1];
-    const nameMatch = fm.match(/^name:\s*(.+)$/m);
-    const descMatch = fm.match(/^description:\s*["']?(.+?)["']?\s*$/m);
-    const verMatch = fm.match(/^version:\s*["']?(.+?)["']?\s*$/m);
-    const authorMatch = fm.match(/^author:\s*(.+)$/m);
-    // v3.1.0: extract skill_tier (planning|functional|atomic)
-    const tierMatch = fm.match(/^skill_tier:\s*(.+)$/m);
-    // v3.1.0: extract triggers.en and triggers.zh (inline list format only)
-    const triggersEnMatch = fm.match(/triggers:\s*[\s\S]*?en:\s*\[([^\]]*)\]/);
-    const triggersZhMatch = fm.match(/triggers:\s*[\s\S]*?zh:\s*\[([^\]]*)\]/);
-
-    if (nameMatch) skillName = nameMatch[1].trim();
-    if (descMatch) skillDescription = descMatch[1].trim();
-    if (verMatch) skillVersion = verMatch[1].trim();
-    if (authorMatch) skillAuthor = authorMatch[1].trim();
-    if (tierMatch) skillTier = tierMatch[1].trim();
-    if (triggersEnMatch) {
-      skillTriggers.en = triggersEnMatch[1].split(',').map(t => t.trim().replace(/^["']|["']$/g, '')).filter(Boolean);
-    }
-    if (triggersZhMatch) {
-      skillTriggers.zh = triggersZhMatch[1].split(',').map(t => t.trim().replace(/^["']|["']$/g, '')).filter(Boolean);
+    try {
+      const fm = yaml.load(frontmatterMatch[1]) || {};
+      if (fm.name) skillName = String(fm.name);
+      if (fm.description) skillDescription = String(fm.description);
+      if (fm.version) skillVersion = String(fm.version);
+      if (fm.author) {
+        skillAuthor = typeof fm.author === 'string'
+          ? fm.author
+          : (fm.author?.name || String(fm.author));
+      }
+      if (fm.skill_tier) skillTier = String(fm.skill_tier);
+      if (fm.triggers?.en && Array.isArray(fm.triggers.en)) skillTriggers.en = fm.triggers.en;
+      if (fm.triggers?.zh && Array.isArray(fm.triggers.zh)) skillTriggers.zh = fm.triggers.zh;
+    } catch (e) {
+      console.warn(`[mcp] Failed to parse YAML frontmatter: ${e.message}`);
     }
   }
 
@@ -204,7 +205,7 @@ function formatSkill(skillContent) {
     // Embed a compact summary of available modes
     capabilities: {
       modes: ['CREATE', 'LEAN', 'EVALUATE', 'OPTIMIZE', 'INSTALL'],
-      platforms: ['opencode', 'openclaw', 'claude', 'cursor', 'openai', 'gemini', 'mcp'],
+      platforms: SUPPORTED_PLATFORMS,
       self_evolution: true,
       // v3.1.0: security baseline now includes OWASP Agentic Skills Top 10 checks
       security_baseline: 'CWE + OWASP-ASI01-ASI10',

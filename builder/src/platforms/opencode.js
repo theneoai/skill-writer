@@ -93,13 +93,11 @@ class OpenCodeAdapter extends MarkdownAdapter {
    * @returns {Object}
    */
   generateMetadata(skillData) {
+    // Delegate entirely to MarkdownAdapter (which already uses the current
+    // builder version and deduplicates). Only override 'format' for clarity.
     return {
       ...super.generateMetadata(skillData),
       format: 'SKILL.md',
-      compatibility: {
-        minVersion: '1.0.0',
-        testedVersions: ['1.0.0', '2.0.0', '2.2.0'],
-      },
     };
   }
 }

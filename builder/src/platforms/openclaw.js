@@ -11,8 +11,28 @@
 
 const path = require('path');
 const os = require('os');
+const fs = require('fs');
 
 const name = 'openclaw';
+
+// ---------------------------------------------------------------------------
+// External section templates (loaded once at module initialisation).
+// Keeping presentation content in dedicated files separates it from adapter
+// logic and makes each section independently reviewable and editable.
+// ---------------------------------------------------------------------------
+const SECTIONS_DIR = path.join(__dirname, 'sections');
+
+function readSection(filename) {
+  try {
+    return fs.readFileSync(path.join(SECTIONS_DIR, filename), 'utf8');
+  } catch (e) {
+    throw new Error(`[openclaw] Failed to load section template "${filename}": ${e.message}`);
+  }
+}
+
+const LOONGFLOW_BODY = readSection('openclaw-loongflow.md');
+const SELF_REVIEW_BODY = readSection('openclaw-self-review.md');
+const UTE_BODY = readSection('openclaw-ute.md');
 
 // ---------------------------------------------------------------------------
 // Constants — centralised so they don't scatter across formatSkill / validate
@@ -43,68 +63,6 @@ const RECOMMENDED_SECTIONS = [
   '## §11 UTE Injection',
 ];
 
-const LOONGFLOW_BODY = `
-## §4 LoongFlow Orchestration
-
-Every mode executes via Plan-Execute-Summarize:
-
-\`\`\`
-┌──────────────────────────────────────────────────────────┐
-│  PLAN                                                    │
-│  Multi-pass self-review → plan reviewed                  │
-│  Build cognitive graph of steps                          │
-└──────────────────────────────┬───────────────────────────┘
-                               │ consensus reached
-                               ▼
-┌──────────────────────────────────────────────────────────┐
-│  EXECUTE                                                 │
-│  Implement plan with error recovery fallback             │
-│  Hard checkpoint after each phase                        │
-└──────────────────────────────┬───────────────────────────┘
-                               │ execution complete
-                               ▼
-┌──────────────────────────────────────────────────────────┐
-│  SUMMARIZE                                               │
-│  Cross-validate results against requirements             │
-│  Update evolution memory                                 │
-│  Route: CERTIFIED | TEMP_CERT | HUMAN_REVIEW | ABORT     │
-└──────────────────────────────────────────────────────────┘
-\`\`\``;
-
-const SELF_REVIEW_BODY = `
-## §9 Self-Review Protocol
-
-| Role | Responsibility |
-|------|----------------|
-| Pass 1 — Generate | Produce initial draft / score / fix proposal |
-| Pass 2 — Review | Security + quality audit; severity-tagged issue list (ERROR/WARNING/INFO) |
-| Pass 3 — Reconcile | Address all ERRORs, reconcile scores, produce final artifact |
-
-Timeouts: 30 s per pass, 60 s per phase, 180 s total (6 turns max).
-Consensus: CLEAR → proceed; REVISED → proceed with notes;
-UNRESOLVED → HUMAN_REVIEW.`;
-
-const UTE_BODY = `
-## §11 UTE Injection
-
-**Use-to-Evolve (UTE)** enables self-improving capabilities through actual usage.
-
-| Capability | Mechanism |
-|-----------|-----------|
-| Per-call usage recording | Post-Invocation Hook appended to skill context |
-| Implicit feedback detection | Pattern match on user follow-up |
-| Trigger candidate collection | Rephrasing signals logged; count≥3 → micro-patch candidate |
-| Lightweight check every 10 calls | Rolling 20-call success rate + trigger accuracy check |
-| Full metric recompute every 50 calls | F1 / MRR / trigger_accuracy from usage log |
-| Tier drift detection every 100 calls | Estimated LEAN vs certified baseline |
-| Autonomous micro-patching | Keyword additions staged + LEAN-validated before apply |
-
-\`\`\`yaml
-use_to_evolve:
-  enabled: true
-  certified_lean_score: 0
-  last_ute_check: null
-\`\`\``;
 
 // ---------------------------------------------------------------------------
 // Template definition
@@ -278,7 +236,7 @@ function generateMetadata(skillData) {
     version: skillData?.version || '1.0.0',
     created: new Date().toISOString(),
     metadata: { openclaw: OPENCLAW_METADATA },
-    compatibility: { minVersion: '1.0.0', testedVersions: ['1.0.0', '2.0.0', '2.2.0'] },
+    compatibility: { minVersion: '2.2.0', testedVersions: [require('../../package.json').version] },
   };
 }
 

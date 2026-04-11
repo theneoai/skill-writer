@@ -84,8 +84,8 @@ function generateMetadata(skillData) {
     version: skillData.version || '1.0.0',
     created: new Date().toISOString(),
     compatibility: {
-      minVersion: '1.0.0',
-      testedVersions: ['1.0.0']
+      minVersion: '2.2.0',
+      testedVersions: [require('../../package.json').version],
     }
   };
 }

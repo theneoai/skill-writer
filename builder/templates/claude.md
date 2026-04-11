@@ -1,16 +1,17 @@
 ---
 name: skill-writer
-version: "2.1.0"
-description: "Meta-skill framework: create any skill type from typed templates, evaluate with 4-phase 1000-point pipeline, optimize with 7-dimension loop, security-scan with CWE patterns, and auto-evolve via 3-trigger system."
+version: "{{VERSION}}"
+description: "{{DESCRIPTION}}"
 description_i18n:
-  en: "Full lifecycle meta-skill framework: CREATE from templates, LEAN fast-eval, EVALUATE 4-phase 1000pt pipeline, OPTIMIZE 7-dim 9-step loop, auto-evolve via threshold/time/usage triggers."
-  zh: "全生命周期元技能框架：从模板CREATE、LEAN快速评测、4阶段1000分EVALUATE、7维9步OPTIMIZE、三触发器自动进化。"
+  en: "Full lifecycle meta-skill framework: CREATE from templates, LEAN fast-eval, EVALUATE 4-phase 1000pt pipeline, OPTIMIZE 7-dim 10-step loop with VERIFY, COLLECT for collective evolution, auto-evolve via threshold/time/usage triggers. Supports 7 platforms including MCP."
+  zh: "全生命周期元技能框架：从模板CREATE、LEAN快速评测、4阶段1000分EVALUATE、7维10步OPTIMIZE（含VERIFY）、集体进化COLLECT、三触发器自动进化。支持含MCP在内的7个平台。"
 license: MIT
 author:
   name: theneoai
 created: "2026-03-31"
-updated: "2026-04-05"
+updated: "{{generated_at}}"
 type: meta-framework
+skill_tier: functional
 tags:
   - meta-skill
   - lifecycle
@@ -19,17 +20,33 @@ tags:
   - optimization
   - self-review
   - self-evolution
+  - mcp
 interface:
   input: user-natural-language
   output: structured-skill
-  modes: [create, lean, evaluate, optimize, install]
+  modes: [create, lean, evaluate, optimize, install, collect]
+triggers:
+  en:
+    - "create a skill"
+    - "evaluate this skill"
+    - "optimize this skill"
+    - "install skill-writer"
+    - "lean eval"
+  zh:
+    - "创建技能"
+    - "评测技能"
+    - "优化技能"
+    - "安装skill-writer"
+    - "快评"
 
 self_review:
   spec: claude/refs/self-review.md
 
 use_to_evolve:
   enabled: true
-  framework_version: "2.1.0"
+  injected_by: skill-writer-builder
+  injected_at: "{{generated_at}}"
+  framework_version: "{{VERSION}}"
   check_cadence: {lightweight: 10, full_recompute: 50, tier_drift: 100}
   micro_patch_enabled: true
   feedback_detection: true
@@ -44,7 +61,7 @@ use_to_evolve:
 
 > **Type**: Meta-Skill  
 > **Platform**: Claude  
-> **Version**: 2.1.0
+> **Version**: {{VERSION}}
 
 A meta-skill that enables AI assistants to create, evaluate, and optimize other skills through natural language interaction. Designed for Claude Code and Claude desktop.
 
@@ -52,28 +69,32 @@ A meta-skill that enables AI assistants to create, evaluate, and optimize other 
 
 ## §1 Overview
 
-Skill Writer provides four powerful modes:
+Skill Writer provides six powerful modes:
 
 - **CREATE**: Generate new skills from scratch using structured templates
 - **LEAN**: Fast 500-point heuristic evaluation (~1 second)
 - **EVALUATE**: Assess skill quality with 1000-point scoring and certification
 - **OPTIMIZE**: Continuously improve skills through iterative refinement
+- **INSTALL**: Deploy built skills to any of 7 supported platforms
+- **COLLECT**: Collective skill evolution via session artifacts (SkillClaw + SkillRL)
 
 ### Key Features
 
 - **Zero CLI**: Natural language interface - no commands to memorize
-- **Cross-Platform**: Works on OpenCode, OpenClaw, Claude, Cursor, OpenAI, and Gemini
+- **Cross-Platform**: Works on OpenCode, OpenClaw, Claude, Cursor, OpenAI, Gemini, and MCP
 - **Claude Native**: Uses companion files in `~/.claude/` for full functionality
 - **Template-Based**: 4 built-in templates for common skill patterns
 - **Quality Assurance**: Automated evaluation with certification tiers
-- **Self-Evolution**: UTE protocol for automatic skill improvement
+- **Self-Evolution**: UTE 2.0 L1/L2 protocol for automatic skill improvement
 - **Multi-Pass Self-Review**: Generate/Review/Reconcile protocol
+- **Security Baseline**: CWE patterns + OWASP Agentic Skills Top 10 (ASI01–ASI10)
 
 **Red Lines (严禁)**:
 - 严禁 deliver any skill without passing BRONZE gate (score ≥ 700)
 - 严禁 skip LEAN or EVALUATE security scan before delivery
 - 严禁 hardcoded credentials anywhere in generated skills (CWE-798)
 - 严禁 skip requirement elicitation (Inversion) before entering PLAN phase
+- 严禁 bypass OWASP ASI security baseline checks
 
 ---
 
@@ -119,6 +140,12 @@ Skill Writer provides four powerful modes:
 ```
 "Optimize this skill to make it more concise"
 "优化这个技能"
+```
+
+**Install to platform:**
+```
+"Install skill-writer to opencode"
+"安装 skill-writer 到 claude"
 ```
 
 ---
@@ -182,6 +209,17 @@ Skill Writer provides four powerful modes:
 - "优化这个技能"
 - "改进技能"
 
+### INSTALL Mode Triggers
+
+**EN:** install skill-writer, deploy skill  
+**ZH:** 安装 skill-writer, 部署技能
+
+**Intent Patterns:**
+- "install skill-writer"
+- "install skill-writer to [platform]"
+- "安装 skill-writer"
+- "部署到 [platform]"
+
 ---
 
 ## §4 CREATE Mode
@@ -192,7 +230,7 @@ Skill Writer provides four powerful modes:
 2. **SELECT TEMPLATE**: Choose from 4 built-in templates
 3. **PLAN**: Multi-pass self-review for implementation strategy
 4. **GENERATE**: Create skill using template
-5. **SECURITY SCAN**: Check for CWE vulnerabilities
+5. **SECURITY SCAN**: Check for CWE + OWASP ASI vulnerabilities
 6. **LEAN EVAL**: Fast 500-point heuristic evaluation
 7. **FULL EVALUATE**: Complete 1000-point evaluation (if LEAN uncertain)
 8. **INJECT UTE**: Add Use-to-Evolve self-improvement hooks
@@ -242,7 +280,7 @@ When creating a skill, ask:
 | Red Lines | 50 | "Red Lines" or "严禁" text present |
 | Quality Gates Table | 60 | Table with numeric thresholds |
 | Code Block Examples | 50 | ≥2 code block examples |
-| Trigger Keywords | 120 | EN+ZH keywords for all 4 modes |
+| Trigger Keywords | 120 | EN+ZH keywords for all modes |
 | Security Baseline | 50 | Security section present |
 | No Placeholders | 50 | No `{{PLACEHOLDER}}` remaining |
 
@@ -296,17 +334,19 @@ variance = | (phase2_score / 3) - (phase3_score / 4) |
 | Metadata | 10% | YAML frontmatter, versioning, tags |
 | Long-Context | 10% | Section refs, chunking, cross-reference integrity |
 
-### 9-Step Optimization Loop
+### 10-Step Optimization Loop
 
-1. **Parse**: Understand current skill
+1. **Parse**: Understand current skill structure and scoring baseline
 2. **Analyze**: Identify improvement areas across 7 dimensions
 3. **Generate**: Create optimized version
-4. **Evaluate**: Score the new version
-5. **Compare**: Check against previous
-6. **Converge**: Detect improvement plateau
-7. **Validate**: Ensure correctness
-8. **Report**: Show changes
-9. **Iterate**: Repeat if needed
+4. **Evaluate**: Score the new version with full 1000-pt pipeline
+5. **Compare**: Check against previous version's scores
+6. **Converge**: Detect improvement plateau (< 0.5pt gain)
+7. **Validate**: Ensure correctness and security compliance
+8. **Report**: Show changes and delta scores
+9. **Iterate**: Repeat steps 3–8 if convergence not reached
+10. **VERIFY**: Co-evolutionary cross-check — evaluate the optimizer's own output
+    against an independent evaluator pass; halt if DIVERGING detected
 
 ### Convergence Detection
 
@@ -321,16 +361,19 @@ Optimization stops when:
 
 ## §8 Security Features
 
-### CWE Pattern Detection
+### CWE + OWASP ASI Pattern Detection
 
-| Severity | CWE | Pattern Type | Action |
-|----------|-----|-------------|--------|
+| Severity | ID | Pattern Type | Action |
+|----------|----|-------------|--------|
 | **P0** | CWE-798 | Hardcoded credentials | **ABORT** |
 | **P0** | CWE-89 | SQL injection | **ABORT** |
 | **P0** | CWE-78 | Command injection | **ABORT** |
+| **P0** | ASI01 | Prompt injection | **ABORT** |
+| **P0** | ASI02 | Excessive agency | **ABORT** |
 | **P1** | CWE-22 | Path traversal | Score −50, WARNING |
 | **P1** | CWE-306 | Missing auth check | Score −30, WARNING |
 | **P1** | CWE-862 | Missing authz check | Score −30, WARNING |
+| **P1** | ASI06 | Sensitive data exposure | Score −30, WARNING |
 
 ABORT protocol: stop → log → flag → notify → require human sign-off before resume.
 
@@ -358,10 +401,16 @@ Self-improvement protocol that enables skills to evolve through usage.
 
 ```yaml
 use_to_evolve:
-  framework_version: "2.1.0"
-  injection_date: "2026-04-05"
-  certified_lean_score: 390
-  last_ute_check: "2026-04-05"
+  enabled: true
+  injected_by: skill-writer-builder
+  injected_at: "2026-04-11"
+  framework_version: "{{VERSION}}"
+  check_cadence: {lightweight: 10, full_recompute: 50, tier_drift: 100}
+  certified_lean_score: null
+  last_ute_check: null
+  pending_patches: 0
+  total_micro_patches_applied: 0
+  cumulative_invocations: 0
 ```
 
 ### 3-Trigger System
@@ -380,7 +429,7 @@ Claude uses companion reference files for full functionality:
 
 | Directory | Contents |
 |-----------|----------|
-| `~/.claude/refs/` | self-review.md, use-to-evolve.md, security-patterns.md, evolution.md, convergence.md |
+| `~/.claude/refs/` | self-review.md, use-to-evolve.md, security-patterns.md, evolution.md, convergence.md, session-artifact.md, edit-audit.md, skill-registry.md |
 | `~/.claude/templates/` | base.md, api-integration.md, data-pipeline.md, workflow-automation.md, use-to-evolve-snippet.md |
 | `~/.claude/eval/` | rubrics.md, benchmarks.md |
 | `~/.claude/optimize/` | strategies.md, anti-patterns.md |
@@ -392,13 +441,16 @@ Claude uses companion reference files for full functionality:
 ### Common Issues
 
 **Issue**: Skill not triggering
-- **Solution**: Check trigger phrases match exactly
+- **Solution**: Check trigger phrases match exactly; verify skill is installed in `~/.claude/skills/`
 
 **Issue**: Low evaluation score
 - **Solution**: Run OPTIMIZE mode for specific improvements
 
 **Issue**: Security warnings
-- **Solution**: Review CWE patterns and fix violations
+- **Solution**: Review CWE + OWASP ASI patterns and fix violations
+
+**Issue**: UTE check not running
+- **Solution**: Verify `use_to_evolve.enabled: true` in frontmatter; check cumulative_invocations counter
 
 ---
 
@@ -410,7 +462,7 @@ MIT License - See LICENSE file for details
 
 ## §UTE Use-to-Evolve
 
-<!-- Post-invocation protocol — auto-managed by skill-writer v2.1.0 -->
+<!-- Post-invocation protocol — auto-managed by skill-writer v{{VERSION}} -->
 
 After each invocation, increment `use_to_evolve.cumulative_invocations`.
 Run lightweight LEAN check every 10 invocations; full re-score every 50;
@@ -424,6 +476,6 @@ tier-drift detection every 100.
 
 ---
 
-*Generated by skill-writer-builder v2.1.0*  
+*Generated by skill-writer-builder v{{VERSION}}*  
 *For platform: Claude*  
 *Last updated: {{generated_at}}*
