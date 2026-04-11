@@ -246,7 +246,8 @@ No confirmation needed. These commands are LLM-evaluated (not platform CLI comma
 | `/lean` | LEAN mode | `/快评` |
 | `/eval` or `/evaluate` | EVALUATE mode | `/评测` |
 | `/opt` or `/optimize` | OPTIMIZE mode | `/优化` |
-| `/install` | INSTALL mode | `/安装` |
+| `/install` | INSTALL mode (deploy framework to platforms) | `/安装` |
+| `/share` | SHARE mode (export + package your created skill) | `/分享` |
 | `/collect` | COLLECT mode | `/采集` |
 | `/skip` | Accept current result as-is (TEMP_CERT if below BRONZE) | `/跳过` |
 
@@ -290,6 +291,8 @@ User Input
 │           enhance,tune,refine,upgrade,evolve]                   │
 │ INSTALL  [安装,部署,读取安装 | install,read.*install,            │
 │           fetch.*install,setup,deploy]                          │
+│ SHARE    [分享,发布,推送,导出技能 | share,push.*skill,export    │
+│           .*skill,publish.*skill,distribute]                    │
 │ COLLECT  [采集,记录,收集,会话数据 | collect,record,artifact,    │
 │           session-data,session-artifact,export.*log]            │
 │                                                                 │
@@ -572,6 +575,13 @@ LEAN and EVALUATE scores are **estimates**, not exact measurements. Treat scores
 
 ### Check Reliability Tiers
 
+> **Quick glossary** (shown inline when LEAN score is delivered):
+> - `[STATIC]` = **deterministic** — regex/structural checks, ±0 variance, always the same result.
+>   Trust these scores 100%. Example: "YAML frontmatter present" — either it is or it isn't.
+> - `[HEURISTIC]` = **LLM-judged** — quality assessments, ±5–15 pts per dimension.
+>   If two LEAN runs differ by ≤20 pts, treat them as equivalent — that's just noise.
+>   Use EVALUATE for an authoritative score when you need to certify a tier.
+
 Each LEAN check is labeled by its execution method:
 
 - **`[STATIC]`** — Deterministic regex / structural match. Same skill → same result every run.
@@ -687,7 +697,9 @@ Ask **one question at a time**. Wait for answer before next question.
 5. "有哪些安全或技术约束？ / What security or technical constraints apply?"
 6. "验收标准是什么？ / What are the acceptance criteria?"
 7. "这个skill在哪些场景下**不**应该触发？ / In which scenarios should this skill NOT trigger? (List 2–5 anti-cases)"
-   > 💡 **示例 / Examples**: "不用于生产数据库操作" / "不适用于超过1000条记录的批量处理" / "不用于需要实时数据的场景"
+   > 💡 **What are negative boundaries?** Rules that prevent false triggering. Example: a "code reviewer" skill should NOT trigger when someone asks "explain this architecture diagram" — that's for a different skill.
+   > 💡 **English examples**: "Do NOT use for production database writes" / "Do NOT process files > 1 GB" / "Do NOT use when real-time data is required" / "Do NOT trigger for 'explain this code' — use code-explainer instead"
+   > 💡 **Chinese examples (中文示例)**: "不用于生产数据库操作" / "不适用于超过1000条记录的批量处理" / "不用于需要实时数据的场景"
    > 💡 **卡住了？** 输入 `skip` — 将自动填充通用边界: "Avoid irreversible actions without explicit confirmation"
    > [Answer validation: SKIP accepted → auto-fill default boundary + WARNING note]
    > ⚠️ **跳过后自动填充的内容 / Auto-filled content on skip**:
@@ -911,6 +923,19 @@ Post-loop — Co-Evolutionary VERIFY (Step 10) [NEW in v3.1.0]:
   │    └─ delta > 50 pts → score inflation suspected → HUMAN_REVIEW  │
   │ 5. REPORT: "VERIFY SCORE: N/500 | OPTIMIZE SCORE: M/500 |        │
   │    DELTA: ±D | STATUS: CONSISTENT / WARNING / SUSPECT"           │
+  │                                                                  │
+  │ 📖 VERIFY 评分解读 / How to read VERIFY results:                  │
+  │  • VERIFY ≥ OPTIMIZE: unusual; may indicate genuine improvement  │
+  │  • VERIFY < OPTIMIZE by ≤20 pts: normal. Independent scoring     │
+  │    without context is slightly conservative. Trust VERIFY as     │
+  │    the more robust baseline. Both scores indicate real quality.  │
+  │  • VERIFY < OPTIMIZE by 20–50 pts: WARNING. OPTIMIZE may have   │
+  │    over-tuned for specific phrasing. Review changed sections.    │
+  │  • VERIFY < OPTIMIZE by >50 pts: score inflation suspected.      │
+  │    OPTIMIZE likely polished surface text without depth. Revert.  │
+  │                                                                  │
+  │  Use the VERIFY score (not OPTIMIZE score) as the UTE baseline   │
+  │  and for registry push decisions. VERIFY is more trustworthy.    │
   └──────────────────────────────────────────────────────────────────┘
 
 Post-loop — UTE update:
@@ -1103,6 +1128,52 @@ Mode: EVALUATE → auto-route to OPTIMIZE on FAIL
 → CERTIFIED BRONZE: skill v1.1.0
 ```
 
+### OPTIMIZE loop — what each round looks like
+
+```
+Input: "optimize this skill" [pastes skill with LEAN score 340]
+Mode: OPTIMIZE | Strategy: Auto | Starting score: 340/500
+
+Pre-loop output:
+  Dimension Scores:
+  systemDesign    48/95  ■■■■■░░░░░  51%
+  workflow        35/90  ■■■■░░░░░░  39%  ← lowest
+  errorHandling   55/80  ■■■■■■░░░░  69%
+  examples        40/70  ■■■■■░░░░░  57%
+  trigger phrases 80/120 ■■■■■■■░░░  67%
+  security        50/50  ■■■■■■■■■■ 100%
+  metadata        32/45  ■■■■■■░░░░  71%
+
+  Strategy: A (Auto) → Focus dimension: workflow (lowest)
+
+--- Round 1/20 ---
+  Focus: workflow | Tactic: Add 5-step structured workflow table
+  [implementing change...]
+  New score: 365/500 (+25 pts) | Trend: ▲
+  Round 1/20 | Score: 365/500 | Best: 365 | Trend: ▲ | Focus: workflow
+
+--- Round 2/20 ---
+  Focus: workflow → systemDesign | Tactic: Add Red Lines + purpose statement
+  [implementing change...]
+  New score: 382/500 (+17 pts) | Trend: ▲
+  Round 2/20 | Score: 382/500 | Best: 382 | Trend: ▲ | Focus: systemDesign
+
+--- Round 3/20 ---
+  Focus: examples | Tactic: Add 2 concrete usage examples with I/O
+  New score: 380/500 (-2 pts) | Rolling back round 3
+  Round 3/20 | Score: 382/500 | Best: 382 | Trend: ─ | Focus: examples
+
+[...continues until convergence or Round 20...]
+
+VERIFY pass: VERIFY SCORE: 378/500 | OPTIMIZE: 382/500 | DELTA: 4 | CONSISTENT ✓
+
+OPTIMIZE Complete
+Rounds: 8 / 20 max  |  Starting: 340  →  Final: 382 (+42)  |  VERIFY: 378
+Trend: ▲ UP  |  Stop reason: PLATEAU (no gain in 5 rounds)
+Estimated EVALUATE: ~382 × 2 = ~764 → SILVER tier
+Next: run /eval for authoritative score, then /share when ready
+```
+
 ---
 
 ## §15  UTE Injection
@@ -1265,6 +1336,34 @@ URL examples:
    ℹ Companion files (refs/, eval/, templates/, optimize/) copied for Claude.
 ```
 
+### How to Share / Export Your Skill
+
+> **Note**: INSTALL mode deploys the *skill-writer framework* to platforms. To share a skill
+> **you created**, use one of the export methods below.
+
+**Trigger phrases** (route to skill export workflow, not framework install):
+```
+"share this skill"          → package + export + show registry instructions
+"push this skill"           → same as "share"
+"export this skill"         → output packaged skill file only (no instructions)
+"分享这个技能"               → same as "share this skill" in Chinese
+"发布技能"                   → publish skill
+```
+
+**Export workflow** (triggered by above phrases):
+```
+1. VALIDATE  — confirm skill has passed LEAN ≥ 350 (LEAN_CERT minimum)
+2. PACKAGE   — output: YAML frontmatter + full skill body as single .md file
+               Name: {skill_name}-v{version}.md
+3. STAMP     — compute SHA-256 of skill content; embed as use_to_evolve.content_hash
+4. DELIVER   — output the packaged file to conversation
+5. GUIDE     — show sharing options:
+               (a) GitHub Gist: paste content → gist.github.com → share URL
+               (b) Future registry: [registry URL TBD — v3.2.0 milestone]
+               (c) Team share: copy .md to teammates' platform skills directory
+               (d) Agent install: "read [your-gist-url] and install to claude"
+```
+
 ### Registry Push Policy
 
 Before pushing a skill to the shared registry, use the following tier thresholds to
@@ -1312,6 +1411,67 @@ User: "read https://raw.githubusercontent.com/.../skill-framework.md and install
 → Confirm: install to claude only? yes
 → ✓ ~/.claude/skills/skill-writer.md  + companion files
 → Installed to 1 platform. Restart Claude to activate.
+```
+
+---
+
+## §16b  MCP Integration Guide
+
+> MCP (Model Context Protocol) is fundamentally different from Markdown-based platforms.
+> Read this section if you are integrating skill-writer into an MCP server for a team.
+
+### MCP vs. Markdown platforms
+
+| Aspect | Claude / OpenCode / Cursor | MCP |
+|--------|---------------------------|-----|
+| Skill format | Markdown + YAML frontmatter | JSON manifest |
+| Context | Chat conversation | API call |
+| User feedback | Present in chat | Not directly available |
+| UTE auto-trigger | ✅ (observes chat) | ❌ (no chat context) |
+| COLLECT auto-persist | ✅ with hooks | Requires explicit API call |
+
+### Install
+
+```bash
+# Via install.sh
+./install.sh --platform mcp
+# Writes to: ~/.mcp/servers/skill-writer/mcp-manifest.json
+
+# Via Agent Install
+read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-mcp.json and install to mcp
+```
+
+### After install — team usage
+
+After the MCP manifest is installed, restart your MCP host. Team members can invoke
+skill-writer via MCP calls:
+
+```json
+// Example MCP invocation
+{
+  "tool": "skill-writer",
+  "mode": "create",
+  "input": "a skill that validates REST API responses"
+}
+```
+
+All 6 modes are available via MCP. Output is returned as structured JSON.
+
+### UTE and COLLECT via MCP
+
+Because MCP operates without a persistent chat context:
+- **UTE auto-trigger** does not fire (no chat to observe). Add `use_to_evolve.enabled: true`
+  to skill YAML and trigger COLLECT explicitly via API call.
+- **COLLECT**: Call COLLECT mode explicitly after each skill invocation via MCP API.
+  Output is JSON artifact — store in your backend (file, database, GitHub Gist).
+- **AGGREGATE**: Call with 2+ artifacts to get ranked improvement priorities.
+
+If your team needs automatic tracking, configure an external backend:
+```
+Backend options:
+  File system:  write to ~/.skill-artifacts/ on the MCP server host
+  Database:     SQLite / PostgreSQL with episodic memory schema (see §17)
+  GitHub Gist:  POST artifact JSON to gist API; reference by SHA
 ```
 
 ---
@@ -1486,6 +1646,35 @@ When the user provides 2+ Session Artifact JSONs, AGGREGATE mode synthesizes the
 - "aggregate skill feedback" / "聚合技能反馈"
 - "analyze usage sessions" / "分析使用记录"
 - "synthesize session data" / "综合会话数据"
+- "which skill to optimize?" / "哪个技能先优化？"
+
+**AGGREGATE output format** (always produce this structure):
+```
+AGGREGATE Results — N artifacts analyzed
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Skills covered: [list of skill names from artifacts]
+Sessions analyzed: N  |  Date range: YYYY-MM-DD – YYYY-MM-DD
+
+┌─ Priority 1 (HIGH — 3+ sessions): ─────────────────────────
+│ Skill: [skill_name]  |  Dimension: [trigger_accuracy]
+│ Pattern: Trigger phrase "review my code" missed 3/4 sessions
+│ Action: Add "review my code" as primary keyword in YAML triggers
+│ → Run: optimize this skill (Focus trigger_accuracy)
+
+┌─ Priority 2 (MEDIUM — 2 sessions): ────────────────────────
+│ Skill: [skill_name]  |  Dimension: [errorHandling]
+│ Pattern: Output truncated on large inputs (2 sessions)
+│ Action: Add explicit size gate with graceful degradation
+│ → Run: optimize this skill (Focus errorHandling)
+
+┌─ No-Skill Bucket: ─────────────────────────────────────────
+│ 2 sessions had no skill trigger (topic: "API mock generation")
+│ Proposal: Create new skill → "api-mock-generator"
+│ → Run: /create an API mock generator skill
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Recommended next action: optimize [priority-1-skill] first
+```
 
 ### Triggers for COLLECT
 
