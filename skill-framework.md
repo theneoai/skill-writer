@@ -331,15 +331,44 @@ Other languages: type English or Chinese keywords, or use /slash commands
 **Low confidence mode menu** (show when no clear keyword and no context clue):
 ```
 Not sure which mode to use. Please choose:
-  1. /create  — 创建新技能 / Build a new skill from a description
-  2. /lean    — 快速检查 (~5s) / Quick quality check (~5s, heuristic scoring)
-  3. /eval    — 完整评测 (~60s) / Full 4-phase quality evaluation (~60s)
-  4. /opt     — 迭代优化 (最多20轮) / Iterative improvement loop (up to 20 rounds)
-  5. /install — 部署到平台 / Deploy skill to platforms
-  6. /collect — 记录会话数据 / Record this session as a skill artifact
 
-Or describe what you want to do and I'll route automatically.
-(Cursor/IDE users: type the number or keyword — not the /command)
+  1. /create  — Build a new skill from scratch
+               I'll ask you 8 questions about what the skill should do, then generate it.
+               Best for: "I want a skill that does X"
+               Time: 2–5 min
+
+  2. /lean    — Quick quality check on an existing skill (5 seconds)
+               Runs 17 structural checks. Tells you if the skill is well-formed.
+               Best for: After writing a draft, before running full eval
+               Time: ~5s
+
+  3. /eval    — Full quality evaluation with certification score (60 seconds)
+               4-phase pipeline, 1000 pts. Gives you PLATINUM/GOLD/SILVER/BRONZE/FAIL.
+               Best for: Before sharing or publishing a skill
+               Time: ~60s
+
+  4. /opt     — Improve a skill through up to 20 rounds of targeted iteration
+               Focuses on your weakest dimension first, with rollback protection.
+               Best for: Skill stuck at BRONZE; want to reach SILVER or higher
+               Time: 5–20 min
+
+  5. /install — Install skill-writer itself to one or more AI platforms
+               Not for your skills — this installs the skill-writer framework.
+               Best for: First-time setup or adding a new platform
+               Time: <30s
+
+  6. /share   — Package your created skill to share with your team or publish
+               Validates quality threshold, stamps metadata, outputs a ready-to-share file.
+               Best for: After creating and evaluating a skill
+               Time: ~30s
+
+  7. /collect — Record this session as a structured improvement artifact
+               Outputs JSON you can save and later feed to /aggregate for evidence-based /opt.
+               Best for: After an important skill invocation or when a trigger missed
+               Time: ~10s
+
+Type a number, the /command, or describe what you want to do in plain language.
+(Cursor/IDE users: type the number or keyword phrase — IDE intercepts /commands)
 ```
 
 **Routing Decision Tree** `[CORE — apply in order, stop at first match]`:
@@ -474,8 +503,20 @@ When HUMAN_REVIEW is triggered, adapt the output message to the user's context:
 ⚠ HUMAN_REVIEW 触发 — AI 无法自动继续
 Human review required — cannot proceed automatically.
 
+Dimension scores at trigger point:
+  systemDesign    [score]/[max]  [⚠ if below 60%]
+  domainKnowledge [score]/[max]  [⚠ if below 60%]
+  workflow        [score]/[max]  [⚠ if below 60%]
+  errorHandling   [score]/[max]  [⚠ if below 60%]
+  examples        [score]/[max]  [⚠ if below 60%]
+  security        [score]/[max]  [⚠ if below 60%]
+  metadata        [score]/[max]  [⚠ if below 60%]
+
+Trigger reason: [DIVERGING | score < 560 after round 10 | 
+                 delta > 50 (VERIFY) | cumulative_delta < -40]
+
 下一步 / Next steps:
-  1. 查看下方标记 ⚠ 的维度得分 / Review ⚠-flagged dimension scores below
+  1. 查看上方标记 ⚠ 的维度得分 / Review ⚠-flagged dimension scores above
   2. 手动修改技能文件对应章节 / Manually fix the flagged sections
   3. 修改后重新运行 /eval 确认分数 / Re-run /eval after changes to confirm score
 ```
@@ -717,6 +758,22 @@ lean_score < 300 (FAIL)
       "LEAN score: [N]/500 — below BRONZE threshold.
        Weakest dimension: [DIMENSION] ([score]/[max]).
        Routing to OPTIMIZE mode to address [DIMENSION] first. [Type /skip to override]"
+
+    → Negative Boundaries diagnostic (run BEFORE routing to OPTIMIZE):
+      IF (Negative Boundaries section is absent)
+        OR (contains only the default placeholder
+            "Avoid irreversible actions without explicit confirmation")
+        OR (all listed boundaries are generic across skills, not specific to THIS skill's domain):
+        OUTPUT advisory:
+        "⚠ Likely cause: Negative Boundaries section is too generic or missing.
+         The placeholder 'Avoid irreversible actions without explicit confirmation'
+         does not describe this skill's actual scope — every skill has that rule.
+         Fix: Add 2–3 specific anti-cases. Examples for a code-review skill:
+           • 'Do NOT use for architecture diagram explanations — use code-explainer'
+           • 'Do NOT process files > 5,000 lines — split first'
+           • 'Do NOT trigger for commit message generation — use commit-writer skill'
+         Then re-run /lean."
+
     → Route to OPTIMIZE (§9) with full dimension report
 ```
 
@@ -767,6 +824,20 @@ Ask **one question at a time**. Wait for answer before next question.
 > If user types `skip` for Q7 or Q8: auto-fill defaults, flag with WARNING in output,
 > add a reminder: "Review Negative Boundaries before publishing this skill."
 
+> **Vague-answer probe rule** (apply to Q1–Q6):
+> If a user's answer is ≤3 words OR contains only a domain name with no specifics
+> (e.g., "git stuff", "some data", "I want a skill"), do NOT proceed to the next question.
+> Instead, ask ONE targeted follow-up probe:
+> ```
+> Q3 vague answer: "the input is git stuff"
+> → Probe: "Got it — can you be a bit more specific about the format?
+>   (a) Git command output (text from git diff / git log)?
+>   (b) Git repository files (code files, commit objects)?
+>   (c) Git API responses (JSON from GitHub API)?
+>   Just pick a, b, or c — or describe in your own words."
+> ```
+> Probe rule: one probe per question maximum. If still vague after probe, accept and continue.
+
 > **Template-specific follow-up** (ask after Q6 if applicable):
 > - `api-integration`: "Which HTTP methods / authentication mechanism?"
 > - `data-pipeline`: "What is the data schema / transformation rules?"
@@ -792,9 +863,28 @@ Ask **one question at a time**. Wait for answer before next question.
 | Phase | Name | Max Points | Method |
 |-------|------|-----------|--------|
 | 1 | Parse & Validate | 100 | Heuristic (schema, sections, no placeholders) |
-| 2 | Text Quality | 300 | Static analysis across 6 sub-dimensions |
+| 2 | Text Quality | 300 | Static analysis across 7 sub-dimensions (see table below) |
 | 3 | Runtime Testing | 400 | Trigger pattern tests, mode definitions, error handling |
 | 4 | Certification | 200 | Variance gate + security scan + quality gates |
+
+### Phase 2 Sub-Dimensions (300 points total)
+
+Phase 2 scores across 7 content quality dimensions with tier-adjusted weights.
+**If your Phase 2 score is low**, run `/eval` and ask "show my Phase 2 breakdown by dimension" to see which one is dragging your score.
+
+| Dimension | planning | functional | atomic | What it checks |
+|-----------|----------|------------|--------|----------------|
+| systemDesign | 30% | 20% | 15% | Clarity of architecture, role definition, purpose |
+| domainKnowledge | 20% | 20% | 15% | Depth and accuracy of domain-specific content |
+| workflow | 25% | 20% | 15% | Step sequence, gates, rollback actions |
+| errorHandling | 10% | 15% | 25% | Recovery paths, escalation rules |
+| examples | 5% | 15% | 20% | Usage coverage, realistic I/O |
+| security | 5% | 5% | 5% | CWE + OWASP ASI baseline |
+| metadata | 5% | 5% | 5% | YAML triggers, negative boundaries, versions |
+
+> To understand which dimension is low: after receiving your EVALUATE score, ask:
+> "What are my Phase 2 sub-dimension scores?" — the framework outputs per-dimension totals.
+> Use these to target your next OPTIMIZE run (`/opt` + skill + "focus on [dimension]`).
 
 ### Certification Tiers
 
@@ -1435,6 +1525,41 @@ determine the appropriate tag and whether to proceed:
 > This is an estimate (±60 pt variance). Use `/eval` for an authoritative score before
 > pushing, especially if your estimated tier is within ±30 pts of a tier boundary.
 
+### Enterprise / Team Access Control
+
+For teams deploying skills to shared infrastructure (CI/CD, MCP servers, internal registries):
+
+**Approval gates** — add these checks before any registry push or team-wide deploy:
+
+```
+IF skill.tier == FAIL (<700):
+  → BLOCK push; output: "Skill blocked from team registry — score {N}/1000 < 700 minimum.
+     Run /eval to diagnose, then /opt to improve before re-attempting."
+
+IF skill.tier == BRONZE (700–799):
+  → WARN: "Experimental tier — team lead approval recommended before deploy."
+  → Output skill with tag: experimental
+  → Proceed only on explicit confirmation: "I confirm experimental deploy"
+
+IF skill.tier >= SILVER (≥800):
+  → Allow push with tag: beta (SILVER) or stable (GOLD/PLATINUM)
+```
+
+**Team governance checklist** (append to DELIVER output when team context detected):
+```
+Team Deploy Checklist:
+  □ EVALUATE score ≥ 700 (required) — current: {N}/1000
+  □ Negative Boundaries reviewed by a second team member
+  □ Security scan shows no P0/P1 violations
+  □ Skill committed to version control (not only local files)
+  □ Install path documented in team runbook
+  □ Rollback plan: previous version skill file retained as skill-v{prev}.md
+```
+
+**Security note for shared MCP deployments**: The MCP manifest (`mcp-manifest.json`) runs
+server-side. Review `ASI02` (insecure tool use) and `ASI03` (excessive agency) flags before
+adding to a shared server. Minimum required: SILVER certification + P1-clean security scan.
+
 ### Error Handling
 
 | Error | Action |
@@ -1533,8 +1658,45 @@ all 8 answers must be provided in a single call using `elicitation_answers`:
 If `elicitation_answers` is omitted, skill-writer will return a **questionnaire prompt**
 (the 8 questions as text) for the caller to collect and re-submit with answers. This enables
 a two-step MCP flow:
-1. Call CREATE without answers → receive 8 questions
-2. Collect team member's answers → call CREATE again with `elicitation_answers`
+
+```
+Step 1 — Initiate CREATE, get questions:
+  Request:  {"tool": "skill-writer", "mode": "create", "input": "..."}
+  Response: {"status": "NEEDS_ELICITATION", "session_id": "sw-xxxx",
+             "questions": ["Q1: ...", "Q2: ...", ..., "Q8: ..."]}
+
+Step 2 — Re-submit with answers:
+  Request:  {"tool": "skill-writer", "mode": "create", "input": "...",
+             "session_id": "sw-xxxx",   ← include to resume context
+             "elicitation_answers": {"q1_problem": "...", ...}}
+  Response: {"status": "COMPLETE", "skill_content": "---\nname: ..."}
+```
+
+**`session_id` state management**: The `session_id` returned in Step 1 can be stored
+in your application to associate the pending questionnaire with a user. `session_id` values
+are valid for 24 hours. After 24 hours, start a new CREATE call. If your MCP host has
+no session state, omit `session_id` and always provide `elicitation_answers` in one call (batch mode).
+
+### Team Backend Choice for MCP Deployments
+
+If your team needs automatic tracking (COLLECT auto-persist, AGGREGATE across team members),
+choose a backend based on team size and infrastructure:
+
+| Backend | Best for | Setup complexity | Notes |
+|---------|----------|-----------------|-------|
+| **File system** (`~/.skill-artifacts/`) | Single developer, single host | None | Write JSON to `~/.skill-artifacts/YYYYMMDD_{skill}.jsonl` |
+| **GitHub Gist** (private) | Small team (2–5 people), no ops | Low | POST artifact JSON; share Gist URL for AGGREGATE |
+| **SQLite** | Team on shared server | Low-medium | One DB file; episodic memory schema (see §17) |
+| **PostgreSQL** | Large team, multi-host MCP | Medium | Full query capability; recommended for >20 skills |
+| **Vector DB** (Qdrant/Pinecone) | Semantic search across sessions | High | Required for §17 L4 episodic memory |
+
+**Minimum viable team setup** (GitHub Gist, no ops):
+```
+1. After each skill invocation, call COLLECT via MCP API
+2. POST the artifact JSON to a private GitHub Gist
+3. Store the Gist URL in your team wiki
+4. To run AGGREGATE: fetch 2+ Gist URLs, paste into MCP AGGREGATE call
+```
 
 ### UTE and COLLECT via MCP
 
@@ -1542,16 +1704,9 @@ Because MCP operates without a persistent chat context:
 - **UTE auto-trigger** does not fire (no chat to observe). Add `use_to_evolve.enabled: true`
   to skill YAML and trigger COLLECT explicitly via API call.
 - **COLLECT**: Call COLLECT mode explicitly after each skill invocation via MCP API.
-  Output is JSON artifact — store in your backend (file, database, GitHub Gist).
+  Output is JSON artifact — store in your chosen backend (see table above).
 - **AGGREGATE**: Call with 2+ artifacts to get ranked improvement priorities.
-
-If your team needs automatic tracking, configure an external backend:
-```
-Backend options:
-  File system:  write to ~/.skill-artifacts/ on the MCP server host
-  Database:     SQLite / PostgreSQL with episodic memory schema (see §17)
-  GitHub Gist:  POST artifact JSON to gist API; reference by SHA
-```
+  Provide artifacts as inline JSON in the call body (Method B) or point to a backend path.
 
 ---
 
@@ -1738,10 +1893,35 @@ never interrupts the main workflow.
 
 ### AGGREGATE mode (multi-session synthesis) `[EXTENDED — basic flow available]`
 
+**Two methods to run AGGREGATE — choose based on your setup:**
+
+```
+Method A — Automatic (EXTENDED: UTE hooks configured)
+─────────────────────────────────────────────────────
+Prerequisites: UTE hooks write artifacts to ~/.skill-artifacts/ automatically.
+Trigger: "aggregate skill feedback"
+→ skill-writer reads all artifacts in ~/.skill-artifacts/ automatically
+→ Synthesizes and outputs ranked improvement list
+→ No manual paste needed
+
+Method B — Manual paste (CORE: no hooks, works everywhere)
+───────────────────────────────────────────────────────────
+Step 1: After each invocation, run /collect → copy the JSON output to a file
+Step 2: When ready, paste 2+ JSON artifacts directly into the chat:
+  User: "aggregate skill feedback"
+  [paste artifact 1 JSON]
+  [paste artifact 2 JSON]
+  ...
+→ skill-writer synthesizes and outputs ranked improvement list
+
+If you only have 1 artifact: AGGREGATE will run but note "low confidence — 
+  collect 2+ sessions for reliable prioritization."
+```
+
 When the user provides 2+ Session Artifact JSONs, AGGREGATE mode synthesizes them:
 
 ```
-1. READ     — parse N session artifacts
+1. READ     — parse N session artifacts (from paste or ~/.skill-artifacts/)
 2. SUMMARIZE— merge individual summaries into a unified cross-session picture
 3. AGGREGATE— group by skill dimension; identify the "no-skill bucket"
               (sessions where skill didn't trigger → new skill candidates)

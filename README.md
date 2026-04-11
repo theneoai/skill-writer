@@ -66,17 +66,33 @@ Skill Writer is a meta-skill that enables AI assistants to create, evaluate, and
 
 ## Quick Start
 
+> **START HERE →** New to skill-writer? Follow this dependency flow:
+> ```
+> 1. INSTALL  → install skill-writer to your platform (one-liner below)
+> 2. CREATE   → describe a skill you want and answer 8 questions
+> 3. LEAN     → quick quality check (5s, 500 pts) — is the structure solid?
+> 4. EVALUATE → full quality score (60s, 1000 pts) — what certification tier?
+> 5. OPTIMIZE → improve to target tier (up to 20 rounds with convergence guard)
+> 6. SHARE    → package and distribute to your team or registry
+> ```
+> Each step feeds the next. Skip ahead only if you already have a skill file.
+
 ### What You Get After Installing
 
-| Features | curl install `[CORE]` | git clone install `[EXTENDED]` |
-|----------|----------------------|-------------------------------|
+| Feature | curl install `[CORE]` | git clone install `[EXTENDED]` |
+|---------|----------------------|-------------------------------|
 | All 6 modes (CREATE, LEAN, EVALUATE, OPTIMIZE, INSTALL, COLLECT) | ✅ | ✅ |
-| LEAN & EVALUATE scoring | ✅ | ✅ (richer detail reports) |
+| LEAN scoring (17-check, 500 pts) | ✅ | ✅ |
+| EVALUATE scoring (4-phase, 1000 pts) | ✅ same scoring logic | ✅ + per-dimension breakdown in report |
 | OPTIMIZE loop | ✅ | ✅ |
 | COLLECT manual (JSON output to conversation) | ✅ | ✅ |
 | Companion files (refs/, templates/, eval/) for Claude | ❌ | ✅ |
 | COLLECT auto-persist to `~/.skill-artifacts/` | ❌ | ✅ (requires hooks) |
 | UTE Hook-based auto-evolution | ❌ | ✅ |
+
+> **EVALUATE scoring is identical in both installs** — the 1000-point algorithm is fully inline.
+> The difference is output richness: git clone adds companion files that enable per-dimension
+> breakdowns, historical comparisons, and richer advisory text in the report.
 
 **tl;dr**: The curl one-liner gives you everything you need to create, evaluate, and optimize skills. The git clone adds richer evaluation reports and automatic persistence.
 
@@ -437,6 +453,97 @@ After collecting 2+ Session Artifacts, type:
 - `"aggregate skill feedback"` / `"聚合技能反馈"`
 
 AGGREGATE groups findings by skill dimension, identifies the "no-skill bucket" (sessions where no skill triggered), and ranks improvement opportunities by evidence count. Output feeds directly into `/opt`.
+
+## Sharing Your Created Skills
+
+Once you have created and evaluated a skill, you can share it with your team or publish it.
+
+### SHARE Mode — Package and Distribute a Skill
+
+Say any of the following to enter SHARE mode:
+- `"share this skill"` / `"分享这个技能"`
+- `"package my skill for distribution"` / `"打包我的技能"`
+- `"install my skill to Claude"` / `"install this skill"`
+- `"deploy my skill"` / `"部署我的技能"`
+
+**SHARE is different from INSTALL**: INSTALL deploys skill-writer itself. SHARE packages a skill *you created* for use by others.
+
+### 5-Step SHARE Workflow
+
+1. **VALIDATE** — Checks that the skill has at minimum a BRONZE LEAN score (≥350/500). Skills below BRONZE are blocked from sharing.
+2. **PACKAGE** — Wraps the skill in the standard format for the target platform (Markdown for most; JSON for OpenAI/MCP).
+3. **STAMP** — Adds certification metadata: tier badge, version, author, publish date.
+4. **DELIVER** — Outputs the packaged skill as:
+   - A copyable code block (all platforms `[CORE]`)
+   - A downloadable file (if file system hooks are configured `[EXTENDED]`)
+5. **GUIDE** — Explains where to place the file on each platform.
+
+### Registry Publishing Thresholds
+
+| Tier | Score | Registry Tag | Can Publish? |
+|------|-------|-------------|--------------|
+| PLATINUM/GOLD | ≥900 | `stable` | ✅ Recommended |
+| SILVER | ≥800 | `beta` | ✅ Allowed |
+| BRONZE | ≥700 | `experimental` | ✅ Allowed |
+| FAIL | <700 | — | ❌ Fix first |
+
+> Skills tagged `experimental` include a notice: "Community use — review before production deployment."
+
+---
+
+## How Skills Work After Creation
+
+When skill-writer finishes generating your skill, you have a **Markdown file** (`.md`) with a YAML frontmatter block. Here is what happens next:
+
+### Skill Anatomy
+
+```
+---
+name: my-skill
+version: "1.0.0"
+triggers:
+  en: ["do X", "run X for me"]
+  zh: ["执行X"]
+---
+
+## §1  Identity
+...
+```
+
+The **YAML frontmatter** tells the AI assistant when to activate the skill (via the `triggers` list). The **Markdown body** is the skill's instructions — the AI reads this as its operating procedure.
+
+### Where Your Skill File Goes
+
+Place the `.md` file in the skills directory for your platform:
+
+| Platform | Directory |
+|----------|-----------|
+| Claude | `~/.claude/skills/your-skill.md` |
+| OpenCode | `~/.config/opencode/skills/your-skill.md` |
+| OpenClaw | `~/.openclaw/skills/your-skill.md` |
+| Cursor | `~/.cursor/skills/your-skill.md` |
+| Gemini | `~/.gemini/skills/your-skill.md` |
+
+After placing the file, restart the AI assistant. It will load the skill automatically on startup.
+
+### How Trigger Routing Works
+
+When you type a message, the AI compares it against each loaded skill's `triggers` list:
+- Exact or near-match → skill activates
+- No match → general assistant mode (no skill)
+
+You can also activate skills with `/skill-name` on platforms that support slash commands (Claude, OpenCode). On Cursor, use the keyword trigger phrases since the IDE intercepts `/`.
+
+### Improving Your Skill Over Time
+
+| Situation | Action |
+|-----------|--------|
+| Skill triggered when it shouldn't | Add an exclusion to `Negative Boundaries` |
+| Skill missed a valid trigger phrase | Add phrase to `triggers.en` / `triggers.zh` |
+| Output quality degraded | Run `/eval` → `/opt` |
+| Many users gave similar feedback | Run `/collect` → `/aggregate` → `/opt` |
+
+---
 
 ## Security Features
 
