@@ -1,18 +1,18 @@
 ```json
 {
   "name": "skill-writer",
-  "version": "3.1.0",
-  "description": "Full lifecycle meta-skill framework: CREATE from templates (3-tier hierarchy, negative boundaries), LEAN fast-eval, EVALUATE 4-phase 1000pt pipeline + OWASP Agentic Top 10, OPTIMIZE 7-dim loop + co-evolutionary VERIFY, COLLECT for session artifact recording, deploy to 7 platforms.",
+  "version": "2.1.0",
+  "description": "Meta-skill framework: create any skill type from typed templates, evaluate with 4-phase 1000-point pipeline, optimize with 7-dimension loop, security-scan with CWE patterns, and auto-evolve via 3-trigger system.",
   "description_i18n": {
-    "en": "Full lifecycle meta-skill framework: CREATE from templates (skill_tier, negative boundaries, trigger phrases), LEAN 500pt fast-eval [STATIC]+[HEURISTIC], EVALUATE 4-phase 1000pt + OWASP ASI01-ASI10, OPTIMIZE 7-dim 9-step + VERIFY, COLLECT session artifacts, UTE 2.0 L1/L2 self-evolution.",
-    "zh": "全生命周期元技能框架：三层架构+负向边界+触发词的CREATE、[静态]+[启发式]双轨LEAN快评、OWASP Agentic Top 10安全检测4阶段EVALUATE、协同进化VERIFY的OPTIMIZE、会话数据COLLECT、UTE 2.0双层自进化。"
+    "en": "Full lifecycle meta-skill framework: CREATE from templates, LEAN fast-eval, EVALUATE 4-phase 1000pt pipeline, OPTIMIZE 7-dim 9-step loop, auto-evolve via threshold/time/usage triggers.",
+    "zh": "全生命周期元技能框架：从模板CREATE、LEAN快速评测、4阶段1000分EVALUATE、7维9步OPTIMIZE、三触发器自动进化。"
   },
   "license": "MIT",
   "author": {
     "name": "theneoai"
   },
   "created": "2026-03-31",
-  "updated": "2026-04-11",
+  "updated": "2026-04-01",
   "type": "meta-framework",
   "tags": [
     "meta-skill",
@@ -31,13 +31,12 @@
       "lean",
       "evaluate",
       "optimize",
-      "install",
-      "collect"
+      "install"
     ]
   },
   "use_to_evolve": {
     "enabled": true,
-    "framework_version": "3.1.0",
+    "framework_version": "2.1.0",
     "check_cadence": {
       "lightweight": 10,
       "full_recompute": 50,
@@ -59,14 +58,7 @@
 
 > **Type**: Meta-Skill  
 > **Platform**: Cursor  
-> **Version**: 3.1.0
-
-> ⚠️ **Cursor users — command syntax**: Cursor's command palette may intercept `/create`, `/eval`, etc.
-> If a slash command opens the palette instead of triggering this skill, use the **keyword form**:
-> - `create a skill that...` (not `/create`)
-> - `lean eval` / `quick check` (not `/lean`)
-> - `evaluate this skill` (not `/eval`)
-> - `optimize this skill` (not `/opt`)
+> **Version**: 2.1.0
 
 A meta-skill that enables Cursor to create, evaluate, and optimize other skills through natural language interaction.
 
@@ -74,14 +66,12 @@ A meta-skill that enables Cursor to create, evaluate, and optimize other skills 
 
 ## §1 Overview
 
-Skill Writer provides six powerful modes:
+Skill Writer provides four powerful modes:
 
 - **CREATE**: Generate new skills from scratch using structured templates
 - **LEAN**: Fast 500-point heuristic evaluation (~1 second)
 - **EVALUATE**: Assess skill quality with 1000-point scoring and certification
 - **OPTIMIZE**: Continuously improve skills through iterative refinement
-- **INSTALL**: Deploy skill-writer to one or more AI platforms
-- **COLLECT**: Record session artifacts for collective skill improvement
 
 ### Key Features
 
@@ -1043,10 +1033,31 @@ tier-drift detection every 100.
 
 ## How to fill this template
 
-1. Replace all `${PLACEHOLDER}` tokens with values gathered from §7 elicitation questions.
-2. Delete any section marked `<!-- OPTIONAL -->` if not applicable.
-3. **Do not skip Skill Summary or Negative Boundaries** — both are required for delivery (v3.1.0).
-4. Run the EVALUATE mode (§8) before delivery — minimum BRONZE (score ≥ 700).
+**推荐做法**: 运行 `/create` — AI 会提问 8 个问题，自动生成填好的技能文件，你只需审查。
+**Recommended**: Run `/create` — AI asks 8 questions and auto-fills this template. Just review the output.
+
+如需手动填写 / Manual fill guide:
+
+**必填占位符 (15个) — REQUIRED placeholders**:
+`${SKILL_NAME}`, `${ONE_LINE_DESCRIPTION}`, `${EN_DESCRIPTION}`, `${ZH_DESCRIPTION}`,
+`${TARGET_USER}`, `{{TRIGGER_PHRASE_EN_1~3}}`, `{{TRIGGER_PHRASE_ZH_1~2}}`,
+`${ANTI_CASE_1}`, `${CORE_ACTION}`, `${OUTPUT_FORMAT}`, `${DATE}`
+
+**自动填充 (其余占位符) — AUTO-FILLED by `/create`**:
+其余所有 `${PLACEHOLDER}` 均可由 CREATE 模式根据你的回答自动推断。
+All remaining placeholders are inferred by CREATE mode from your answers.
+如手动填写，`${PLACEHOLDER}` 格式说明见各字段注释。
+
+**选模板?** 参见 §5 模板选择逻辑:
+- 调用外部 API → `api-integration` 模板
+- 数据转换/处理 → `data-pipeline` 模板
+- 多步骤工作流 → `workflow-automation` 模板
+- 其他 / 不确定 → 本模板 (base) ← **当前模板**
+
+1. 替换必填占位符 / Replace required `${PLACEHOLDER}` tokens.
+2. 删除标有 `<!-- OPTIONAL -->` 的可选节 / Delete optional sections if not applicable.
+3. **不要跳过 Skill Summary 和 Negative Boundaries** — 两者为 v3.1.0 必交付项。
+4. 交付前运行 EVALUATE (`/eval`) — 最低 BRONZE (score ≥ 700)。
 
 ---
 
