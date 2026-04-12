@@ -41,6 +41,8 @@ const REQUIRED_FILES = [
   { path: path.join(PATHS.refs, 'session-artifact.md'), label: 'refs/session-artifact.md', mustEmbed: true },
   { path: path.join(PATHS.refs, 'edit-audit.md'), label: 'refs/edit-audit.md', mustEmbed: true },
   { path: path.join(PATHS.refs, 'skill-registry.md'), label: 'refs/skill-registry.md', mustEmbed: true },
+  // Refs - v3.1.1 additions
+  { path: path.join(PATHS.refs, 'progressive-disclosure.md'), label: 'refs/progressive-disclosure.md', mustEmbed: true },
   // Eval - must be embedded
   { path: path.join(PATHS.eval, 'rubrics.md'), label: 'eval/rubrics.md', mustEmbed: true },
   { path: path.join(PATHS.eval, 'benchmarks.md'), label: 'eval/benchmarks.md', mustEmbed: true },
@@ -206,6 +208,14 @@ const PLATFORMS = {
     supportsFrontmatter: false,
     triggerFormat: 'json',
   },
+  a2a: {
+    name: 'a2a',
+    placeholderPattern: PLACEHOLDERS.extended,
+    sectionPrefix: '##',
+    codeBlockLang: 'json',
+    supportsFrontmatter: false,
+    triggerFormat: 'json',
+  },
 };
 
 /**
@@ -339,7 +349,7 @@ const ERROR_CODES = {
  * Single Source of Truth — consumed by build.js and platforms/index.js.
  * Previously duplicated as local constants in both files; now defined once here.
  */
-const JSON_OUTPUT_PLATFORMS = new Set(['openai', 'mcp']);
+const JSON_OUTPUT_PLATFORMS = new Set(['openai', 'mcp', 'a2a']);
 
 module.exports = {
   PATHS,

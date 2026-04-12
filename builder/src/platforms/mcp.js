@@ -7,8 +7,14 @@
  *
  * Output format: JSON manifest (mcp-manifest.json) conforming to MCP schema v1.0.
  *
+ * MCP Server Cards (2026 roadmap):
+ *   Exposes a `.well-known/mcp-server-card.json` file at the install location so that
+ *   MCP-compatible registries and discovery agents can passively enumerate available
+ *   skills without prior knowledge of the server URL. generateServerCard() produces
+ *   this companion document alongside the main manifest.
+ *
  * @module builder/src/platforms/mcp
- * @version 3.1.0 - Added skill_tier, triggers extraction; OWASP ASI security_baseline; 10-step optimize description
+ * @version 3.1.1 - Added MCP Server Cards (generateServerCard) for passive registry discovery
  * @see https://modelcontextprotocol.io
  */
 
@@ -285,6 +291,78 @@ function validateSkill(skillContent) {
   return { valid: errors.length === 0, errors, warnings };
 }
 
+/**
+ * Generate an MCP Server Card for passive registry discovery.
+ *
+ * Server Cards are exposed at `.well-known/mcp-server-card.json` (relative to the
+ * MCP server install directory) so MCP registries and discovery agents can enumerate
+ * available skills without prior knowledge of the server URL.
+ *
+ * Spec: MCP 2026 Roadmap — "MCP Server Cards" feature
+ * Install path: ~/.mcp/servers/skill-writer/.well-known/mcp-server-card.json
+ *
+ * @param {Object} manifest - Parsed MCP manifest object (output of formatSkill, then JSON.parse)
+ * @returns {string} JSON-formatted Server Card
+ */
+function generateServerCard(manifest) {
+  if (!manifest || typeof manifest !== 'object') {
+    throw new Error('generateServerCard requires a parsed manifest object');
+  }
+
+  const serverCard = {
+    // Server Card schema version (MCP 2026 draft)
+    card_schema_version: '2026-draft',
+
+    // Identity fields — mirror the manifest
+    name: manifest.name || 'unnamed-skill',
+    description: manifest.description || '',
+    version: manifest.version || '1.0.0',
+    author: manifest.author || '',
+
+    // Discovery metadata
+    provider: {
+      name: manifest.author || 'theneoai',
+      url: 'https://github.com/theneoai/skill-writer',
+    },
+
+    // Capability summary used by registries for search/filter
+    capabilities: {
+      modes: manifest.capabilities?.modes || ['CREATE', 'LEAN', 'EVALUATE', 'OPTIMIZE', 'INSTALL'],
+      platforms: manifest.capabilities?.platforms || SUPPORTED_PLATFORMS,
+      self_evolution: manifest.capabilities?.self_evolution ?? true,
+      security_baseline: manifest.capabilities?.security_baseline || 'CWE + OWASP-ASI01-ASI10',
+    },
+
+    // Tool summary (names + descriptions only — omit full input schemas for compactness)
+    tools: (manifest.tools || []).map(t => ({
+      name: t.name,
+      description: t.description,
+    })),
+
+    // Skill classification (v3.1.0 fields)
+    ...(manifest.skill_tier && { skill_tier: manifest.skill_tier }),
+    ...(manifest.triggers && { triggers: manifest.triggers }),
+
+    // Card metadata
+    generated_at: new Date().toISOString(),
+    generated_by: 'skill-writer-builder',
+  };
+
+  return JSON.stringify(serverCard, null, 2);
+}
+
+/**
+ * Get the .well-known Server Card install path.
+ * Returned path is the full file path where the card should be written.
+ *
+ * @param {string} skillName - Skill directory name (default: 'skill-writer')
+ * @returns {string} Full path to the server card file
+ */
+function getServerCardPath(skillName = 'skill-writer') {
+  const os = require('os');
+  return require('path').join(os.homedir(), '.mcp', 'servers', skillName, '.well-known', 'mcp-server-card.json');
+}
+
 module.exports = {
   name,
   outputFormat,
@@ -293,4 +371,6 @@ module.exports = {
   getInstallPath,
   generateMetadata,
   validateSkill,
+  generateServerCard,
+  getServerCardPath,
 };

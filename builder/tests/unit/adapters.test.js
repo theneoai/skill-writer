@@ -579,7 +579,8 @@ describe('Platform Registry', () => {
     expect(supported).toContain('openai');
     expect(supported).toContain('gemini');
     expect(supported).toContain('mcp');
-    expect(supported).toHaveLength(7);
+    expect(supported).toContain('a2a');
+    expect(supported).toHaveLength(8);
   });
 
   test('getPlatform should return adapter for valid platform', () => {
@@ -618,8 +619,10 @@ describe('Platform Registry', () => {
 
   test('getAllPlatformInfo should return info for all platforms', () => {
     const info = platforms.getAllPlatformInfo();
-    expect(Object.keys(info)).toHaveLength(7);
+    expect(Object.keys(info)).toHaveLength(8);
     expect(info.mcp).toBeDefined();
     expect(info.mcp.name).toBe('mcp');
+    expect(info.a2a).toBeDefined();
+    expect(info.a2a.name).toBe('a2a');
   });
 });

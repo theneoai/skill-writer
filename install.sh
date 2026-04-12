@@ -156,13 +156,14 @@ detect_platforms() {
   [[ -d "${HOME}/.cursor" ]]               && detected+=(cursor)
   [[ -d "${HOME}/.gemini" ]]               && detected+=(gemini)
   [[ -d "${HOME}/.mcp" ]]                  && detected+=(mcp)
+  [[ -d "${HOME}/.a2a" ]]                  && detected+=(a2a)
   echo "${detected[@]:-}"
 }
 
 # Determine target platform list
 declare -a TARGETS
 if [[ "${INSTALL_ALL}" == "true" ]]; then
-  TARGETS=(claude opencode openclaw cursor gemini mcp)
+  TARGETS=(claude opencode openclaw cursor gemini mcp a2a)
 elif [[ -n "${PLATFORM}" ]]; then
   TARGETS=("${PLATFORM}")
 else
@@ -227,6 +228,73 @@ install_mcp() {
   mkdir -p "${mcp_dir}"
   cp "${src}" "${mcp_dir}/mcp-manifest.json"
   success "[mcp] ${mcp_dir}/mcp-manifest.json"
+
+  # ── MCP Server Card (.well-known/mcp-server-card.json) ──────────────────────
+  # Server Cards enable passive discovery by MCP registries (2026 roadmap feature).
+  # The card lives at .well-known/mcp-server-card.json relative to the server dir.
+  local card_dir="${mcp_dir}/.well-known"
+  local card_file="${card_dir}/mcp-server-card.json"
+  mkdir -p "${card_dir}"
+
+  # Extract name/version/description from the installed manifest using node or python3,
+  # then write a compact Server Card JSON alongside the manifest.
+  if command -v node &>/dev/null; then
+    node - "${mcp_dir}/mcp-manifest.json" "${card_file}" <<'NODEJS'
+const fs = require('fs');
+const [,, manifestPath, cardPath] = process.argv;
+const m = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+const card = {
+  card_schema_version: '2026-draft',
+  name: m.name || 'skill-writer',
+  description: m.description || '',
+  version: m.version || '1.0.0',
+  author: m.author || 'theneoai',
+  provider: { name: m.author || 'theneoai', url: 'https://github.com/theneoai/skill-writer' },
+  capabilities: m.capabilities || {},
+  tools: (m.tools || []).map(t => ({ name: t.name, description: t.description })),
+  ...(m.skill_tier ? { skill_tier: m.skill_tier } : {}),
+  ...(m.triggers ? { triggers: m.triggers } : {}),
+  generated_at: new Date().toISOString(),
+  generated_by: 'skill-writer-builder/install.sh',
+};
+fs.writeFileSync(cardPath, JSON.stringify(card, null, 2));
+NODEJS
+    success "[mcp] ${card_file} (Server Card for registry discovery)"
+  elif command -v python3 &>/dev/null; then
+    python3 - "${mcp_dir}/mcp-manifest.json" "${card_file}" <<'PYEOF'
+import json, sys
+from datetime import datetime, timezone
+manifest_path, card_path = sys.argv[1], sys.argv[2]
+m = json.loads(open(manifest_path).read())
+card = {
+  "card_schema_version": "2026-draft",
+  "name": m.get("name", "skill-writer"),
+  "description": m.get("description", ""),
+  "version": m.get("version", "1.0.0"),
+  "author": m.get("author", "theneoai"),
+  "provider": {"name": m.get("author", "theneoai"), "url": "https://github.com/theneoai/skill-writer"},
+  "capabilities": m.get("capabilities", {}),
+  "tools": [{"name": t["name"], "description": t.get("description", "")} for t in m.get("tools", [])],
+  "generated_at": datetime.now(timezone.utc).isoformat(),
+  "generated_by": "skill-writer-builder/install.sh",
+}
+if "skill_tier" in m: card["skill_tier"] = m["skill_tier"]
+if "triggers" in m: card["triggers"] = m["triggers"]
+open(card_path, "w").write(json.dumps(card, indent=2))
+PYEOF
+    success "[mcp] ${card_file} (Server Card for registry discovery)"
+  else
+    warn "[mcp] Server Card skipped — node or python3 required to generate .well-known/mcp-server-card.json"
+  fi
+}
+
+install_a2a() {
+  local a2a_dir="${HOME}/.a2a/agents/skill-writer"
+  local src
+  src="$(resolve_source a2a json)"
+  mkdir -p "${a2a_dir}"
+  cp "${src}" "${a2a_dir}/agent-card.json"
+  success "[a2a] ${a2a_dir}/agent-card.json"
 }
 
 install_platform() {
@@ -238,6 +306,7 @@ install_platform() {
     cursor)   install_md_platform cursor   "${HOME}/.cursor/skills" ;;
     gemini)   install_md_platform gemini   "${HOME}/.gemini/skills" ;;
     mcp)      install_mcp ;;
+    a2a)      install_a2a ;;
     openai)
       local openai_src
       openai_src="$(resolve_source openai json)"
