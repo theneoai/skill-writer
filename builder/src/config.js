@@ -141,7 +141,7 @@ const AUTHOR_PLACEHOLDERS = new Set([
  * Section markers
  */
 const SECTIONS = {
-  frontmatter: /^---\n([\s\S]*?)\n---/,
+  frontmatter: /^---\r?\n([\s\S]*?)\r?\n---/,
   uteSection: /##\s+§UTE/,
   header: /^(#{1,6})\s+(.+)$/,
 };

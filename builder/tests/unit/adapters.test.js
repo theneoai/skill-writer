@@ -202,6 +202,15 @@ describe('MCP Adapter', () => {
     expect(() => mcp.formatSkill(null)).toThrow();
   });
 
+  test('formatSkill should parse frontmatter from CRLF skill files', () => {
+    // Regression guard for FRONTMATTER_REGEX CRLF fix — parseFrontmatter must
+    // handle Windows line endings so mcp/a2a adapters don't silently use defaults.
+    const crlfSkill = VALID_SKILL.replace(/\n/g, '\r\n');
+    const manifest = JSON.parse(mcp.formatSkill(crlfSkill));
+    expect(manifest.name).toBe('test-skill');
+    expect(manifest.description).toBe('A test skill');
+  });
+
   test('generateServerCard should return valid JSON', () => {
     const manifest = JSON.parse(mcp.formatSkill(VALID_SKILL));
     const card = mcp.generateServerCard(manifest);
@@ -321,10 +330,25 @@ describe('A2A Adapter', () => {
     expect(result.valid).toBe(false);
   });
 
+  test('formatSkill should parse frontmatter from CRLF skill files', () => {
+    // Regression guard for FRONTMATTER_REGEX CRLF fix
+    const crlfSkill = VALID_SKILL.replace(/\n/g, '\r\n');
+    const card = JSON.parse(a2a.formatSkill(crlfSkill));
+    expect(card.name).toBe('test-skill');
+    expect(card.description).toBe('A test skill');
+  });
+
   test('generateMetadata should include a2a platform name', () => {
     const meta = a2a.generateMetadata({ version: '1.0.0' });
     expect(meta.platform).toBe('a2a');
     expect(meta.schema_version).toBe('a2a/1.0');
+  });
+
+  test('generateMetadata compatibility should use A2A spec fields, not MCP fields', () => {
+    const meta = a2a.generateMetadata({ version: '1.0.0' });
+    expect(meta.compatibility.a2a_spec).toBe('a2a/1.0');
+    expect(meta.compatibility.mcp_protocol).toBeUndefined();
+    expect(Array.isArray(meta.compatibility.frameworks)).toBe(true);
   });
 });
 

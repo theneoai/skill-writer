@@ -2,7 +2,7 @@
  * Canonical Platform Metadata Schema
  *
  * Provides factory functions and type definitions for platform adapter
- * `generateMetadata()` return values. All 7 platform adapters must return
+ * `generateMetadata()` return values. All 8 platform adapters must return
  * an object conforming to PlatformMetadata, using these factories to build
  * the compatibility block.
  *
@@ -70,4 +70,18 @@ function mcpCompatibility() {
   };
 }
 
-module.exports = { markdownCompatibility, mcpCompatibility, getBuilderVersion };
+/**
+ * Build an A2A-specific compatibility block.
+ * A2A (Agent-to-Agent) protocol is governed by the Linux Foundation AAIF (June 2025).
+ *
+ * @returns {{ a2a_spec: string, governance: string, frameworks: string[] }}
+ */
+function a2aCompatibility() {
+  return {
+    a2a_spec: 'a2a/1.0',
+    governance: 'Linux Foundation AAIF',
+    frameworks: ['google-adk', 'a2a-python-sdk', 'langgraph', 'crewai'],
+  };
+}
+
+module.exports = { markdownCompatibility, mcpCompatibility, a2aCompatibility, getBuilderVersion };

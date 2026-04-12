@@ -25,15 +25,16 @@ const yaml = require('js-yaml');
 /**
  * Canonical frontmatter regex.
  *
- * Pattern: `^---\n` … `\n---\n?`
+ * Pattern: `^---\r?\n` … `\r?\n---\r?\n?`
  *   - Anchored at start of string
- *   - Opening `---` followed by newline
+ *   - Opening `---` followed by LF or CRLF
  *   - Captures the YAML body ([\s\S]*?) lazily
- *   - Closing `---` preceded by newline, optional trailing newline
+ *   - Closing `---` preceded by LF or CRLF, optional trailing line ending
+ *   - \r? makes the regex safe on both Unix (LF) and Windows (CRLF) files
  *
  * Score variance: ±0 (deterministic, same skill → same result every run).
  */
-const FRONTMATTER_REGEX = /^---\n([\s\S]*?)\n---\n?/;
+const FRONTMATTER_REGEX = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/;
 
 /**
  * Parse frontmatter from skill content.

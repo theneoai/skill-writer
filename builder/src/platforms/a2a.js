@@ -23,7 +23,7 @@
 const path = require('path');
 const os = require('os');
 const { parseFrontmatter } = require('../utils/frontmatter');
-const { mcpCompatibility } = require('../utils/metadata-schema');
+const { a2aCompatibility } = require('../utils/metadata-schema');
 
 const name = 'a2a';
 
@@ -235,7 +235,7 @@ function generateMetadata(skillData) {
     schema_version: 'a2a/1.0',
     version: skillData?.version || '1.0.0',
     created: new Date().toISOString(),
-    compatibility: mcpCompatibility(), // reuse JSON compatibility helper
+    compatibility: a2aCompatibility(),
     spec: 'https://github.com/google-a2a/A2A',
     governance: 'Linux Foundation AAIF (June 2025)',
   };
