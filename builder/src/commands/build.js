@@ -116,7 +116,7 @@ async function build(options) {
         }
 
         // Determine output path
-        // JSON_OUTPUT_PLATFORMS (openai, mcp) emit .json; all others emit .md
+        // JSON_OUTPUT_PLATFORMS (openai, mcp, a2a) emit .json; all others emit .md
         const outputDir = path.resolve(buildOptions.output);
         const fileExtension = JSON_OUTPUT_PLATFORMS.has(platform) ? 'json' : 'md';
         const outputFile = buildOptions.release

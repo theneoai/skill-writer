@@ -201,6 +201,155 @@ describe('MCP Adapter', () => {
     expect(() => mcp.formatSkill('')).toThrow();
     expect(() => mcp.formatSkill(null)).toThrow();
   });
+
+  test('formatSkill should parse frontmatter from CRLF skill files', () => {
+    // Regression guard for FRONTMATTER_REGEX CRLF fix — parseFrontmatter must
+    // handle Windows line endings so mcp/a2a adapters don't silently use defaults.
+    const crlfSkill = VALID_SKILL.replace(/\n/g, '\r\n');
+    const manifest = JSON.parse(mcp.formatSkill(crlfSkill));
+    expect(manifest.name).toBe('test-skill');
+    expect(manifest.description).toBe('A test skill');
+  });
+
+  test('generateServerCard should return valid JSON', () => {
+    const manifest = JSON.parse(mcp.formatSkill(VALID_SKILL));
+    const card = mcp.generateServerCard(manifest);
+    expect(() => JSON.parse(card)).not.toThrow();
+  });
+
+  test('generateServerCard should mirror identity fields from manifest', () => {
+    const manifest = JSON.parse(mcp.formatSkill(VALID_SKILL));
+    const card = JSON.parse(mcp.generateServerCard(manifest));
+    expect(card.name).toBe(manifest.name);
+    expect(card.description).toBe(manifest.description);
+    expect(card.version).toBe(manifest.version);
+  });
+
+  test('generateServerCard should include card_schema_version', () => {
+    const manifest = JSON.parse(mcp.formatSkill(VALID_SKILL));
+    const card = JSON.parse(mcp.generateServerCard(manifest));
+    expect(card.card_schema_version).toBe('2026-draft');
+  });
+
+  test('generateServerCard should include tools summary without input schemas', () => {
+    const manifest = JSON.parse(mcp.formatSkill(VALID_SKILL));
+    const card = JSON.parse(mcp.generateServerCard(manifest));
+    expect(Array.isArray(card.tools)).toBe(true);
+    expect(card.tools.length).toBeGreaterThan(0);
+    // Server Card tools should be compact (name + description only — no input_schema)
+    card.tools.forEach(t => {
+      expect(t.name).toBeDefined();
+      expect(t.description).toBeDefined();
+      expect(t.input_schema).toBeUndefined();
+    });
+  });
+
+  test('generateServerCard should throw on non-object input', () => {
+    expect(() => mcp.generateServerCard(null)).toThrow();
+    expect(() => mcp.generateServerCard('string')).toThrow();
+  });
+
+  test('getServerCardPath should include .well-known/mcp-server-card.json', () => {
+    const cardPath = mcp.getServerCardPath('test-skill');
+    expect(cardPath).toContain('.well-known');
+    expect(cardPath).toContain('mcp-server-card.json');
+    expect(cardPath).toContain('test-skill');
+  });
+
+  test('getServerCardPath should default to skill-writer when no name given', () => {
+    const cardPath = mcp.getServerCardPath();
+    expect(cardPath).toContain('skill-writer');
+  });
+});
+
+describe('A2A Adapter', () => {
+  const a2a = require('../../src/platforms/a2a');
+
+  test('should have name = a2a', () => {
+    expect(a2a.name).toBe('a2a');
+  });
+
+  test('outputFormat should be JSON', () => {
+    expect(a2a.outputFormat).toBe('JSON');
+  });
+
+  test('install path should reference .a2a/agents', () => {
+    const installPath = a2a.getInstallPath();
+    expect(installPath).toContain('.a2a');
+    expect(installPath).toContain('agents');
+  });
+
+  test('formatSkill should return valid JSON', () => {
+    const result = a2a.formatSkill(VALID_SKILL);
+    expect(() => JSON.parse(result)).not.toThrow();
+  });
+
+  test('formatSkill should produce schema_version a2a/1.0', () => {
+    const card = JSON.parse(a2a.formatSkill(VALID_SKILL));
+    expect(card.schema_version).toBe('a2a/1.0');
+  });
+
+  test('formatSkill should extract name from frontmatter', () => {
+    const card = JSON.parse(a2a.formatSkill(VALID_SKILL));
+    expect(card.name).toBe('test-skill');
+  });
+
+  test('formatSkill should include at least one skill entry', () => {
+    const card = JSON.parse(a2a.formatSkill(VALID_SKILL));
+    expect(Array.isArray(card.skills)).toBe(true);
+    expect(card.skills.length).toBeGreaterThan(0);
+  });
+
+  test('formatSkill should include capabilities block', () => {
+    const card = JSON.parse(a2a.formatSkill(VALID_SKILL));
+    expect(card.capabilities).toBeDefined();
+    expect(typeof card.capabilities.streaming).toBe('boolean');
+  });
+
+  test('formatSkill should throw on empty input', () => {
+    expect(() => a2a.formatSkill('')).toThrow();
+    expect(() => a2a.formatSkill(null)).toThrow();
+  });
+
+  test('validateSkill should pass a valid Agent Card JSON', () => {
+    const formatted = a2a.formatSkill(VALID_SKILL);
+    const result = a2a.validateSkill(formatted);
+    expect(result.valid).toBe(true);
+    expect(result.errors).toHaveLength(0);
+  });
+
+  test('validateSkill should fail on invalid JSON', () => {
+    const result = a2a.validateSkill('{broken json');
+    expect(result.valid).toBe(false);
+    expect(result.errors.some(e => /JSON/i.test(e))).toBe(true);
+  });
+
+  test('validateSkill should fail when required fields are missing', () => {
+    const incomplete = JSON.stringify({ schema_version: 'a2a/1.0', skills: [{ id: 'x' }] });
+    const result = a2a.validateSkill(incomplete);
+    expect(result.valid).toBe(false);
+  });
+
+  test('formatSkill should parse frontmatter from CRLF skill files', () => {
+    // Regression guard for FRONTMATTER_REGEX CRLF fix
+    const crlfSkill = VALID_SKILL.replace(/\n/g, '\r\n');
+    const card = JSON.parse(a2a.formatSkill(crlfSkill));
+    expect(card.name).toBe('test-skill');
+    expect(card.description).toBe('A test skill');
+  });
+
+  test('generateMetadata should include a2a platform name', () => {
+    const meta = a2a.generateMetadata({ version: '1.0.0' });
+    expect(meta.platform).toBe('a2a');
+    expect(meta.schema_version).toBe('a2a/1.0');
+  });
+
+  test('generateMetadata compatibility should use A2A spec fields, not MCP fields', () => {
+    const meta = a2a.generateMetadata({ version: '1.0.0' });
+    expect(meta.compatibility.a2a_spec).toBe('a2a/1.0');
+    expect(meta.compatibility.mcp_protocol).toBeUndefined();
+    expect(Array.isArray(meta.compatibility.frameworks)).toBe(true);
+  });
 });
 
 describe('OpenCode Adapter (extends MarkdownAdapter)', () => {
@@ -498,6 +647,7 @@ describe('outputFormat — all adapters expose the property', () => {
     cursor:    require('../../src/platforms/cursor'),
     openai:    require('../../src/platforms/openai'),
     mcp:       require('../../src/platforms/mcp'),
+    a2a:       require('../../src/platforms/a2a'),
   };
 
   const VALID_OUTPUT_FORMATS = new Set(['MARKDOWN', 'HYBRID', 'JSON']);
@@ -521,9 +671,10 @@ describe('outputFormat — all adapters expose the property', () => {
     expect(adapterModules.cursor.outputFormat).toBe('HYBRID');
   });
 
-  test('JSON adapters: openai, mcp', () => {
+  test('JSON adapters: openai, mcp, a2a', () => {
     expect(adapterModules.openai.outputFormat).toBe('JSON');
     expect(adapterModules.mcp.outputFormat).toBe('JSON');
+    expect(adapterModules.a2a.outputFormat).toBe('JSON');
   });
 });
 
@@ -536,6 +687,7 @@ describe('generateMetadata schema consistency', () => {
     cursor:    require('../../src/platforms/cursor'),
     openai:    require('../../src/platforms/openai'),
     mcp:       require('../../src/platforms/mcp'),
+    a2a:       require('../../src/platforms/a2a'),
   };
 
   test.each(Object.entries(adapterModules))(
@@ -570,7 +722,7 @@ describe('generateMetadata schema consistency', () => {
 });
 
 describe('Platform Registry', () => {
-  test('should support all 7 platforms including mcp', () => {
+  test('should support all 8 platforms including mcp and a2a', () => {
     const supported = platforms.getSupportedPlatforms();
     expect(supported).toContain('opencode');
     expect(supported).toContain('openclaw');
@@ -579,7 +731,8 @@ describe('Platform Registry', () => {
     expect(supported).toContain('openai');
     expect(supported).toContain('gemini');
     expect(supported).toContain('mcp');
-    expect(supported).toHaveLength(7);
+    expect(supported).toContain('a2a');
+    expect(supported).toHaveLength(8);
   });
 
   test('getPlatform should return adapter for valid platform', () => {
@@ -618,8 +771,10 @@ describe('Platform Registry', () => {
 
   test('getAllPlatformInfo should return info for all platforms', () => {
     const info = platforms.getAllPlatformInfo();
-    expect(Object.keys(info)).toHaveLength(7);
+    expect(Object.keys(info)).toHaveLength(8);
     expect(info.mcp).toBeDefined();
     expect(info.mcp.name).toBe('mcp');
+    expect(info.a2a).toBeDefined();
+    expect(info.a2a.name).toBe('a2a');
   });
 });

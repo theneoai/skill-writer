@@ -3,14 +3,18 @@
  *
  * Reads companion Markdown files for the skill-writer-builder.
  * Sources: refs/, templates/, eval/, optimize/ (Single Source of Truth)
- * 
- * @version 3.1.0 - Added v3.0 collective evolution refs; v3.1.0 added session-artifact, edit-audit, skill-registry reads
+ *
+ * @version 3.1.1 - Cache builder version at module load time (avoid repeated require() in async context)
  */
 
 const fs = require('fs-extra');
 const path = require('path');
 const { glob } = require('glob');
 const config = require('../config');
+
+// Cache the builder version once at module load — avoids synchronous require() calls
+// inside async functions and repeated disk reads on every readAllCoreData() invocation.
+const BUILDER_VERSION = require('../../package.json').version;
 
 /**
  * Parse a Markdown or JSON file
@@ -125,6 +129,8 @@ async function readSharedResources() {
     sessionArtifact: null,
     editAudit: null,
     skillRegistry: null,
+    // v3.1.1: Progressive Disclosure architecture spec
+    progressiveDisclosure: null,
   };
 
   // Read security patterns (includes OWASP Agentic Top 10 since v3.1.0)
@@ -175,6 +181,12 @@ async function readSharedResources() {
     data.skillRegistry = await parseFile(skillRegistryPath);
   }
 
+  // v3.1.1: Read progressive disclosure spec (three-layer loading pattern)
+  const progressiveDisclosurePath = path.join(config.PATHS.refs, 'progressive-disclosure.md');
+  if (await fs.pathExists(progressiveDisclosurePath)) {
+    data.progressiveDisclosure = await parseFile(progressiveDisclosurePath);
+  }
+
   return data;
 }
 
@@ -197,7 +209,7 @@ async function readAllCoreData() {
     shared,
     metadata: {
       readAt: new Date().toISOString(),
-      version: require('../../package.json').version
+      version: BUILDER_VERSION
     }
   };
 }

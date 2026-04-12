@@ -2,14 +2,15 @@
  * Metadata Schema Utility Tests
  *
  * Tests for the shared metadata schema factory functions.
- * Verifies that markdownCompatibility() and mcpCompatibility() produce
- * well-structured objects, and that getBuilderVersion() returns the live
+ * Verifies that markdownCompatibility(), mcpCompatibility(), and a2aCompatibility()
+ * produce well-structured objects, and that getBuilderVersion() returns the live
  * package.json version rather than a hardcoded string (BUG-3 regression guard).
  */
 
 const {
   markdownCompatibility,
   mcpCompatibility,
+  a2aCompatibility,
   getBuilderVersion,
 } = require('../../src/utils/metadata-schema');
 
@@ -93,6 +94,32 @@ describe('mcpCompatibility()', () => {
 
   test('clients list includes claude-desktop', () => {
     expect(mcpCompatibility().clients).toContain('claude-desktop');
+  });
+});
+
+// ─── a2aCompatibility ─────────────────────────────────────────────────────────
+
+describe('a2aCompatibility()', () => {
+  test('returns an object with a2a_spec', () => {
+    expect(a2aCompatibility()).toHaveProperty('a2a_spec');
+  });
+
+  test('a2a_spec should be a2a/1.0', () => {
+    expect(a2aCompatibility().a2a_spec).toBe('a2a/1.0');
+  });
+
+  test('returns a frameworks array', () => {
+    const result = a2aCompatibility();
+    expect(Array.isArray(result.frameworks)).toBe(true);
+    expect(result.frameworks.length).toBeGreaterThan(0);
+  });
+
+  test('should not include mcp_protocol (must be A2A-specific, not MCP)', () => {
+    expect(a2aCompatibility().mcp_protocol).toBeUndefined();
+  });
+
+  test('result is serialisable to JSON', () => {
+    expect(() => JSON.stringify(a2aCompatibility())).not.toThrow();
   });
 });
 

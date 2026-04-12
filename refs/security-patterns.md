@@ -17,20 +17,28 @@ P0 patterns are non-negotiable. Detection at any phase halts delivery immediatel
 
 ```
 Patterns (case-insensitive):
-  sk-[a-zA-Z0-9]{20,}                    # OpenAI / Anthropic API key
-  AKIA[0-9A-Z]{16}                        # AWS Access Key ID
-  password\s*=\s*["'][^"']{4,}["']        # password = "..."
-  api_key\s*=\s*["'][^"']{4,}["']         # api_key = "..."
-  secret\s*=\s*["'][^"']{4,}["']          # secret = "..."
-  token\s*=\s*["'][^"']{4,}["']           # token = "..."
-  Bearer\s+[a-zA-Z0-9\-._~+/]{20,}       # hardcoded Bearer token
-  [a-z0-9]{32,}                           # generic long hex secret (heuristic)
+  sk-[a-zA-Z0-9]{20,}                                         # OpenAI / Anthropic API key
+  AKIA[0-9A-Z]{16}                                             # AWS Access Key ID
+  password\s*=\s*["'][^"']{4,}["']                             # password = "..."
+  api_key\s*=\s*["'][^"']{4,}["']                              # api_key = "..."
+  secret\s*=\s*["'][^"']{4,}["']                               # secret = "..."
+  token\s*=\s*["'][^"']{4,}["']                                # token = "..."
+  Bearer\s+[a-zA-Z0-9\-._~+/]{20,}                            # hardcoded Bearer token
+  (?:key|token|secret|password|credential|auth)[\s_-]*[:=]\s*["']?[a-f0-9]{32,}["']?
+                                                               # hex secret bound to credential context
 ```
 
 **False positive mitigation**: Exclude patterns inside:
 - Comment blocks starting with `#`, `//`, `<!--`
 - Placeholder patterns: `{{...}}`, `<...>`, `YOUR_*`, `REPLACE_*`
 - Example/test strings explicitly labelled as such
+- Standalone hex strings with no credential-naming context (MD5 checksums, UUIDs, content hashes)
+
+> **v3.1.1 change**: The previous `[a-z0-9]{32,}` bare-hex heuristic was replaced with a
+> context-anchored pattern that requires a credential-naming prefix (`key`, `token`, `secret`,
+> `password`, `credential`, `auth`) immediately before the hex value. This eliminates false
+> positives from MD5 checksums, UUIDs, Base64 content, and SHA hashes while preserving
+> detection of actual hardcoded secrets.
 
 **Required remediation**: Replace with environment variable reference.
 ```

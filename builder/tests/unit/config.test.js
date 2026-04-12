@@ -237,13 +237,14 @@ describe('Config Module', () => {
       expect(config.JSON_OUTPUT_PLATFORMS).toBeInstanceOf(Set);
     });
 
-    test('should contain openai and mcp', () => {
+    test('should contain openai, mcp, and a2a', () => {
       expect(config.JSON_OUTPUT_PLATFORMS.has('openai')).toBe(true);
       expect(config.JSON_OUTPUT_PLATFORMS.has('mcp')).toBe(true);
+      expect(config.JSON_OUTPUT_PLATFORMS.has('a2a')).toBe(true);
     });
 
-    test('should contain exactly 2 platforms', () => {
-      expect(config.JSON_OUTPUT_PLATFORMS.size).toBe(2);
+    test('should contain exactly 3 platforms', () => {
+      expect(config.JSON_OUTPUT_PLATFORMS.size).toBe(3);
     });
 
     test('should NOT contain markdown platforms', () => {

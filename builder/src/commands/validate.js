@@ -4,18 +4,32 @@
  * Validates the project structure by checking companion files,
  * template placeholders, and generated skill files.
  *
+ * Also enforces agentskills.io SKILL.md specification compliance:
+ *   - Skill name: [a-z0-9-] only, max 64 chars, no leading/trailing/consecutive hyphens
+ *   - Description: max 1024 characters
+ *   - Content: warn if > 500 lines (Progressive Disclosure best practice)
+ *
  * @module builder/src/commands/validate
- * @version 2.1.0 - Updated to use centralized config
+ * @version 3.1.1 - Added agentskills.io SKILL.md spec compliance checks
  */
 
 const fs = require('fs');
 const path = require('path');
 const chalk = require('chalk');
 const glob = require('glob');
+const yaml = require('js-yaml');
 const config = require('../config');
 
 // Use configuration from centralized config
 const { PATHS, REQUIRED_FILES, REQUIRED_UTE_FIELDS, PLACEHOLDERS, AUTHOR_PLACEHOLDERS } = config;
+
+// agentskills.io SKILL.md specification constraints
+const SKILLMD_SPEC = {
+  namePattern: /^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$/,   // no leading/trailing hyphens
+  nameMaxLen: 64,
+  descMaxLen: 1024,
+  contentMaxLines: 500,  // warn (not error) above this threshold
+};
 
 /**
  * Main validate function
@@ -34,6 +48,7 @@ async function validate() {
   await validateRequiredFiles(result);
   await validateTemplates(result);
   await validateGeneratedSkills(result);
+  await validateSkillMdSpec(result);
 
   printSummary(result);
   return result;
@@ -210,7 +225,7 @@ async function validateGeneratedSkills(result) {
     }
   }
 
-  // --- JSON output files (mcp, openai) ---
+  // --- JSON output files (mcp, openai, a2a) ---
   for (const filePath of jsonFiles) {
     const fileName = path.basename(filePath);
     let raw;
@@ -236,7 +251,8 @@ async function validateGeneratedSkills(result) {
     }
 
     // MCP manifest checks
-    if (fileName.includes('-mcp-')) {
+    // Use /-mcp[.-]/ to match both skill-writer-mcp.json and skill-writer-mcp-dev.json
+    if (/-mcp[.-]/.test(fileName)) {
       if (!parsed.schema_version) {
         addIssue(result, 'error', `${fileName}: MCP manifest missing schema_version`);
         fileOk = false;
@@ -255,7 +271,8 @@ async function validateGeneratedSkills(result) {
     }
 
     // OpenAI JSON checks
-    if (fileName.includes('-openai-')) {
+    // Use /-openai[.-]/ to match both skill-writer-openai.json and skill-writer-openai-dev.json
+    if (/-openai[.-]/.test(fileName)) {
       if (!parsed.name) {
         addIssue(result, 'error', `${fileName}: OpenAI manifest missing name`);
         fileOk = false;
@@ -266,10 +283,136 @@ async function validateGeneratedSkills(result) {
       }
     }
 
+    // A2A Agent Card checks
+    // Use /-a2a[.-]/ to match both skill-writer-a2a.json and skill-writer-a2a-dev.json
+    if (/-a2a[.-]/.test(fileName)) {
+      if (!parsed.schema_version || !parsed.schema_version.startsWith('a2a/')) {
+        addIssue(result, 'error', `${fileName}: A2A Agent Card missing or invalid schema_version (expected "a2a/1.0")`);
+        fileOk = false;
+      }
+      if (!parsed.name) {
+        addIssue(result, 'error', `${fileName}: A2A Agent Card missing name`);
+        fileOk = false;
+      }
+      if (!Array.isArray(parsed.skills) || parsed.skills.length === 0) {
+        addIssue(result, 'error', `${fileName}: A2A Agent Card must declare at least one skill`);
+        fileOk = false;
+      }
+      if (!parsed.capabilities) {
+        addIssue(result, 'warning', `${fileName}: A2A Agent Card missing capabilities block`);
+      }
+    }
+
     if (fileOk) {
       console.log(chalk.green(`  ✓ ${fileName}`));
     } else {
       console.log(chalk.red(`  ✗ ${fileName} (see issues above)`));
+    }
+  }
+
+  console.log('');
+}
+
+/**
+ * Validate generated skill files against the agentskills.io SKILL.md specification.
+ * Checks: skill name format, description length, content line count.
+ * Spec source: https://agentskills.io/specification (December 2025)
+ */
+async function validateSkillMdSpec(result) {
+  console.log(chalk.cyan('📐 Checking agentskills.io SKILL.md spec compliance...'));
+
+  let mdFiles = [];
+  try {
+    mdFiles = glob.sync(path.join(PATHS.platforms, '*.md'));
+  } catch {
+    // No files — already reported by validateGeneratedSkills
+  }
+
+  if (mdFiles.length === 0) {
+    console.log(chalk.gray('  (no .md skill files to check)\n'));
+    return;
+  }
+
+  for (const filePath of mdFiles) {
+    const fileName = path.basename(filePath);
+    let content;
+    try {
+      content = await fs.promises.readFile(filePath, 'utf8');
+    } catch (error) {
+      addIssue(result, 'error', `${fileName}: cannot read for spec compliance check — ${error.message}`);
+      continue;
+    }
+
+    // Track spec issues added for this file specifically
+    const issuesBefore = result.issues.length;
+
+    // Extract YAML frontmatter — use \r?\n to handle both Unix and Windows line endings
+    let fm = null;
+    const fmMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+    if (fmMatch) {
+      try {
+        fm = yaml.load(fmMatch[1]);
+      } catch {
+        // frontmatter parse error already caught by validateGeneratedSkills
+      }
+    }
+
+    // ── 1. Skill name validation ─────────────────────────────────────────────
+    // namePattern catches: non-[a-z0-9-] chars, leading/trailing hyphens.
+    // Consecutive hyphens (e.g. "bad--name") pass namePattern and require a
+    // separate /--/ check — namePattern alone does NOT catch them.
+    const skillName = fm?.name ? String(fm.name) : null;
+    if (skillName) {
+      if (skillName.length > SKILLMD_SPEC.nameMaxLen) {
+        addIssue(result, 'error',
+          `${fileName}: skill name "${skillName}" exceeds ${SKILLMD_SPEC.nameMaxLen}-char limit ` +
+          `(${skillName.length} chars) — agentskills.io spec §2.1`);
+      }
+      // Checks: invalid chars, leading hyphen, trailing hyphen
+      if (!SKILLMD_SPEC.namePattern.test(skillName)) {
+        addIssue(result, 'error',
+          `${fileName}: skill name "${skillName}" violates naming convention — ` +
+          `must match [a-z0-9-] only, no leading/trailing hyphens — agentskills.io spec §2.1`);
+      }
+      // Separate check: consecutive hyphens (allowed by namePattern, forbidden by spec)
+      if (/--/.test(skillName)) {
+        addIssue(result, 'error',
+          `${fileName}: skill name "${skillName}" contains consecutive hyphens — agentskills.io spec §2.1`);
+      }
+    }
+
+    // ── 2. Description length ────────────────────────────────────────────────
+    const desc = fm?.description ? String(fm.description) : null;
+    if (desc && desc.length > SKILLMD_SPEC.descMaxLen) {
+      addIssue(result, 'error',
+        `${fileName}: description exceeds ${SKILLMD_SPEC.descMaxLen}-char limit ` +
+        `(${desc.length} chars) — agentskills.io spec §2.2`);
+    }
+
+    // ── 3. Content line count ────────────────────────────────────────────────
+    // Thresholds match refs/progressive-disclosure.md §3:
+    //   >500  lines → WARNING  (acceptable but monitor token usage)
+    //   >1000 lines → ERROR    (likely contains embedded reference content)
+    const lineCount = content.split('\n').length;
+    if (lineCount > 1000) {
+      addIssue(result, 'error',
+        `${fileName}: ${lineCount} lines is excessive — skill likely contains embedded reference content ` +
+        `that belongs in Layer 3 companion files — refs/progressive-disclosure.md §3`);
+    } else if (lineCount > SKILLMD_SPEC.contentMaxLines) {
+      addIssue(result, 'warning',
+        `${fileName}: ${lineCount} lines exceeds recommended ${SKILLMD_SPEC.contentMaxLines}-line limit ` +
+        `— consider Progressive Disclosure pattern (refs/progressive-disclosure.md §3)`);
+    }
+
+    const newIssues = result.issues.slice(issuesBefore);
+    const newErrors = newIssues.filter(i => i.type === 'error').length;
+    const newWarnings = newIssues.filter(i => i.type === 'warning').length;
+    if (newIssues.length === 0) {
+      console.log(chalk.green(`  ✓ ${fileName} (spec compliant)`));
+    } else if (newErrors > 0) {
+      console.log(chalk.red(`  ✗ ${fileName} (${newErrors} error(s), ${newWarnings} warning(s))`));
+    } else {
+      console.log(chalk.yellow(`  ⚠ ${fileName} (${newWarnings} warning(s))`));
     }
   }
 
@@ -318,4 +461,6 @@ module.exports = {
   validateRequiredFiles,
   validateTemplates,
   validateGeneratedSkills,
+  validateSkillMdSpec,
+  SKILLMD_SPEC,
 };
