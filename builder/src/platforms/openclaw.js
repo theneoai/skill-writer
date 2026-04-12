@@ -12,7 +12,7 @@
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
-const { hasFrontmatter, parseFrontmatter } = require('../utils/frontmatter');
+const { hasFrontmatter, parseFrontmatter, FRONTMATTER_REGEX } = require('../utils/frontmatter');
 const { markdownCompatibility } = require('../utils/metadata-schema');
 
 const name = 'openclaw';
@@ -150,9 +150,12 @@ function ensureOpenClawMetadata(content) {
     `      checkpointInterval: ${OPENCLAW_METADATA.runtime.checkpointInterval}`,
   ].join('\n');
 
-  // Use shared canonical regex for replacement (handles optional trailing newline)
-  const { FRONTMATTER_REGEX } = require('../utils/frontmatter');
-  return content.replace(FRONTMATTER_REGEX, (match, yamlBody) => `---\n${yamlBody}\n${metaBlock}\n---\n`);
+  // Use shared canonical regex for replacement (handles LF and CRLF line endings).
+  // Normalize yamlBody to LF so the reconstructed frontmatter has consistent line endings.
+  return content.replace(FRONTMATTER_REGEX, (match, yamlBody) => {
+    const normalizedBody = yamlBody.replace(/\r\n/g, '\n');
+    return `---\n${normalizedBody}\n${metaBlock}\n---\n`;
+  });
 }
 
 /**
