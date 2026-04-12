@@ -336,6 +336,9 @@ async function validateSkillMdSpec(result) {
     }
 
     // ── 1. Skill name validation ─────────────────────────────────────────────
+    // namePattern catches: non-[a-z0-9-] chars, leading/trailing hyphens.
+    // Consecutive hyphens (e.g. "bad--name") pass namePattern and require a
+    // separate /--/ check — namePattern alone does NOT catch them.
     const skillName = fm?.name ? String(fm.name) : null;
     if (skillName) {
       if (skillName.length > SKILLMD_SPEC.nameMaxLen) {
@@ -343,12 +346,13 @@ async function validateSkillMdSpec(result) {
           `${fileName}: skill name "${skillName}" exceeds ${SKILLMD_SPEC.nameMaxLen}-char limit ` +
           `(${skillName.length} chars) — agentskills.io spec §2.1`);
       }
+      // Checks: invalid chars, leading hyphen, trailing hyphen
       if (!SKILLMD_SPEC.namePattern.test(skillName)) {
         addIssue(result, 'error',
           `${fileName}: skill name "${skillName}" violates naming convention — ` +
-          `must match [a-z0-9-], no leading/trailing/consecutive hyphens — agentskills.io spec §2.1`);
+          `must match [a-z0-9-] only, no leading/trailing hyphens — agentskills.io spec §2.1`);
       }
-      // Check for consecutive hyphens (not caught by the regex above)
+      // Separate check: consecutive hyphens (allowed by namePattern, forbidden by spec)
       if (/--/.test(skillName)) {
         addIssue(result, 'error',
           `${fileName}: skill name "${skillName}" contains consecutive hyphens — agentskills.io spec §2.1`);

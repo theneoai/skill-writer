@@ -98,11 +98,21 @@ describe('Validate Command', () => {
   });
 
   describe('validateSkillMdSpec', () => {
-    // Override PATHS.platforms to point at our temp dir
-    const origPlatforms = config.PATHS.platforms;
+    // Capture origPlatforms in beforeEach so it reflects the true value at test
+    // run time (not at describe-parse time), guarding against cross-file mutations.
+    let origPlatforms;
+    const tmpDirs = [];
+
+    beforeEach(() => {
+      origPlatforms = config.PATHS.platforms;
+    });
 
     afterEach(() => {
       config.PATHS.platforms = origPlatforms;
+      // Clean up all temp dirs created during the test
+      for (const d of tmpDirs.splice(0)) {
+        try { require('fs').rmSync(d, { recursive: true, force: true }); } catch {}
+      }
     });
 
     function makeValidFrontmatter(overrides = {}) {
@@ -111,8 +121,15 @@ describe('Validate Command', () => {
       return `---\nname: ${name}\nversion: "1.0.0"\ndescription: "${desc}"\n---\n\n## §1 Overview\n\nContent here.\n`;
     }
 
+    // Wrapper that registers tmp dirs for cleanup
+    function tempSkill(content, fileName) {
+      const { tmpDir, filePath } = makeTempSkill(content, fileName);
+      tmpDirs.push(tmpDir);
+      return { tmpDir, filePath };
+    }
+
     test('should pass for a spec-compliant skill file', async () => {
-      const { tmpDir } = makeTempSkill(makeValidFrontmatter());
+      const { tmpDir } = tempSkill(makeValidFrontmatter());
       config.PATHS.platforms = tmpDir;
       const result = makeResult();
       await validateSkillMdSpec(result);
@@ -122,7 +139,7 @@ describe('Validate Command', () => {
 
     test('should error when skill name exceeds 64 chars', async () => {
       const longName = 'a'.repeat(65);
-      const { tmpDir } = makeTempSkill(makeValidFrontmatter({ name: longName }));
+      const { tmpDir } = tempSkill(makeValidFrontmatter({ name: longName }));
       config.PATHS.platforms = tmpDir;
       const result = makeResult();
       await validateSkillMdSpec(result);
@@ -131,7 +148,7 @@ describe('Validate Command', () => {
     });
 
     test('should error when skill name has leading hyphen', async () => {
-      const { tmpDir } = makeTempSkill(makeValidFrontmatter({ name: '-bad-name' }));
+      const { tmpDir } = tempSkill(makeValidFrontmatter({ name: '-bad-name' }));
       config.PATHS.platforms = tmpDir;
       const result = makeResult();
       await validateSkillMdSpec(result);
@@ -140,7 +157,7 @@ describe('Validate Command', () => {
     });
 
     test('should error when skill name has consecutive hyphens', async () => {
-      const { tmpDir } = makeTempSkill(makeValidFrontmatter({ name: 'bad--name' }));
+      const { tmpDir } = tempSkill(makeValidFrontmatter({ name: 'bad--name' }));
       config.PATHS.platforms = tmpDir;
       const result = makeResult();
       await validateSkillMdSpec(result);
@@ -150,7 +167,7 @@ describe('Validate Command', () => {
 
     test('should error when description exceeds 1024 chars', async () => {
       const longDesc = 'x'.repeat(1025);
-      const { tmpDir } = makeTempSkill(makeValidFrontmatter({ desc: longDesc }));
+      const { tmpDir } = tempSkill(makeValidFrontmatter({ desc: longDesc }));
       config.PATHS.platforms = tmpDir;
       const result = makeResult();
       await validateSkillMdSpec(result);
@@ -160,7 +177,7 @@ describe('Validate Command', () => {
 
     test('should warn when content exceeds 500 lines', async () => {
       const manyLines = makeValidFrontmatter() + '\n'.repeat(502);
-      const { tmpDir } = makeTempSkill(manyLines);
+      const { tmpDir } = tempSkill(manyLines);
       config.PATHS.platforms = tmpDir;
       const result = makeResult();
       await validateSkillMdSpec(result);
@@ -170,7 +187,7 @@ describe('Validate Command', () => {
 
     test('should error when content exceeds 1000 lines', async () => {
       const manyLines = makeValidFrontmatter() + '\n'.repeat(1002);
-      const { tmpDir } = makeTempSkill(manyLines);
+      const { tmpDir } = tempSkill(manyLines);
       config.PATHS.platforms = tmpDir;
       const result = makeResult();
       await validateSkillMdSpec(result);
@@ -180,7 +197,7 @@ describe('Validate Command', () => {
 
     test('should parse frontmatter with Windows CRLF line endings', async () => {
       const crlfContent = '---\r\nname: my-skill\r\nversion: "1.0.0"\r\ndescription: "A valid description."\r\n---\r\n\r\n## §1 Overview\r\n';
-      const { tmpDir } = makeTempSkill(crlfContent);
+      const { tmpDir } = tempSkill(crlfContent);
       config.PATHS.platforms = tmpDir;
       const result = makeResult();
       await validateSkillMdSpec(result);
@@ -190,6 +207,7 @@ describe('Validate Command', () => {
 
     test('should handle empty platforms directory gracefully', async () => {
       const emptyDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sw-empty-'));
+      tmpDirs.push(emptyDir);
       config.PATHS.platforms = emptyDir;
       const result = makeResult();
       await expect(validateSkillMdSpec(result)).resolves.not.toThrow();
