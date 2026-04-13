@@ -86,40 +86,18 @@ async function buildForPlatform(platform) {
     // Read all core data
     const coreData = await readAllCoreData();
 
-    // Prepare data for embedder (metadata sourced from shared metadata.js — SSoT)
-    const embedData = {
+    // Prepare enriched core data (metadata sourced from shared metadata.js — SSoT).
+    // Spread coreData directly so all reader.js fields (securityPatterns, selfReview,
+    // evolution, useToEvolve, convergence, sessionArtifact, editAudit, skillRegistry,
+    // progressiveDisclosure, rubrics, benchmarks, strategies, antiPatterns, templates)
+    // are passed through unchanged — matching exactly what build.js does.
+    const enrichedCoreData = {
+      ...coreData,
       metadata: getSkillMetadata(platform),
-      create: {
-        workflow: coreData.create.workflow,
-        elicitation: coreData.create.elicitation,
-        templates: coreData.create.templates,
-        securityChecks: null,
-        config: null
-      },
-      evaluate: {
-        phases: coreData.evaluate.phases,
-        rubrics: coreData.evaluate.rubrics,
-        certification: coreData.evaluate.certification,
-        scoring: null,
-        config: null
-      },
-      optimize: {
-        dimensions: coreData.optimize.dimensions,
-        strategies: coreData.optimize.strategies,
-        convergence: coreData.optimize.convergence,
-        loopConfig: null,
-        config: null
-      },
-      shared: {
-        security: coreData.shared.security,
-        utils: coreData.shared.utils,
-        helpers: null,
-        config: null
-      }
     };
 
     // Generate skill file
-    const result = generateSkillFile(platform, embedData);
+    const result = generateSkillFile(platform, enrichedCoreData);
 
     // Get platform install path
     const platformAdapter = getPlatform(platform);
@@ -222,16 +200,13 @@ async function dev(options) {
 
   // Create debounced rebuild function
   let debounceTimer = null;
-  let pendingRebuild = false;
 
   const debouncedRebuild = (targetPlatform) => {
     if (debounceTimer) {
       clearTimeout(debounceTimer);
     }
 
-    pendingRebuild = true;
     debounceTimer = setTimeout(() => {
-      pendingRebuild = false;
       performRebuild(targetPlatform).catch((err) => {
         log(`Unhandled rebuild error: ${err.message}`, 'error');
       });

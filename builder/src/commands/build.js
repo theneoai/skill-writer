@@ -22,7 +22,7 @@ const { JSON_OUTPUT_PLATFORMS } = config;
 
 /**
  * Build platform-specific skills from core engine
- * 
+ *
  * @param {Object} options - Build options
  * @param {string} options.platform - Target platform (or 'all')
  * @param {boolean} options.release - Whether to create a release build
@@ -72,7 +72,7 @@ async function build(options) {
     console.log(chalk.green('  ✓ Core data loaded successfully\n'));
 
     // Step 2: Determine target platforms
-    const targetPlatforms = buildOptions.platform === 'all' 
+    const targetPlatforms = buildOptions.platform === 'all'
       ? getSupportedPlatforms()
       : [buildOptions.platform];
 
@@ -91,7 +91,7 @@ async function build(options) {
 
     for (const platform of targetPlatforms) {
       const platformStartTime = Date.now();
-      
+
       try {
         console.log(chalk.cyan(`  Building ${chalk.bold(platform)}...`));
 
@@ -104,7 +104,7 @@ async function build(options) {
         };
 
         // Generate skill file for platform
-        let skillResult = generateSkillFile(platform, enrichedCoreData);
+        const skillResult = generateSkillFile(platform, enrichedCoreData);
 
         // Apply platform-specific formatting
         const { formatForPlatform } = require('../platforms');
@@ -136,7 +136,7 @@ async function build(options) {
         }
 
         const platformDuration = Date.now() - platformStartTime;
-        
+
         // Log success
         console.log(chalk.green(`    ✓ ${platform} skill generated`));
         console.log(chalk.gray(`      Output: ${path.relative(process.cwd(), outputPath)}`));
@@ -154,9 +154,9 @@ async function build(options) {
 
       } catch (error) {
         const platformDuration = Date.now() - platformStartTime;
-        
+
         console.log(chalk.red(`    ✗ ${platform} failed: ${error.message}\n`));
-        
+
         results.failed.push({
           platform,
           error: error.message,
@@ -182,7 +182,7 @@ async function build(options) {
 
   } catch (error) {
     console.error(chalk.red(`\n✗ Build failed: ${error.message}\n`));
-    
+
     if (error.stack) {
       console.error(chalk.gray(error.stack));
     }
@@ -223,7 +223,7 @@ function printSummary(results) {
   console.log(`  Succeeded: ${chalk.green(results.stats.succeeded)}`);
   console.log(`  Failed: ${chalk.red(results.stats.failed)}`);
   console.log(`  Duration: ${chalk.yellow(results.stats.duration + 'ms')}`);
-  
+
   if (results.success.length > 0) {
     const totalSize = results.success.reduce((sum, r) => sum + r.size, 0);
     console.log(`  Total size: ${chalk.yellow(formatBytes(totalSize))}`);
@@ -248,11 +248,11 @@ function printSummary(results) {
  */
 function formatBytes(bytes) {
   if (bytes === 0) return '0 B';
-  
+
   const units = ['B', 'KB', 'MB', 'GB'];
   const k = 1024;
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
+
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + units[i];
 }
 
