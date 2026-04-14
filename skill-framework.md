@@ -1,16 +1,16 @@
 ---
 name: skill-writer
-version: "3.2.0"
-description: "Meta-skill framework: CREATE from templates, LEAN/EVALUATE/OPTIMIZE lifecycle, GRAPH mode for GoS bundle retrieval, COLLECT for collective skill evolution, Edit Audit Guard, Skill Registry v2.0 with typed graph edges, UTE 2.0 two-tier self-improvement, and deploy to 7 platforms including MCP."
+version: "3.3.0"
+description: "Meta-skill framework: CREATE from templates, LEAN/EVALUATE/OPTIMIZE lifecycle, GRAPH mode for GoS bundle retrieval, COLLECT for collective skill evolution, Edit Audit Guard, Skill Registry v2.0 + SkillRouter weighted ranking, three-tier Hook routing layer (AGENTS.md + UserPromptSubmit Hook + triggers), Trigger Discovery pipeline, UTE 2.0 two-tier self-improvement, and deploy to 7 platforms including MCP."
 description_i18n:
-  en: "Full lifecycle meta-skill framework: CREATE from templates (3-tier hierarchy, negative boundaries, Skill Summary, optional graph: block), LEAN fast-eval + D8 Composability bonus, EVALUATE 4-phase 1000pt pipeline + OWASP Agentic Top 10, OPTIMIZE 8-dim loop + S10/S11/S12 graph strategies + co-evolutionary VERIFY, GRAPH mode (GoS bundle retrieval, health checks, dependency resolution), COLLECT with bundle context for collective evolution (SkillClaw + SkillRL-compatible), skill registry v2.0 + SHARE, UTE 2.0 L1/L2, deploy to 7 platforms."
-  zh: "全生命周期元技能框架：支持可选graph:块的三层层级结构+负向边界+检索优化摘要的CREATE、带D8可组合性奖励的LEAN快速评测、OWASP Agentic Top 10安全检测的4阶段EVALUATE、含S10/S11/S12图策略+协同进化VERIFY的OPTIMIZE、GoS包检索+健康检查+依赖解析的GRAPH模式、含包上下文的SkillRL+SkillClaw兼容COLLECT、技能注册表v2.0+共享、UTE 2.0双层自进化、部署至7平台。"
+  en: "Full lifecycle meta-skill framework: CREATE from templates (3-tier hierarchy, negative boundaries, Skill Summary, optional graph: block), LEAN fast-eval + D8 Composability bonus, EVALUATE 4-phase 1000pt pipeline + OWASP Agentic Top 10, OPTIMIZE 8-dim loop + S10/S11/S12 graph strategies + co-evolutionary VERIFY, GRAPH mode (GoS bundle retrieval, health checks, dependency resolution), COLLECT with bundle context for collective evolution (SkillClaw + SkillRL-compatible), skill registry v2.0 + SHARE, SkillRouter weighted ranking + quality threshold gate, three-tier Hook routing (AGENTS.md + UserPromptSubmit Hook + trigger phrases), Trigger Discovery pipeline (AGGREGATE Rule 4), UTE 2.0 L1/L2, deploy to 7 platforms."
+  zh: "全生命周期元技能框架：支持可选graph:块的三层层级结构+负向边界+检索优化摘要的CREATE、带D8可组合性奖励的LEAN快速评测、OWASP Agentic Top 10安全检测的4阶段EVALUATE、含S10/S11/S12图策略+协同进化VERIFY的OPTIMIZE、GoS包检索+健康检查+依赖解析的GRAPH模式、含包上下文的SkillRL+SkillClaw兼容COLLECT、技能注册表v2.0+共享、SkillRouter加权排序+质量阈值门控、三层Hook路由（AGENTS.md+UserPromptSubmit Hook+触发词短语）、触发词发现流水线（AGGREGATE规则4）、UTE 2.0双层自进化、部署至7平台。"
 
 license: MIT
 author:
   name: theneoai
 created: "2026-03-31"
-updated: "2026-04-13"
+updated: "2026-04-14"
 type: meta-framework
 
 tags:
@@ -25,7 +25,7 @@ tags:
 interface:
   input: user-natural-language
   output: structured-skill
-  modes: [create, lean, evaluate, optimize, install, collect]
+  modes: [create, lean, evaluate, optimize, install, collect, graph]
   platforms: [claude, opencode, openclaw, cursor, openai, gemini, mcp]
 
 extends:
@@ -1577,13 +1577,110 @@ URL examples:
           to ~/.claude/{refs,templates,eval,optimize}/
      d. Log: ✓ <install_path>
 
+4e. GENERATE AGENTS.md ROUTING RULES `[CORE]`
+    After writing all skill files, generate or update the platform's agent
+    context file with skill-routing rules. This implements the "always-present
+    context" layer that makes skills reliably triggerable without relying on
+    trigger-phrase matching alone.
+
+    Target files by platform:
+      claude   → ~/.claude/CLAUDE.md          (append/update skill-writer block)
+      opencode → ~/.config/opencode/AGENTS.md (append/update skill-writer block)
+      cursor   → ~/.cursor/rules/skill-writer.mdc (create/overwrite)
+      gemini   → ~/.gemini/GEMINI.md          (append/update skill-writer block)
+      openclaw → ~/.openclaw/AGENTS.md        (append/update skill-writer block)
+
+    Content template (insert between <!-- skill-writer:start --> markers):
+    ```
+    <!-- skill-writer:start -->
+    ## Skill Registry — Active Skills
+
+    Installed skills are indexed at: <install_path_dir>/registry.json
+    Before creating any reusable component, function, or workflow, check:
+      → Run: /share (or type "find skill <query>") to search installed skills
+      → Prefer existing GOLD/SILVER skills over writing from scratch
+
+    ## Skill-Writer Framework Rules
+
+    When the user asks to create, evaluate, optimize, or install a skill:
+      → Load: <install_path> (skill-writer framework)
+      → Do NOT generate ad-hoc skill definitions — always use the framework
+
+    Skill trigger routing (checked before responding to user):
+      create/build/make a skill  → skill-writer CREATE mode
+      evaluate/score/assess      → skill-writer EVALUATE or LEAN mode
+      optimize/improve a skill   → skill-writer OPTIMIZE mode
+      install skill-writer       → skill-writer INSTALL mode
+    <!-- skill-writer:end -->
+    ```
+
+    Merge strategy:
+      IF <!-- skill-writer:start --> already exists in target file:
+        → Replace the block between the markers (idempotent update)
+      ELSE:
+        → Append block to end of file (or create file if absent)
+
+    Platform-specific notes:
+      Cursor: write as `.mdc` (Markdown with YAML frontmatter):
+        ---
+        description: Skill-Writer routing rules
+        alwaysApply: true
+        ---
+        <block content without markers>
+
+4f. GENERATE HOOK INJECTION CONFIG `[CORE for Claude/OpenCode; EXTENDED for others]`
+    Hooks fire at the UserPromptSubmit event — before the LLM processes the user
+    message. This is the most reliable routing layer: it injects skill-awareness
+    context even when the user's phrasing doesn't match any trigger keyword.
+
+    Target: ~/.claude/settings.json  (Claude platform only in v3.2.0)
+
+    Hook block to merge into settings.json:
+    ```json
+    {
+      "hooks": {
+        "UserPromptSubmit": [
+          {
+            "matcher": "",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "echo '[skill-writer] Check registry before creating new components: run /share to search installed skills.'"
+              }
+            ]
+          }
+        ]
+      }
+    }
+    ```
+
+    Merge strategy for settings.json:
+      IF hooks.UserPromptSubmit already exists:
+        → Check if skill-writer hook is present (match on command string)
+        → IF absent: append to hooks.UserPromptSubmit array
+        → IF present: skip (idempotent)
+      ELSE:
+        → Add hooks.UserPromptSubmit array with the block above
+
+    Safety note: only append to existing hooks — NEVER overwrite or delete
+    existing hook entries. If settings.json does not exist, create it with
+    only the hooks key.
+
+    Skip this step and report "Hook injection: skipped" if:
+      - Platform is not Claude or OpenCode (other platforms lack hook support)
+      - User explicitly passed --no-hook flag
+      - File system write permission is denied
+
 5. REPORT
    ✓ Installed to N platform(s):
      • <platform>: <install_path>
+   ✓ AGENTS.md routing rules: <agents_path> (created / updated)
    ✓ Dependencies installed: <dep1>, <dep2> (if any)
    ⚠ Manual action required: <dep3> not in registry — install separately
    ℹ Restart <platform> to activate skill-writer.
    ℹ Companion files (refs/, eval/, templates/, optimize/) copied for Claude.
+   ℹ AGENTS.md ensures skills are triggered reliably without relying on
+     trigger-phrase matching alone (AGENTS.md > Hook > Skill three-layer model).
 ```
 
 ### How to Share / Export Your Skill

@@ -85,6 +85,20 @@ The Session Artifact is the atomic unit that enables this.
     ],
     "should_merge_with":   null,
     "composability_score": null
+  },
+
+  "trigger_signals": {
+    "trigger_used":          "<verbatim user phrase that invoked this skill>",
+    "matched_trigger":       "<canonical trigger phrase that matched, or null if no match>",
+    "match_type":            "exact | fuzzy | acronym | semantic | none",
+    "trigger_miss":          false,
+    "candidate_triggers": [
+      {
+        "phrase":      "<observed user phrase not in triggers.en/zh>",
+        "confidence":  0.75,
+        "language":    "en | zh"
+      }
+    ]
   }
 }
 ```
@@ -153,6 +167,33 @@ The Session Artifact is the atomic unit that enables this.
 
 7-field object mapping each unified dimension (from `builder/src/config.js SCORING.dimensions`)
 to a strength rating for this session. Use `"n/a"` when a dimension wasn't exercised.
+
+### Trigger signals (v3.3.0) `[CORE]`
+
+> Added for SkillRouter feedback loop (refs/skill-registry.md §11.4 Rule 4).
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `trigger_signals.trigger_used` | ✅ | Verbatim user phrase that caused skill invocation |
+| `trigger_signals.matched_trigger` | ✅ | Canonical trigger phrase that matched; `null` if semantic match |
+| `trigger_signals.match_type` | ✅ | How the match was made: `exact`, `fuzzy`, `acronym`, `semantic`, `none` |
+| `trigger_signals.trigger_miss` | ✅ | `true` if skill was invoked via AGENTS.md/Hook (not trigger phrase) |
+| `trigger_signals.candidate_triggers` | No | Observed user phrases not in current triggers list |
+
+**`candidate_triggers` recording rule** `[CORE]`:
+Record any user phrase that:
+- Was the actual user input (`trigger_used`)
+- Does NOT exactly match any entry in `triggers.en` or `triggers.zh`
+- Resulted in a successful skill invocation
+
+Do NOT record phrases where `match_type = none` AND `outcome = failure`
+(these are accidental misfires, not useful signal).
+
+**`trigger_miss` recording rule** `[CORE]`:
+Set `trigger_miss: true` when the skill was activated via the AGENTS.md routing
+block or UserPromptSubmit Hook (Layer -1), but the user's phrasing did not match
+any entry in `triggers.en` or `triggers.zh`. This is the highest-signal case for
+trigger discovery — the skill *worked* but its trigger list doesn't capture why.
 
 ### SkillRL Lesson Distillation fields `[CORE]`
 
@@ -309,15 +350,46 @@ Do NOT add edges with confidence < 0.60.
 The AGGREGATE pipeline reads `bundle_context` across N artifacts and applies:
 
 ```
-N ≥ 5 artifacts with same co_invoked pair:
+Rule 1 — Co-invocation:
+  N ≥ 5 artifacts with same co_invoked pair:
   → If ≥ 80% show skill A + B co-invoked → propose A depends_on B
 
-N ≥ 5 artifacts with same data_flow entry:
+Rule 2 — Data Flow:
+  N ≥ 5 artifacts with same data_flow entry:
   → If ≥ 60% show A.output → B.input → propose A provides X; B consumes X
 
-Any artifact with should_add_edge.confidence ≥ 0.85:
+Rule 3 — Immediate Edge Proposal:
+  Any artifact with should_add_edge.confidence ≥ 0.85:
   → Immediately surface to user for confirmation (no minimum count)
+
+Rule 4 — Trigger Discovery (v3.3.0):
+  Reads trigger_signals.candidate_triggers across N artifacts for a given skill.
+
+  For each candidate phrase P observed for skill S:
+    count(P) = number of artifacts where P appears in candidate_triggers
+
+    IF count(P) ≥ 5
+    AND (P not in S.triggers.en AND P not in S.triggers.zh):
+      confidence = count(P) / total_artifacts_for_skill_S
+
+      IF confidence ≥ 0.70:
+        → Propose: add P to S.triggers.en (or .zh based on language field)
+        → Present to user: "Observed phrase '<P>' triggered <skill-name> N times
+          but is not a canonical trigger. Add to triggers? (yes/no)"
+        → On confirmation: update registry.json triggers + bump version PATCH
+
+    IF trigger_signals.trigger_miss = true (skill triggered but no match_type hit):
+      AND count ≥ 3:
+        → Immediately propose (lower threshold) — miss pattern is high-signal
+
+  Side effect: Update registry.usage_stats.trigger_phrase_counts[trigger_used] += 1
+  for every processed artifact, regardless of Rule 4 proposal outcome.
 ```
+
+**Rule 4 rationale**: Trigger phrases are written at skill creation time, but users
+develop natural phrasings through actual use. Rule 4 closes the feedback loop by
+promoting observed user language into canonical triggers, improving SkillRouter
+weighted ranking (refs/skill-registry.md §11.4) over time.
 
 ---
 
