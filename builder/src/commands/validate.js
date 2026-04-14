@@ -387,7 +387,7 @@ async function validateSkillMdSpec(result) {
       if (!SKILLMD_SPEC.namePattern.test(skillName)) {
         addIssue(result, 'error',
           `${fileName}: skill name "${skillName}" violates naming convention — ` +
-          `must match [a-z0-9-] only, no leading/trailing hyphens — agentskills.io spec §2.1`);
+          'must match [a-z0-9-] only, no leading/trailing hyphens — agentskills.io spec §2.1');
       }
       // Separate check: consecutive hyphens (allowed by namePattern, forbidden by spec)
       if (/--/.test(skillName)) {
@@ -412,11 +412,11 @@ async function validateSkillMdSpec(result) {
     if (lineCount > 1000) {
       addIssue(result, 'error',
         `${fileName}: ${lineCount} lines is excessive — skill likely contains embedded reference content ` +
-        `that belongs in Layer 3 companion files — refs/progressive-disclosure.md §3`);
+        'that belongs in Layer 3 companion files — refs/progressive-disclosure.md §3');
     } else if (lineCount > SKILLMD_SPEC.contentMaxLines) {
       addIssue(result, 'warning',
         `${fileName}: ${lineCount} lines exceeds recommended ${SKILLMD_SPEC.contentMaxLines}-line limit ` +
-        `— consider Progressive Disclosure pattern (refs/progressive-disclosure.md §3)`);
+        '— consider Progressive Disclosure pattern (refs/progressive-disclosure.md §3)');
     }
 
     const newIssues = result.issues.slice(issuesBefore);
@@ -486,7 +486,6 @@ async function validateGraphEdges(result) {
     anyGraph = true;
 
     const g   = fm.graph;
-    const id  = fm.name || fileName;          // use skill name as human label
     const tier = fm.skill_tier || 'functional';
     const issuesBefore = result.issues.length;
 

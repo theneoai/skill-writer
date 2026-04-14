@@ -1,9 +1,9 @@
 /**
  * Embedder Module
- * 
+ *
  * Embeds core content into platform templates.
  * Handles template placeholders and platform-specific formatting.
- * 
+ *
  * @module builder/src/core/embedder
  * @version 3.1.0
  */
@@ -19,6 +19,10 @@ const PLATFORM_CONFIGS = config.PLATFORMS;
 
 // Default configuration
 const DEFAULT_CONFIG = PLATFORM_CONFIGS.opencode;
+
+// Template cache: populated lazily on first generateSkillFile() call per platform.
+// Avoids repeated synchronous disk reads when building multiple skills in one session.
+const _templateCache = new Map();
 
 /**
  * Get platform-specific configuration
@@ -47,7 +51,7 @@ function getPlatformConfig(platform) {
 function replacePlaceholders(template, data, platformConfig, options = {}) {
   const { strict = false } = options;
   let result = template;
-  
+
   // Replace all placeholders
   result = result.replace(platformConfig.placeholderPattern, (match, key) => {
     const value = data[key];
@@ -60,7 +64,7 @@ function replacePlaceholders(template, data, platformConfig, options = {}) {
     }
     return String(value);
   });
-  
+
   return result;
 }
 
@@ -146,12 +150,12 @@ function formatTemplates(templates) {
   }
 
   const sections = [];
-  
+
   for (const [name, templateData] of Object.entries(templates)) {
     const content = extractContent(templateData);
     sections.push(`### ${name} Template\n\n${content}`);
   }
-  
+
   return sections.join('\n\n---\n\n');
 }
 
@@ -431,7 +435,7 @@ function embedSharedResources(template, sharedData) {
 
 /**
  * Generate complete skill file for a platform
- * 
+ *
  * @param {string} platform - Target platform (opencode, openclaw, claude, cursor, openai, gemini)
  * @param {Object} coreData - Core engine data
  * @param {Object} coreData.metadata - Skill metadata
@@ -454,8 +458,10 @@ function generateSkillFile(platform, coreData) {
   let template;
   if (coreData.template) {
     template = coreData.template;
+  } else if (_templateCache.has(platform)) {
+    template = _templateCache.get(platform);
   } else {
-    // Try to load platform-specific template
+    // Try to load platform-specific template (read once, then cache)
     const platformTemplatePath = path.join(__dirname, '../../templates', `${platform}.md`);
     const platformTemplateJsonPath = path.join(__dirname, '../../templates', `${platform}.json`);
 
@@ -471,28 +477,29 @@ function generateSkillFile(platform, coreData) {
       console.warn(`Could not load platform template for ${platform} (${error.message}), using default`);
       template = getDefaultTemplate(platform);
     }
+    _templateCache.set(platform, template);
   }
-  
+
   // Replace metadata placeholders
   if (coreData.metadata) {
     template = replacePlaceholders(template, coreData.metadata, config);
   }
-  
+
   // Embed CREATE mode
   if (coreData.create) {
     template = embedCreateMode(template, coreData.create);
   }
-  
+
   // Embed EVALUATE mode
   if (coreData.evaluate) {
     template = embedEvaluateMode(template, coreData.evaluate);
   }
-  
+
   // Embed OPTIMIZE mode
   if (coreData.optimize) {
     template = embedOptimizeMode(template, coreData.optimize);
   }
-  
+
   // Embed shared resources
   if (coreData.shared) {
     template = embedSharedResources(template, coreData.shared);
@@ -595,8 +602,6 @@ function injectUTESection(content, metadata) {
  * @returns {string} Default template
  */
 function getDefaultTemplate(platform) {
-  const config = getPlatformConfig(platform);
-  
   // Default template structure
   return `# {{TITLE}}
 
@@ -645,7 +650,7 @@ function getDefaultTemplate(platform) {
  */
 function validateEmbeddedContent(content) {
   const issues = [];
-  
+
   // Check for remaining placeholders (use extended pattern to catch {{OUTER-KEY}} and {{outer.key}})
   const placeholderMatches = content.match(/\{\{[\w.-]+\}\}/g);
   if (placeholderMatches) {
@@ -654,7 +659,7 @@ function validateEmbeddedContent(content) {
       message: `Unreplaced placeholders found: ${[...new Set(placeholderMatches)].join(', ')}`,
     });
   }
-  
+
   // Check for empty sections
   const emptySectionMatches = content.match(/##\s+\w+\s*\n\s*(?=##|$)/g);
   if (emptySectionMatches) {
@@ -664,7 +669,7 @@ function validateEmbeddedContent(content) {
       sections: emptySectionMatches,
     });
   }
-  
+
   // Check for balanced code blocks
   const codeBlockOpens = (content.match(/```/g) || []).length;
   if (codeBlockOpens % 2 !== 0) {
@@ -673,7 +678,7 @@ function validateEmbeddedContent(content) {
       message: 'Unbalanced code blocks detected',
     });
   }
-  
+
   return {
     valid: issues.filter(i => i.type === 'error').length === 0,
     issues: issues,
@@ -773,7 +778,7 @@ function convertFrontmatterToJSON(content) {
 function ensureGeminiFormatting(content) {
   // Ensure proper header hierarchy
   let result = content;
-  
+
   // Ensure there's only one H1
   const h1Matches = result.match(/^#\s+.+$/gm);
   if (h1Matches && h1Matches.length > 1) {
@@ -784,7 +789,7 @@ function ensureGeminiFormatting(content) {
       return count === 1 ? match : `## ${title}`;
     });
   }
-  
+
   return result;
 }
 

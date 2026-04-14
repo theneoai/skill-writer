@@ -1,9 +1,9 @@
 /**
  * Project Configuration - Single Source of Truth
- * 
+ *
  * Centralizes all path definitions and configuration constants
  * to prevent SSOT (Single Source of Truth) breaks across modules.
- * 
+ *
  * @module builder/src/config
  * @version 3.1.0
  */

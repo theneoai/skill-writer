@@ -558,7 +558,7 @@ function checkGraphHealth(graph, options = {}) {
  * @param {Object} [graph]          - optional built graph for ID validation
  * @returns {Object} { score, max, checks }
  */
-function scoreD8Composability(skillFrontmatter, graph = null) {
+function scoreD8Composability(skillFrontmatter, _graph = null) {
   const checks = {
     graph_block_present:        { points: 5,  earned: 0, detail: '' },
     skill_tier_graph_consistent: { points: 10, earned: 0, detail: '' },

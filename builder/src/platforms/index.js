@@ -1,11 +1,11 @@
 /**
  * Platform Registry
- * 
+ *
  * Central registry for all platform adapters.
  * Provides unified interface for platform-specific operations.
  */
 
-const fs = require('fs');
+const fs = require('fs-extra');
 const path = require('path');
 
 // Platform adapter modules
@@ -117,9 +117,9 @@ const { JSON_OUTPUT_PLATFORMS: JSON_PLATFORMS } = require('../config');
  * @param {string} platformName - Target platform
  * @param {string} skillContent - Skill content
  * @param {string} skillName - Name of the skill (for filename)
- * @returns {Object} Installation result
+ * @returns {Promise<Object>} Installation result
  */
-function installSkill(platformName, skillContent, skillName) {
+async function installSkill(platformName, skillContent, skillName) {
   const platform = getPlatform(platformName);
   const installDir = platform.getInstallPath();
   const ext = JSON_PLATFORMS.has(platformName.toLowerCase()) ? 'json' : 'md';
@@ -127,9 +127,7 @@ function installSkill(platformName, skillContent, skillName) {
   const fullPath = path.join(installDir, filename);
 
   // Ensure install directory exists
-  if (!fs.existsSync(installDir)) {
-    fs.mkdirSync(installDir, { recursive: true });
-  }
+  await fs.ensureDir(installDir);
 
   // Format skill for platform
   const formattedContent = platform.formatSkill(skillContent);
@@ -147,7 +145,7 @@ function installSkill(platformName, skillContent, skillName) {
 
   // Write skill file
   try {
-    fs.writeFileSync(fullPath, formattedContent, 'utf8');
+    await fs.writeFile(fullPath, formattedContent, 'utf8');
     return {
       success: true,
       path: fullPath,
@@ -171,7 +169,6 @@ function installSkill(platformName, skillContent, skillName) {
  * @returns {string} Converted skill content
  */
 function convertBetweenPlatforms(sourcePlatform, targetPlatform, skillContent) {
-  const source = getPlatform(sourcePlatform);
   const target = getPlatform(targetPlatform);
 
   // If source has a specific export method for target, use it
