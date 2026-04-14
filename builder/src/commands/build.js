@@ -5,7 +5,7 @@
  * Reads core data, embeds it into platform templates, and writes to output directory.
  *
  * @module builder/src/commands/build
- * @version 2.2.0
+ * @version 2.3.0 - Added source_hash incremental build cache (skips unchanged platforms)
  */
 
 const fs = require('fs-extra');
@@ -16,6 +16,57 @@ const { generateSkillFile } = require('../core/embedder');
 const { getSupportedPlatforms, isSupported } = require('../platforms');
 const config = require('../config');
 const { getSkillMetadata } = require('../metadata');
+
+/**
+ * Path for the incremental build cache file.
+ * Stores { source_hashes: { relPath: hash }, built_platforms: [platform] }
+ * so unchanged source files do not trigger a full rebuild.
+ */
+const BUILD_CACHE_PATH = path.join(config.PATHS.root, '.build-cache.json');
+
+/**
+ * Load the build cache from disk. Returns empty cache on any read/parse error.
+ * @returns {Promise<Object>} - { source_hashes: {}, built_platforms: [] }
+ */
+async function loadBuildCache() {
+  try {
+    if (await fs.pathExists(BUILD_CACHE_PATH)) {
+      const raw = await fs.readFile(BUILD_CACHE_PATH, 'utf-8');
+      return JSON.parse(raw);
+    }
+  } catch {
+    // Corrupted or unreadable cache — treat as cold build, no error surfaced.
+  }
+  return { source_hashes: {}, built_platforms: [] };
+}
+
+/**
+ * Persist the build cache to disk. Non-fatal: failures are logged but do not
+ * block the build (the next run will simply do a full rebuild).
+ * @param {Object} cache - Updated cache object to write
+ */
+async function saveBuildCache(cache) {
+  try {
+    await fs.writeFile(BUILD_CACHE_PATH, JSON.stringify(cache, null, 2), 'utf-8');
+  } catch (err) {
+    // Non-fatal: log but do not throw
+    console.warn(chalk.yellow(`  ⚠ Could not write build cache: ${err.message}`));
+  }
+}
+
+/**
+ * Compare two source_hash maps. Returns true if every key/value pair is identical.
+ * A missing key in either map counts as a difference.
+ * @param {Object} cached - Previously stored hashes
+ * @param {Object} current - Freshly computed hashes
+ * @returns {boolean}
+ */
+function hashesEqual(cached, current) {
+  const cachedKeys = Object.keys(cached);
+  const currentKeys = Object.keys(current);
+  if (cachedKeys.length !== currentKeys.length) return false;
+  return currentKeys.every(k => cached[k] === current[k]);
+}
 
 // JSON_OUTPUT_PLATFORMS is the canonical SSOT in config — do not redefine here.
 const { JSON_OUTPUT_PLATFORMS } = config;
@@ -93,6 +144,25 @@ async function build(options) {
     checkVersionCompatibility(coreData.metadata.version);
     console.log();
 
+    // Step 1b: Incremental build cache check
+    // Compare current source_hashes against the persisted cache. If identical AND the
+    // target platform was already built in the last run, skip it to save time.
+    // Cache is always bypassed for release builds and dry-runs to ensure reproducibility.
+    let buildCache = { source_hashes: {}, built_platforms: [] };
+    let sourcesChanged = true;
+    if (!buildOptions.release && !buildOptions.dryRun) {
+      buildCache = await loadBuildCache();
+      sourcesChanged = !hashesEqual(buildCache.source_hashes, coreData.source_hashes || {});
+      if (!sourcesChanged) {
+        console.log(chalk.gray('  ℹ Source files unchanged since last build (cache hit)'));
+      } else {
+        console.log(chalk.gray('  ℹ Source files changed — full rebuild required'));
+        // Reset built_platforms so all platforms rebuild with new source content.
+        buildCache.built_platforms = [];
+      }
+      console.log();
+    }
+
     // Step 2: Determine target platforms
     const targetPlatforms = buildOptions.platform === 'all'
       ? getSupportedPlatforms()
@@ -113,6 +183,14 @@ async function build(options) {
 
     for (const platform of targetPlatforms) {
       const platformStartTime = Date.now();
+
+      // Incremental skip: if sources are unchanged AND this platform was already built,
+      // skip re-building it. Force rebuild with --release or --force flags.
+      if (!sourcesChanged && buildCache.built_platforms.includes(platform) && !buildOptions.force) {
+        console.log(chalk.gray(`  ⏭ ${platform} — skipped (no source changes since last build)`));
+        results.stats.total--;
+        continue;
+      }
 
       try {
         console.log(chalk.cyan(`  Building ${chalk.bold(platform)}...`));
@@ -174,6 +252,11 @@ async function build(options) {
         });
         results.stats.succeeded++;
 
+        // Record successful platform in cache (persisted after loop)
+        if (!buildCache.built_platforms.includes(platform)) {
+          buildCache.built_platforms.push(platform);
+        }
+
       } catch (error) {
         const platformDuration = Date.now() - platformStartTime;
 
@@ -195,6 +278,12 @@ async function build(options) {
 
     // Calculate total duration
     results.stats.duration = Date.now() - startTime;
+
+    // Persist updated build cache (source_hashes + built_platforms)
+    if (!buildOptions.release && !buildOptions.dryRun && results.stats.failed === 0) {
+      buildCache.source_hashes = coreData.source_hashes || {};
+      await saveBuildCache(buildCache);
+    }
 
     // Print summary
     printSummary(results);

@@ -75,6 +75,19 @@ The registry is stored as `registry.json` in the shared storage root:
         "en": ["test api", "call endpoint", "check api response"],
         "zh": ["测试接口", "调用API"]
       },
+      "usage_stats": {
+        "total_invocations": 47,
+        "successful_invocations": 44,
+        "success_rate": 0.936,
+        "trigger_phrase_counts": {
+          "test api": 18,
+          "call endpoint": 12,
+          "check api response": 9,
+          "verify api": 8
+        },
+        "last_invoked": "2026-04-13",
+        "prm_distribution": { "good": 38, "ok": 6, "poor": 3 }
+      },
       "platforms": ["claude", "opencode", "openclaw"],
       "tags": ["api", "testing", "http"],
       "history": [
@@ -434,3 +447,119 @@ compatible with SkillClaw's storage spec.
 | Version history | `history[]` array (20-entry limit) |
 | SHA-256 conflict detection | `sha256` field per version entry |
 | LLM-based merge | Conflict Resolution Protocol (§6) |
+
+---
+
+## §11  SkillRouter — Weighted Ranking & Quality Gate (v3.3.0)
+
+> **Research basis**: 得物 AI Coding component reuse practice (2026) — multi-factor weighted
+> ranking with quality threshold gate prevents AI from "going with wrong result" (将错就错).
+> Extends the existing SkillRouter (91.7% cross-encoder accuracy) with usage-signal weighting.
+
+### §11.1  Ranking Formula
+
+When multiple skills match a user query, rank candidates by:
+
+```
+rank(skill) =
+    trigger_match_score  × 0.40   // exact/fuzzy match against triggers.en/zh
+  + lean_score_normalized × 0.30  // lean_score / 520 (max LEAN+D8 score)
+  + usage_frequency_score × 0.20  // log(total_invocations + 1) / log(MAX_INVOCATIONS + 1)
+  + source_quality_score  × 0.10  // see §11.2
+
+where:
+  trigger_match_score:
+    1.0  = exact phrase match (e.g. "test api" matches trigger "test api")
+    0.8  = token overlap ≥ 80%
+    0.6  = acronym expansion match (e.g. "dlp" → "DateLinkPicker")
+    0.4  = semantic match via cross-encoder (existing SkillRouter behavior)
+    0.0  = no match
+
+  lean_score_normalized: lean_score / 520.0  (clamp to [0.0, 1.0])
+
+  usage_frequency_score: log(usage_stats.total_invocations + 1) / log(MAX_INVOCATIONS + 1)
+    MAX_INVOCATIONS = 500  (normalizes across typical skill library sizes)
+    Falls back to 0.0 if usage_stats is absent (new or untracked skills)
+
+  source_quality_score: see §11.2
+```
+
+### §11.2  Source Quality Weights
+
+| Source | Score | Rationale |
+|--------|-------|-----------|
+| User-authored, GOLD/PLATINUM certified | 1.0 | Highest trust — human-verified |
+| User-authored, SILVER certified | 0.8 | High quality, minor gaps possible |
+| User-authored, BRONZE certified | 0.6 | Usable, may need optimization |
+| Registry-pulled, stable tag | 0.9 | Team-vetted, stable |
+| Registry-pulled, beta tag | 0.7 | Community-reviewed |
+| Registry-pulled, experimental tag | 0.4 | Low trust — evaluate before relying on |
+| Auto-generated (CREATE without LEAN) | 0.2 | Unvalidated — treat as draft |
+
+### §11.3  Quality Threshold Gate
+
+**Purpose**: Prevent the AI from "going with wrong result" — if no candidate scores
+above the minimum threshold, return `noMatch` rather than the best low-quality hit.
+
+```
+QUALITY_THRESHOLD = 0.35  (configurable per team via registry.config.router_threshold)
+
+IF max(rank) < QUALITY_THRESHOLD:
+  → Return: { status: "noMatch", reason: "best_match_score_below_threshold",
+              best_score: <score>, best_candidate: <name> }
+  → AI MUST NOT use the low-ranked skill; escalate to user or CREATE new skill
+
+IF max(rank) ≥ QUALITY_THRESHOLD:
+  → Return top candidate; include rank score in response metadata
+
+IF rank_1 - rank_2 < 0.05  (top two candidates too close):
+  → Show disambiguation: "Found 2 similar skills — which did you mean?"
+    (a) <skill_1_name>  [score: X, tier: Y]
+    (b) <skill_2_name>  [score: X, tier: Y]
+```
+
+### §11.4  Trigger Phrase Discovery via Session Artifacts
+
+The AGGREGATE pipeline feeds observed user phrases back into `trigger_phrase_counts`
+and proposes new canonical triggers (see `refs/session-artifact.md §8 Rule 4`).
+
+When a phrase appears in `trigger_phrase_counts` but NOT in `triggers.en`:
+```
+IF trigger_phrase_counts[phrase] ≥ 5 AND
+   phrase_match_score_without_trigger < 0.60:
+  → Propose: add "<phrase>" to triggers.en
+  → Present to user for confirmation before updating registry
+```
+
+This closes the feedback loop: usage patterns → trigger discovery → routing quality improvement.
+
+### §11.5  `usage_stats` Field Spec
+
+Added to each skill entry in `registry.json` (schema v1.1+):
+
+```json
+"usage_stats": {
+  "total_invocations":     <int>,    // cumulative invocation count
+  "successful_invocations":<int>,    // outcome == "success" count
+  "success_rate":          <float>,  // successful / total (0.0–1.0)
+  "trigger_phrase_counts": {         // observed user phrasing → count
+    "<phrase>": <int>
+  },
+  "last_invoked": "<ISO-8601-date>",
+  "prm_distribution": {             // from session artifacts prm_signal
+    "good": <int>,
+    "ok":   <int>,
+    "poor": <int>
+  }
+}
+```
+
+**Update rules** `[EXTENDED — requires AGGREGATE pipeline]`:
+- `total_invocations`: incremented by 1 per session artifact processed
+- `trigger_phrase_counts[trigger_used]`: incremented by 1 per artifact
+- `success_rate`: recomputed on each AGGREGATE run
+- `last_invoked`: set to artifact `recorded_at` date
+- `prm_distribution`: tallied from artifact `prm_signal` field
+
+**Fallback** `[CORE]`: When no AGGREGATE backend is available, the AI MAY manually
+update `usage_stats` at session end if the user runs `/collect` and confirms the update.

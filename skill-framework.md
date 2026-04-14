@@ -1577,13 +1577,110 @@ URL examples:
           to ~/.claude/{refs,templates,eval,optimize}/
      d. Log: ✓ <install_path>
 
+4e. GENERATE AGENTS.md ROUTING RULES `[CORE]`
+    After writing all skill files, generate or update the platform's agent
+    context file with skill-routing rules. This implements the "always-present
+    context" layer that makes skills reliably triggerable without relying on
+    trigger-phrase matching alone.
+
+    Target files by platform:
+      claude   → ~/.claude/CLAUDE.md          (append/update skill-writer block)
+      opencode → ~/.config/opencode/AGENTS.md (append/update skill-writer block)
+      cursor   → ~/.cursor/rules/skill-writer.mdc (create/overwrite)
+      gemini   → ~/.gemini/GEMINI.md          (append/update skill-writer block)
+      openclaw → ~/.openclaw/AGENTS.md        (append/update skill-writer block)
+
+    Content template (insert between <!-- skill-writer:start --> markers):
+    ```
+    <!-- skill-writer:start -->
+    ## Skill Registry — Active Skills
+
+    Installed skills are indexed at: <install_path_dir>/registry.json
+    Before creating any reusable component, function, or workflow, check:
+      → Run: /share (or type "find skill <query>") to search installed skills
+      → Prefer existing GOLD/SILVER skills over writing from scratch
+
+    ## Skill-Writer Framework Rules
+
+    When the user asks to create, evaluate, optimize, or install a skill:
+      → Load: <install_path> (skill-writer framework)
+      → Do NOT generate ad-hoc skill definitions — always use the framework
+
+    Skill trigger routing (checked before responding to user):
+      create/build/make a skill  → skill-writer CREATE mode
+      evaluate/score/assess      → skill-writer EVALUATE or LEAN mode
+      optimize/improve a skill   → skill-writer OPTIMIZE mode
+      install skill-writer       → skill-writer INSTALL mode
+    <!-- skill-writer:end -->
+    ```
+
+    Merge strategy:
+      IF <!-- skill-writer:start --> already exists in target file:
+        → Replace the block between the markers (idempotent update)
+      ELSE:
+        → Append block to end of file (or create file if absent)
+
+    Platform-specific notes:
+      Cursor: write as `.mdc` (Markdown with YAML frontmatter):
+        ---
+        description: Skill-Writer routing rules
+        alwaysApply: true
+        ---
+        <block content without markers>
+
+4f. GENERATE HOOK INJECTION CONFIG `[CORE for Claude/OpenCode; EXTENDED for others]`
+    Hooks fire at the UserPromptSubmit event — before the LLM processes the user
+    message. This is the most reliable routing layer: it injects skill-awareness
+    context even when the user's phrasing doesn't match any trigger keyword.
+
+    Target: ~/.claude/settings.json  (Claude platform only in v3.2.0)
+
+    Hook block to merge into settings.json:
+    ```json
+    {
+      "hooks": {
+        "UserPromptSubmit": [
+          {
+            "matcher": "",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "echo '[skill-writer] Check registry before creating new components: run /share to search installed skills.'"
+              }
+            ]
+          }
+        ]
+      }
+    }
+    ```
+
+    Merge strategy for settings.json:
+      IF hooks.UserPromptSubmit already exists:
+        → Check if skill-writer hook is present (match on command string)
+        → IF absent: append to hooks.UserPromptSubmit array
+        → IF present: skip (idempotent)
+      ELSE:
+        → Add hooks.UserPromptSubmit array with the block above
+
+    Safety note: only append to existing hooks — NEVER overwrite or delete
+    existing hook entries. If settings.json does not exist, create it with
+    only the hooks key.
+
+    Skip this step and report "Hook injection: skipped" if:
+      - Platform is not Claude or OpenCode (other platforms lack hook support)
+      - User explicitly passed --no-hook flag
+      - File system write permission is denied
+
 5. REPORT
    ✓ Installed to N platform(s):
      • <platform>: <install_path>
+   ✓ AGENTS.md routing rules: <agents_path> (created / updated)
    ✓ Dependencies installed: <dep1>, <dep2> (if any)
    ⚠ Manual action required: <dep3> not in registry — install separately
    ℹ Restart <platform> to activate skill-writer.
    ℹ Companion files (refs/, eval/, templates/, optimize/) copied for Claude.
+   ℹ AGENTS.md ensures skills are triggered reliably without relying on
+     trigger-phrase matching alone (AGENTS.md > Hook > Skill three-layer model).
 ```
 
 ### How to Share / Export Your Skill

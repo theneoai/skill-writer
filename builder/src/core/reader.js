@@ -4,11 +4,12 @@
  * Reads companion Markdown files for the skill-writer-builder.
  * Sources: refs/, templates/, eval/, optimize/ (Single Source of Truth)
  *
- * @version 3.1.1 - Cache builder version at module load time (avoid repeated require() in async context)
+ * @version 3.3.0 - Added source_hash computation for incremental build cache support
  */
 
 const fs = require('fs-extra');
 const path = require('path');
+const crypto = require('crypto');
 const { glob } = require('glob');
 const config = require('../config');
 
@@ -17,17 +18,32 @@ const config = require('../config');
 const BUILDER_VERSION = require('../../package.json').version;
 
 /**
+ * Compute SHA-256 hash of a string (first 16 hex chars for compactness).
+ * Used as source_hash for incremental build cache checks.
+ * @param {string} content - File content
+ * @returns {string} - 16-char hex digest
+ */
+function computeHash(content) {
+  return crypto.createHash('sha256').update(content, 'utf-8').digest('hex').slice(0, 16);
+}
+
+/**
  * Parse a Markdown or JSON file
  * @param {string} filePath - Path to the file
- * @returns {Object} - Parsed content object
+ * @returns {Object} - Parsed content object (includes source_hash for cache validation)
  */
 async function parseFile(filePath) {
   const ext = path.extname(filePath).toLowerCase();
   const content = await fs.readFile(filePath, 'utf-8');
+  const source_hash = computeHash(content);
 
   if (ext === '.json') {
     try {
-      return JSON.parse(content);
+      const parsed = JSON.parse(content);
+      // Attach hash metadata without mutating parsed JSON keys
+      parsed._source_hash = source_hash;
+      parsed._source_path = filePath;
+      return parsed;
     } catch (error) {
       throw new Error(`Failed to parse JSON file "${filePath}": ${error.message}`);
     }
@@ -37,7 +53,8 @@ async function parseFile(filePath) {
     content,
     path: filePath,
     name: path.basename(filePath),
-    extension: ext || '.md'
+    extension: ext || '.md',
+    source_hash,
   };
 }
 
@@ -195,8 +212,29 @@ async function readSharedResources() {
 }
 
 /**
+ * Collect all source_hash values from a nested data object into a flat map.
+ * Keys are relative source paths; values are 16-char SHA-256 digests.
+ * Used by build.js to compare against .build-cache.json for incremental skipping.
+ * @param {Object} obj - Nested data object returned by read* functions
+ * @param {Object} [out={}] - Accumulator
+ * @returns {Object} - { relPath: hash, ... }
+ */
+function collectHashes(obj, out = {}) {
+  if (!obj || typeof obj !== 'object') return out;
+  if (obj.source_hash && obj.path) {
+    const rel = path.relative(config.PATHS.root, obj.path);
+    out[rel] = obj.source_hash;
+    return out;
+  }
+  for (const val of Object.values(obj)) {
+    collectHashes(val, out);
+  }
+  return out;
+}
+
+/**
  * Read all core data from source files
- * @returns {Object} - Complete core data object
+ * @returns {Object} - Complete core data object (includes source_hashes map for incremental builds)
  */
 async function readAllCoreData() {
   const [create, evaluate, optimize, shared] = await Promise.all([
@@ -206,11 +244,14 @@ async function readAllCoreData() {
     readSharedResources()
   ]);
 
+  const source_hashes = collectHashes({ create, evaluate, optimize, shared });
+
   return {
     create,
     evaluate,
     optimize,
     shared,
+    source_hashes,
     metadata: {
       readAt: new Date().toISOString(),
       version: BUILDER_VERSION
@@ -227,6 +268,7 @@ function getMustEmbedFiles() {
 }
 
 module.exports = {
+  computeHash,
   parseFile,
   readCreateMode,
   readEvaluateMode,
