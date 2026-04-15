@@ -219,8 +219,8 @@ You'll be prompted to paste 1–3 conversation snippets where the AI produced in
 Every generated skill includes two machine-readable fields in its YAML frontmatter:
 
 ```yaml
-generation_method: "auto-generated"   # auto-generated | human-reviewed | task-validated
-validation_status: "lean-only"         # lean-only | full-eval | task-validated
+generation_method: "auto-generated"   # auto-generated | human-authored | hybrid
+validation_status: "lean-only"         # unvalidated | lean-only | full-eval | pragmatic-verified
 ```
 
 These fields are checked at SHARE and INSTALL time. Skills marked `auto-generated + lean-only` trigger a deployment warning and require at minimum a full EVALUATE before being pushed to a shared registry. This prevents unvalidated skills from silently reaching production.

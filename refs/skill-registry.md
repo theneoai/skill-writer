@@ -368,7 +368,7 @@ Schema v2.0 adds a top-level `graph` object alongside `skills[]`:
 }
 ```
 
-### §10.2  Edge Types (canonical — from `builder/src/config.js GRAPH_EDGE_TYPES`)
+### §10.2  Edge Types (canonical — see `refs/skill-graph.md §2 Edge Types`)
 
 | Type | Direction | Meaning | Which Tier Uses It |
 |------|-----------|---------|-------------------|
@@ -405,7 +405,8 @@ Rule 3 — Merge Advisory:
 ```
 /graph plan [task description]
      ↓
-Resolve bundle via builder/src/core/graph.js resolveBundle()
+Resolve bundle via GoS MVR algorithm [CORE] (refs/skill-graph.md §2a)
+OR via full graph.js resolveBundle() [EXTENDED — v4.0+, not yet implemented]
      ↓
 Bundle entry saved to registry graph.bundles[]
      ↓
@@ -416,18 +417,21 @@ Bundle usage tracked in Session Artifact bundle_context.bundle_id
 
 ### §10.5  Migration: v1.x → v2.0
 
-No breaking changes. To upgrade an existing registry:
+No breaking changes. To upgrade an existing registry, manually add the `graph` key:
 
-```bash
-# Add empty graph section to registry.json
-node -e "
-const fs = require('fs');
-const r = JSON.parse(fs.readFileSync('registry.json'));
-if (!r.graph) r.graph = { edges: [], bundles: [] };
-r.schema_version = '2.0';
-fs.writeFileSync('registry.json', JSON.stringify(r, null, 2));
-"
+```json
+{
+  "schema_version": "2.0",
+  "skills": [ /* ... existing entries unchanged ... */ ],
+  "graph": {
+    "edges": [],
+    "bundles": []
+  }
+}
 ```
+
+> **Note**: The old `node -e "..."` migration script required the removed builder. Since
+> v3.3.0 (zero-dependency architecture), edit `registry.json` directly as shown above.
 
 Skills that have `graph:` blocks in their YAML frontmatter will have their edges
 populated automatically on the next `skillclaw push` or `/install` command.
@@ -583,32 +587,34 @@ update `usage_stats` at session end if the user runs `/collect` and confirms the
 ### §12.1  Required YAML Fields (added by CREATE, maintained by OPTIMIZE/SHARE)
 
 ```yaml
-generation_method: "auto-generated"   # auto-generated | human-reviewed | task-validated
-validation_status: "lean-only"         # lean-only | full-eval | task-validated
+generation_method: "auto-generated"   # auto-generated | human-authored | hybrid
+validation_status: "lean-only"         # unvalidated | lean-only | full-eval | pragmatic-verified
 ```
 
 | `generation_method` | Meaning |
 |---------------------|---------|
 | `auto-generated` | Produced by CREATE mode without subsequent human structural review |
-| `human-reviewed` | Author manually verified/edited the generated content |
-| `task-validated` | Author executed the skill against real tasks and confirmed results |
+| `human-authored` | Author manually wrote or substantially edited the skill content |
+| `hybrid` | AI-assisted draft that was then meaningfully revised by a human author |
 
 | `validation_status` | Meaning |
 |---------------------|---------|
+| `unvalidated` | Created but not yet evaluated (no LEAN or EVALUATE run) |
 | `lean-only` | Passed LEAN (≥ 350) but no full EVALUATE |
 | `full-eval` | Passed EVALUATE (≥ 700, BRONZE or higher) |
-| `task-validated` | Passed Pragmatic Test Phase (pragmatic_success_rate ≥ 60%) |
+| `pragmatic-verified` | Passed Pragmatic Test Phase (pragmatic_success_rate ≥ 60%) |
 
 ### §12.2  Routing Score Impact
 
 These fields determine the `source_quality_score` component in §11.2:
 
 ```
-auto-generated + lean-only        → source_quality_score = 0.2  (unvalidated)
-auto-generated + lean-only (≥350) → source_quality_score = 0.5  (LEAN-cleared)
-auto-generated + full-eval        → source_quality_score = 0.6  (BRONZE+)
-human-reviewed + full-eval        → source_quality_score = 0.8–1.0 (by cert tier)
-any + task-validated              → +0.1 bonus (capped at 1.0)
+auto-generated + unvalidated         → source_quality_score = 0.2
+auto-generated + lean-only (≥350)    → source_quality_score = 0.5  (LEAN-cleared)
+auto-generated + full-eval           → source_quality_score = 0.6  (BRONZE+)
+human-authored + full-eval           → source_quality_score = 0.8–1.0 (by cert tier)
+hybrid         + full-eval           → source_quality_score = 0.7–0.9 (by cert tier)
+any            + pragmatic-verified  → +0.1 bonus (capped at 1.0)
 ```
 
 ### §12.3  Deployment Gate
@@ -623,7 +629,10 @@ IF generation_method == "auto-generated" AND validation_status == "lean-only":
   → Require explicit: "confirm deploy" to proceed
   → registry entry tagged: certified_tier: "DRAFT" (overrides LEAN_CERT)
 
-IF validation_status == "task-validated":
+IF validation_status == "unvalidated":
+  → BLOCK: "✗ Cannot SHARE an unvalidated skill. Run /lean eval first (target ≥ 350)."
+
+IF validation_status == "pragmatic-verified":
   → Show pragmatic_success_rate in registry entry
   → Eligible for "PRAGMATIC_VERIFIED" badge in registry listing
 ```

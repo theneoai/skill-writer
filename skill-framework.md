@@ -82,7 +82,7 @@ use_to_evolve:
 <!-- PATH CONVENTION
   Throughout this document, `claude/` is a path prefix relative to the Claude
   configuration root (~/.claude/). Companion files are installed there by
-  `npm run install:claude` (which runs install-claude.sh):
+  `./claude/install.sh` (zero-dependency install script, no build step required):
 
     claude/refs/security-patterns.md  →  ~/.claude/refs/security-patterns.md
     claude/refs/use-to-evolve.md      →  ~/.claude/refs/use-to-evolve.md
@@ -637,13 +637,13 @@ Submit skill file via PR with this EVALUATE report attached as context.
 | 8 | **INJECT UTE** — append `§UTE` section from snippet, fill placeholders (§15) | UTE section present |
 | 9 | **DELIVER** — annotate, certify, inject honest labels, write audit entry | CERTIFIED / TEMP_CERT |
 
-### Honest Skill Labeling (Phase 9 — mandatory, v3.3.0)
+### Honest Skill Labeling (Phase 9 — mandatory, v3.4.0)
 
 Every generated skill MUST include these two fields in its YAML frontmatter at DELIVER time:
 
 ```yaml
-generation_method: "auto-generated"   # set at CREATE; user updates to "human-reviewed" after manual edit
-validation_status: "lean-only"         # updated automatically by EVALUATE ("full-eval") and Pragmatic Test ("task-validated")
+generation_method: "auto-generated"   # set at CREATE; user updates to "human-authored" or "hybrid" after manual edit
+validation_status: "lean-only"         # updated by EVALUATE ("full-eval") and Pragmatic Test ("pragmatic-verified")
 ```
 
 **Routing impact**: `auto-generated + lean-only` → `source_quality_score = 0.2`; `lean-passed (≥350)` → 0.5.
@@ -1035,7 +1035,7 @@ Ask **one question at a time**. Wait for answer before next question.
 | 4 | Certification | 200 | Variance gate + security scan + quality gates + Behavioral Verifier (+20 bonus) |
 | Pragmatic Test | Optional | N/A | User-provided real task samples → `pragmatic_success_rate` |
 
-**Behavioral Verifier** (Phase 4 sub-step, v3.3.0): Auto-generates 3 positive + 2 negative test cases
+**Behavioral Verifier** (Phase 4 sub-step, v3.4.0): Auto-generates 3 positive + 2 negative test cases
 from the skill's own Skill Summary, executes them, and reports a `behavioral_pass_rate`. Adds up to
 20 bonus pts to Phase 4. Addresses generator bias per EvoSkills (arxiv:2604.01687).
 
@@ -1099,8 +1099,8 @@ High variance = artifact looks good on paper but fails runtime (or vice versa).
    Phase 4 Behavioral Verifier — auto-generate 5 test cases, execute, report pass_rate (+20 bonus)
 7. Pragmatic Test (if --pragmatic flag OR auto-triggered when validation_status == "lean-only" pre-SHARE):
    → User provides 3–5 real task samples → execute → report pragmatic_success_rate
-   → Update validation_status to "task-validated" if pass_rate ≥ 60%
-8. UPDATE labels: set validation_status = "full-eval" (or "task-validated" if pragmatic passed)
+   → Update validation_status to "pragmatic-verified" if pass_rate ≥ 60%
+8. UPDATE labels: set validation_status = "full-eval" (or "pragmatic-verified" if pragmatic passed)
 9. REPORT — per-phase scores + tier + behavioral verifier + pragmatic result + issues list
 10. ROUTE:
       CERTIFIED → deliver; update validation_status in skill YAML
@@ -1828,17 +1828,19 @@ URL examples:
 ```
 1. VALIDATE  — confirm skill has passed LEAN ≥ 350 (LEAN_CERT minimum)
 
-1a. HONEST LABEL CHECK (v3.3.0)
+1a. HONEST LABEL CHECK (v3.4.0)
     Read generation_method and validation_status from skill YAML:
+    IF validation_status == "unvalidated":
+      → BLOCK: "✗ Cannot SHARE an unvalidated skill. Run /lean eval first."
     IF generation_method == "auto-generated" AND validation_status == "lean-only":
       → WARN: "⚠ This skill is auto-generated with lean-only validation.
                Research shows self-generated skills have variable real-world utility.
                Recommended: run /eval before pushing to shared registry."
       → Require user to type "confirm share" to override, OR run /eval first
-    IF validation_status == "task-validated":
+    IF validation_status == "pragmatic-verified":
       → Show pragmatic_success_rate badge in output
 
-1b. SECURITY TRUST STAMP (v3.3.0)
+1b. SECURITY TRUST STAMP (v3.4.0)
     Generate signature block for the skill YAML:
     signature:
       sha256: <ask user to confirm via `sha256sum <skill_file>`, or mark "pending">
