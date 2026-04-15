@@ -641,13 +641,51 @@ Submit skill file via PR with this EVALUATE report attached as context.
 | 6 | **LEAN EVAL** — fast heuristic check (§6) | Score ≥ 350; negative boundaries present |
 | 7 | **FULL EVALUATE** — 4-phase pipeline if LEAN uncertain (§8) | Score ≥ 700 BRONZE |
 | 8 | **INJECT UTE** — append `§UTE` section from snippet, fill placeholders (§15) | UTE section present |
-| 9 | **DELIVER** — annotate, certify, write audit entry | CERTIFIED / TEMP_CERT |
+| 9 | **DELIVER** — annotate, certify, inject honest labels, write audit entry | CERTIFIED / TEMP_CERT |
+
+### Honest Skill Labeling (Phase 9 — mandatory, v3.4.0)
+
+Every generated skill MUST include these two fields in its YAML frontmatter at DELIVER time:
+
+```yaml
+generation_method: "auto-generated"   # set at CREATE; user updates to "human-authored" or "hybrid" after manual edit
+validation_status: "lean-only"         # updated by EVALUATE ("full-eval") and Pragmatic Test ("pragmatic-verified")
+```
+
+**Routing impact**: `auto-generated + lean-only` → `source_quality_score = 0.2`; `lean-passed (≥350)` → 0.5.
+**SHARE gate**: `auto-generated + lean-only` blocks registry push until user confirms or runs `/eval`.
+Full spec: `refs/skill-registry.md §12`.
+
+### Failure-Driven CREATE (`--from-failures` flag)
+
+When user types `/create --from-failures`, replace the standard ELICIT phase with:
+
+```
+FAILURE ELICITATION (replaces Q1–Q8):
+  1. Ask: "Paste 1–3 recent conversation snippets where the AI produced wrong or incomplete
+           results for the task you want to automate. Press ENTER twice when done."
+  2. EXTRACT from each snippet:
+       - What was the user's intent?
+       - What step failed (routing? execution? output format? error handling?)
+       - What recovery action was needed?
+  3. SYNTHESIZE failure patterns:
+       - Recurring failure modes → pre-fill Workflow Error Handling section
+       - Missed intents → pre-fill Negative Boundaries "Do NOT miss these cases"
+       - Recurring task steps → pre-fill Workflow phases
+  4. CONFIRM: Show the synthesized failure map and ask user to confirm or edit
+  5. Resume standard Phase 2 (SELECT TEMPLATE) with the enriched context
+```
+
+> **Research basis**: SkillForge (arxiv:2604.08618) — domain-contextualized skill creation
+> grounded in failure trajectories (Workflow Mining from historical interactions) produces
+> skills significantly better aligned with real-world requirements than template-only generation.
 
 > **Phase 9 (DELIVER) — mandatory activation guidance** `[CORE]`:
 > Every DELIVER output MUST include these lines, verbatim, after the skill file:
 > ```
 > ─── Skill ready ───────────────────────────────────────────────────────
 > Your skill "{skill_name}" has been created (LEAN: {N}/500 · est. {N*2} EVALUATE).
+> Labels: generation_method=auto-generated · validation_status=lean-only
 >
 > To activate it:
 >   1. Copy the skill file above to your platform's skills folder:
@@ -663,6 +701,12 @@ Submit skill file via PR with this EVALUATE report attached as context.
 >   ≥ 350 (BRONZE+) = ready to use | < 350 = run /opt first
 >   Tier guide: PLATINUM(≥950)=publish-ready · GOLD(≥900)=professional · SILVER(≥800)=team-ready · BRONZE(≥700)=personal use
 >
+> ⚠ This skill is auto-generated (validation_status: lean-only).
+>   Research shows self-generated skills have variable real-world utility.
+>   Before sharing or deploying to production:
+>     /eval           → run full 1000-pt evaluation (updates validation_status to "full-eval")
+>     /eval --pragmatic → test against 3–5 real tasks (adds pragmatic_success_rate)
+>
 > About the two key sections in your skill file:
 >   Skill Summary (§2): tells the AI WHEN to use this skill. Keep it specific — it's
 >     the routing signal. If it's vague, the skill may trigger too rarely or too often.
@@ -670,7 +714,7 @@ Submit skill file via PR with this EVALUATE report attached as context.
 >     similar-sounding requests will mis-trigger this skill. Edit these if you notice
 >     false triggers.
 >
-> Next steps (optional): /lean · /eval · /opt · /share
+> Next steps (optional): /lean · /eval · /eval --pragmatic · /opt · /share
 > ───────────────────────────────────────────────────────────────────────
 > ```
 
@@ -985,16 +1029,25 @@ Ask **one question at a time**. Wait for answer before next question.
 
 ## §9  EVALUATE Mode — 4-Phase Pipeline
 
-**Total: 1000 points** | Full rubrics: `eval/rubrics.md`
+**Total: 1000 points** (+ up to 20 bonus from Behavioral Verifier) | Full rubrics: `eval/rubrics.md`
 
 ### Phase Overview
 
 | Phase | Name | Max Points | Method |
 |-------|------|-----------|--------|
-| 1 | Parse & Validate | 100 | Heuristic (schema, sections, no placeholders) |
+| 1 | Parse & Validate | 100 | Heuristic (schema, sections, no placeholders, `generation_method` advisory) |
 | 2 | Text Quality | 300 | Static analysis across 7 sub-dimensions (see table below) |
 | 3 | Runtime Testing | 400 | Trigger pattern tests, mode definitions, error handling |
-| 4 | Certification | 200 | Variance gate + security scan + quality gates |
+| 4 | Certification | 200 | Variance gate + security scan + quality gates + Behavioral Verifier (+20 bonus) |
+| Pragmatic Test | Optional | N/A | User-provided real task samples → `pragmatic_success_rate` |
+
+**Behavioral Verifier** (Phase 4 sub-step, v3.4.0): Auto-generates 3 positive + 2 negative test cases
+from the skill's own Skill Summary, executes them, and reports a `behavioral_pass_rate`. Adds up to
+20 bonus pts to Phase 4. Addresses generator bias per EvoSkills (arxiv:2604.01687).
+
+**Pragmatic Test** (`/eval --pragmatic`): Executes the skill against 3–5 user-provided real task
+samples and produces a `pragmatic_success_rate` independent of the theoretical score. Blocks SHARE
+push if `pragmatic_success_rate < 60%`. Full spec: `eval/rubrics.md §6.5`.
 
 ### Phase 2 Sub-Dimensions (300 points total)
 
@@ -1042,16 +1095,22 @@ High variance = artifact looks good on paper but fails runtime (or vice versa).
 ```
 1. LEAN pre-check (§6) → if UNCERTAIN or FAIL → full pipeline
 2. READ skill_tier from YAML frontmatter (planning | functional | atomic)
-   → If present: apply tier-adjusted Phase 2 weights (eval/rubrics.md §8)
+   READ generation_method + validation_status (advisory — emit INFO if absent)
+   → If skill_tier present: apply tier-adjusted Phase 2 weights (eval/rubrics.md §8)
    → If absent or 'functional': use default Phase 2 weights (rubrics.md §4)
 3. Phase 1: Parse — YAML, required sections, trigger presence, no placeholders
 4. Phase 2: Text — 7 sub-dimensions with tier-adjusted weights
 5. Phase 3: Runtime — benchmark test cases (eval/benchmarks.md)
 6. Phase 4: Certification — compute variance, run security scan, check tier-adjusted gates
-7. REPORT — per-phase scores + tier + issues list (include skill_tier in report header)
-8. ROUTE:
-     CERTIFIED → deliver
-     FAIL       → auto-route to OPTIMIZE (§9)
+   Phase 4 Behavioral Verifier — auto-generate 5 test cases, execute, report pass_rate (+20 bonus)
+7. Pragmatic Test (if --pragmatic flag OR auto-triggered when validation_status == "lean-only" pre-SHARE):
+   → User provides 3–5 real task samples → execute → report pragmatic_success_rate
+   → Update validation_status to "pragmatic-verified" if pass_rate ≥ 60%
+8. UPDATE labels: set validation_status = "full-eval" (or "pragmatic-verified" if pragmatic passed)
+9. REPORT — per-phase scores + tier + behavioral verifier + pragmatic result + issues list
+10. ROUTE:
+      CERTIFIED → deliver; update validation_status in skill YAML
+      FAIL       → auto-route to OPTIMIZE (§9)
 ```
 
 ### Multi-Pass Scoring
@@ -1503,7 +1562,7 @@ Snippet: `templates/use-to-evolve-snippet.md`
 3. FILL PLACEHOLDERS:
      {{SKILL_NAME}}           = skill's `name` YAML field
      {{VERSION}}              = skill's `version` YAML field
-     {{FRAMEWORK_VERSION}}    = "2.2.0"
+     {{FRAMEWORK_VERSION}}    = "3.4.0"
      {{INJECTION_DATE}}       = today ISO-8601
      {{CERTIFIED_LEAN_SCORE}} = LEAN score from Step 6 (or 350 if unknown)
 
@@ -2562,6 +2621,54 @@ After running `/graph check`:
 - If D8 score is 0 (no `graph:` block): GRAPH mode prompts user to add graph declarations
 - If D8 score < 15: GRAPH mode identifies which D8 sub-checks are failing and suggests fixes
 - Successful `/graph plan` execution = proof the graph declarations work → D8 boost
+
+### GoS Minimum Viable Runtime (`[CORE]` — no builder required)
+
+> **Context**: The full GoS (Graph of Skills) runtime specified in `refs/skill-graph.md`
+> requires `builder/src/core/graph.js`, which is a v4.0+ target. However, the most valuable
+> GoS capability — `depends_on` dependency resolution for `/graph plan` and `/install --bundle`
+> — can be implemented entirely from YAML frontmatter reading, without any external code.
+
+The following algorithm is the **Minimum Viable GoS Runtime** that the AI executes `[CORE]`:
+
+```
+MINIMUM VIABLE GoS (depends_on only):
+
+Input: task description + local skill files with graph: blocks
+
+Step 1 — SEED (find primary skill):
+  Run SkillRouter trigger matching against task description.
+  Primary skill = highest-confidence match.
+
+Step 2 — EXPAND (read depends_on chains from YAML only):
+  For the primary skill, read its YAML `graph.depends_on` list (if present).
+  For each dependency, read THAT skill's `graph.depends_on` list.
+  Repeat until no new dependencies found OR depth > 5.
+  Collect: required=true deps (mandatory) and required=false deps (optional).
+
+Step 3 — DEDUPLICATE:
+  Remove duplicates. If two skills declare similar_to ≥ 0.90, keep higher LEAN score.
+
+Step 4 — TOPOLOGICAL SORT:
+  Order: dependencies first, then the skill that depends on them.
+  Output: ordered install list.
+
+Step 5 — TOKEN BUDGET CHECK:
+  Estimate tokens for all skills (≈ file_size / 4).
+  If total > 12,000 tokens: drop optional deps first, warn user.
+
+Output: "Bundle resolved: [list in install order]. Run /install for each."
+```
+
+**What this runtime does NOT support** (v4.0+ only):
+- `composes` edge traversal (planning skill orchestration)
+- `provides/consumes` type matching
+- BFS cycle detection (just stops at depth 5)
+- Auto-inferred edges from COLLECT artifacts
+
+**When to escalate to full spec**: Any `/graph check` that returns GRAPH-001 (dangling edge)
+or GRAPH-003 (cycle detected) requires the full `builder/src/core/graph.js` implementation.
+For depth-limited linear chains (most real-world cases), the MVR is sufficient.
 
 ### Key references
 

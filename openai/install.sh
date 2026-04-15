@@ -18,6 +18,7 @@ TARGET_DIR="${1:-$(pwd)}"
 info()    { echo "  $*"; }
 success() { echo "  ✓ $*"; }
 warn()    { echo "  ⚠ $*" >&2; }
+err()     { echo "  ✗ $*" >&2; }
 
 for arg in "$@"; do
   case "$arg" in
