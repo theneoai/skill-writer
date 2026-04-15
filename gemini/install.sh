@@ -93,6 +93,7 @@ BLOCK_START="<!-- skill-writer:start -->"
 
 if [[ -f "$GEMINI_MD" ]] && grep -q "$BLOCK_START" "$GEMINI_MD"; then
   if ! $DRY_RUN; then
+    cp "$GEMINI_MD" "${GEMINI_MD}.bak.$(date +%Y%m%d_%H%M%S)" 2>/dev/null || true
     python3 -c "
 import re
 with open('$GEMINI_MD', 'r') as f: content = f.read()
@@ -100,7 +101,7 @@ with open('$GEMINI_MD_SRC', 'r') as f: block = f.read().strip()
 pattern = r'<!-- skill-writer:start -->.*?<!-- skill-writer:end -->'
 new = re.sub(pattern, block, content, flags=re.DOTALL)
 with open('$GEMINI_MD', 'w') as f: f.write(new)
-"
+" || { err "Routing file merge failed. Backup at ${GEMINI_MD}.bak.*"; exit 1; }
   fi
   success "GEMINI.md → updated skill-writer block"
 else

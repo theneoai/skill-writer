@@ -126,11 +126,11 @@ questions, direct API calls, or non-skill automation tasks — see Negative Boun
 > **双语支持 / Bilingual**: All 6 modes work in English and Chinese. The router auto-detects
 > your language — use `/eval` or `评测`, `create a skill` or `创建新技能`, interchangeably.
 > Cursor exception: use keyword phrases, not `/commands` (IDE intercepts `/` key).
-> See §2 Mode Router for the full keyword list in both languages.
+> See §3 Mode Router for the full keyword list in both languages.
 
 ### Workflow A — "I want to create a new skill"
 1. Type `/create` followed by a one-sentence description of what the skill should do
-2. Answer the 8 elicitation questions (§7) one at a time
+2. Answer the 8 elicitation questions (§8) one at a time
 3. Receive the completed skill file with a LEAN score attached
 4. LEAN ≥ 350 → ready to use immediately (LEAN_CERT)
 5. Before pushing to skill registry → run `/eval` for an authoritative score
@@ -2034,7 +2034,7 @@ If no response or error → verify `~/.mcp/servers/skill-writer/mcp-manifest.jso
 
 ### CREATE mode via MCP (important — read before using)
 
-CREATE uses an 8-question elicitation interview (§7 Inversion). In chat-based platforms
+CREATE uses an 8-question elicitation interview (§8 Inversion). In chat-based platforms
 (Claude, Cursor), questions are asked one at a time interactively. **MCP is stateless**, so
 all 8 answers must be provided in a single call using `elicitation_answers`:
 
@@ -2661,7 +2661,7 @@ After running `/graph check`:
 ### GoS Minimum Viable Runtime (`[CORE]` — no builder required)
 
 > **Context**: The full GoS (Graph of Skills) runtime specified in `claude/refs/skill-graph.md`
-> requires `builder/src/core/graph.js`, which is a v4.0+ target. However, the most valuable
+> requires the full graph engine (v4.0+ target; not yet shipped). However, the most valuable
 > GoS capability — `depends_on` dependency resolution for `/graph plan` and `/install --bundle`
 > — can be implemented entirely from YAML frontmatter reading, without any external code.
 
@@ -2703,7 +2703,7 @@ Output: "Bundle resolved: [list in install order]. Run /install for each."
 - Auto-inferred edges from COLLECT artifacts
 
 **When to escalate to full spec**: Any `/graph check` that returns GRAPH-001 (dangling edge)
-or GRAPH-003 (cycle detected) requires the full `builder/src/core/graph.js` implementation.
+or GRAPH-003 (cycle detected) requires the full graph engine implementation (v4.0+ target).
 For depth-limited linear chains (most real-world cases), the MVR is sufficient.
 
 ### Key references

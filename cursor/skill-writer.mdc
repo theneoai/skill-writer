@@ -130,11 +130,11 @@ questions, direct API calls, or non-skill automation tasks — see Negative Boun
 > **双语支持 / Bilingual**: All 6 modes work in English and Chinese. The router auto-detects
 > your language — use `/eval` or `评测`, `create a skill` or `创建新技能`, interchangeably.
 > Cursor exception: use keyword phrases, not `/commands` (IDE intercepts `/` key).
-> See §2 Mode Router for the full keyword list in both languages.
+> See §3 Mode Router for the full keyword list in both languages.
 
 ### Workflow A — "I want to create a new skill"
 1. Type `/create` followed by a one-sentence description of what the skill should do
-2. Answer the 8 elicitation questions (§7) one at a time
+2. Answer the 8 elicitation questions (§8) one at a time
 3. Receive the completed skill file with a LEAN score attached
 4. LEAN ≥ 350 → ready to use immediately (LEAN_CERT)
 5. Before pushing to skill registry → run `/eval` for an authoritative score
@@ -1104,7 +1104,7 @@ Full protocol: `refs/self-review.md §2`
 ### 7 Dimensions (unified with LEAN and EVALUATE)
 
 These dimensions are identical to the LEAN scoring dimensions and the EVALUATE
-sub-dimension schema. See `builder/src/config.js SCORING.dimensions` for the canonical spec.
+sub-dimension schema. See `eval/rubrics.md` (builder/src/config.js is a v4.0+ target) for the canonical spec.
 
 | ID | Dimension | Weight | Strategy | What It Covers |
 |----|-----------|--------|----------|----------------|
@@ -1295,6 +1295,32 @@ When VOLATILITY or PLATEAU detected AND score < 350 (FAIL), output structured di
 
 Strategy catalog: `optimize/strategies.md`
 Convergence spec: `refs/convergence.md`
+
+---
+
+### Score Persistence (`.optimize-history.jsonl`)
+
+After each OPTIMIZE session, append one record to `.skill-audit/optimize-history.jsonl`:
+
+```json
+{
+  "timestamp": "<ISO-8601>",
+  "skill_name": "<name>",
+  "rounds_completed": 0,
+  "start_lean": 0,
+  "end_lean": 0,
+  "delta": 0,
+  "session_best": 0,
+  "verify_score": 0,
+  "strategy": "A|B|C|D",
+  "rollbacks": 0,
+  "outcome": "IMPROVED|PLATEAU|VOLATILITY|ROLLBACK"
+}
+```
+
+> `[CORE]` — Output this record as part of your response.
+> `[EXTENDED]` — Auto-write to `.skill-audit/optimize-history.jsonl` with file system access.
+
 
 ---
 
@@ -1966,7 +1992,11 @@ skill generation respectively.
 
 ---
 
-## §19  COLLECT Mode — Session Data Recording
+## §19  COLLECT + AGGREGATE Mode
+
+> **COLLECT** `[CORE]` — Record one session's skill performance as a structured artifact.
+> **AGGREGATE** `[EXTENDED — basic flow available]` — Synthesize 2+ COLLECT artifacts into ranked improvement priorities.
+> Both are invoked via COLLECT mode; AGGREGATE runs after you have multiple artifacts.
 
 > **COLLECT at a Glance**
 >
@@ -2257,7 +2287,7 @@ Full spec: `refs/session-artifact.md §8`
 >
 > **Research basis**: SkillNet (arxiv:2603.04448), GoS bundle retrieval, SkillX tiers
 > **Full spec**: `refs/skill-graph.md`
-> **Implementation**: `builder/src/core/graph.js`
+> **Implementation**: YAML-only MVR `[CORE]`; full graph engine is a v4.0+ target
 >
 > **When to use**:
 > - Before installing a skill that has `graph.depends_on` entries
@@ -2286,7 +2316,7 @@ Full spec: `refs/session-artifact.md §8`
 Step 1: Route to primary skill via SkillRouter trigger matching
         → primary: api-tester (seed node)
      ↓
-Step 2: BFS expansion via builder/src/core/graph.js resolveBundle()
+Step 2: BFS expansion via YAML-only MVR (§20 GoS MVR); full engine is v4.0+ target
         → Follow depends_on (required=true)  → schema-validator
         → Follow depends_on (required=false) → auth-helper (optional)
         → Match provides → consumes         → report-generator
@@ -2330,7 +2360,7 @@ After running `/graph check`:
 ### GoS Minimum Viable Runtime (`[CORE]` — no builder required)
 
 > **Context**: The full GoS (Graph of Skills) runtime specified in `refs/skill-graph.md`
-> requires `builder/src/core/graph.js`, which is a v4.0+ target. However, the most valuable
+> requires the full graph engine (v4.0+ target; not yet shipped). However, the most valuable
 > GoS capability — `depends_on` dependency resolution for `/graph plan` and `/install --bundle`
 > — can be implemented entirely from YAML frontmatter reading, without any external code.
 
@@ -2372,7 +2402,7 @@ Output: "Bundle resolved: [list in install order]. Run /install for each."
 - Auto-inferred edges from COLLECT artifacts
 
 **When to escalate to full spec**: Any `/graph check` that returns GRAPH-001 (dangling edge)
-or GRAPH-003 (cycle detected) requires the full `builder/src/core/graph.js` implementation.
+or GRAPH-003 (cycle detected) requires the full graph engine implementation (v4.0+ target).
 For depth-limited linear chains (most real-world cases), the MVR is sufficient.
 
 ### Key references
@@ -2380,8 +2410,8 @@ For depth-limited linear chains (most real-world cases), the MVR is sufficient.
 - Full GoS spec: `refs/skill-graph.md`
 - Registry v2.0 format: `refs/skill-registry.md §10`
 - D8 scoring rules: `eval/rubrics.md §9`
-- Graph algorithms: `builder/src/core/graph.js`
-- Validation checks: `builder/src/commands/validate.js` (GRAPH-001–005)
+- Graph algorithms: YAML-only MVR `[CORE]` (see GoS MVR section above); full engine v4.0+
+- Validation checks: GRAPH-001–008 defined in §20 error table
 
 ---
 

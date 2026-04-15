@@ -39,7 +39,7 @@ If no response or error → verify `~/.mcp/servers/skill-writer/mcp-manifest.jso
 
 ### CREATE mode via MCP (important — read before using)
 
-CREATE uses an 8-question elicitation interview (§7 Inversion). In chat-based platforms
+CREATE uses an 8-question elicitation interview (§8 Inversion). In chat-based platforms
 (Claude, Cursor), questions are asked one at a time interactively. **MCP is stateless**, so
 all 8 answers must be provided in a single call using `elicitation_answers`:
 

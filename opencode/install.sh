@@ -96,6 +96,7 @@ BLOCK_END="<!-- skill-writer:end -->"
 if [[ -f "$AGENTS_MD" ]] && grep -q "$BLOCK_START" "$AGENTS_MD"; then
   # Replace existing block (idempotent update)
   if ! $DRY_RUN; then
+    cp "$AGENTS_MD" "${AGENTS_MD}.bak.$(date +%Y%m%d_%H%M%S)" 2>/dev/null || true
     python3 -c "
 import re, sys
 with open('$AGENTS_MD', 'r') as f: content = f.read()
@@ -103,7 +104,7 @@ with open('$AGENTS_MD_SRC', 'r') as f: block = f.read().strip()
 pattern = r'<!-- skill-writer:start -->.*?<!-- skill-writer:end -->'
 new = re.sub(pattern, block, content, flags=re.DOTALL)
 with open('$AGENTS_MD', 'w') as f: f.write(new)
-"
+" || { err "Routing file merge failed. Backup at ${AGENTS_MD}.bak.*"; exit 1; }
   fi
   success "AGENTS.md → updated skill-writer block"
 else
