@@ -3,7 +3,7 @@ name: skill-writer
 version: "3.4.0"
 description: "Universal skill-writer v3.4.0: CREATE (incl. --from-failures) → LEAN/EVALUATE (Behavioral Verifier +20, --pragmatic) → OPTIMIZE → GRAPH (GoS MVR) → COLLECT/SHARE. Honest labeling, supply-chain trust, UTE 2.0. Auto-installs to 8 platforms."
 description_i18n:
-  en: "Full lifecycle meta-skill framework v3.4.0: CREATE with --from-failures (SkillForge-style), honest labeling (generation_method+validation_status), LEAN fast-eval + D8 Composability bonus, EVALUATE 4-phase + Behavioral Verifier (+20 bonus) + Pragmatic Test Phase (pragmatic_success_rate) + OWASP Agentic Top 10, OPTIMIZE 8-dim loop + score persistence (.optimize-history.jsonl) + co-evolutionary VERIFY, GRAPH mode with Minimum Viable Runtime (depends_on chains, [CORE]) + full GoS (v4.0+), supply-chain trust verification (SHA-256 signatures), SkillRouter cold-start fix (lean-passed=0.5), UTE hooks in standard install + cross-session persistence, deploy to 8 platforms."
+  en: "Full lifecycle meta-skill framework v3.4.0: CREATE with --from-failures (SkillForge-style), honest labeling (generation_method+validation_status), LEAN fast-eval (500pt triage), EVALUATE 4-phase + Behavioral Verifier (+20 bonus) + Pragmatic Test Phase (pragmatic_success_rate) + OWASP Agentic Top 10, OPTIMIZE 8-dim loop + score persistence (.optimize-history.jsonl) + co-evolutionary VERIFY, GRAPH mode with Minimum Viable Runtime (depends_on chains, [CORE]) + full GoS (v4.0+), supply-chain trust verification (SHA-256 signatures), SkillRouter cold-start fix (lean-passed=0.5), UTE hooks in standard install + cross-session persistence, deploy to 8 platforms."
   zh: "全生命周期元技能框架v3.4.0：支持--from-failures失败驱动创建+诚实标注(generation_method+validation_status)的CREATE、带D8奖励的LEAN快速评测、带行为验证器(+20分)+实用测试阶段+OWASP Agentic Top 10的4阶段EVALUATE、带得分历史持久化+协同进化VERIFY的OPTIMIZE、支持最小可运行时(depends_on链路[CORE])+完整GoS(v4.0+)的GRAPH模式、供应链信任验证(SHA-256签名)、SkillRouter冷启动修复(lean-passed=0.5)、标准安装中的UTE hooks+跨会话持久化、部署至8平台。"
 
 license: MIT
@@ -665,7 +665,7 @@ Submit skill file via PR with this EVALUATE report attached as context.
 
 | # | Phase | Gate |
 |---|-------|------|
-| 1 | **ELICIT** — Inversion pattern, one question at a time (§7) | All Qs answered |
+| 1 | **ELICIT** — Inversion pattern, one question at a time (§8) | All Qs answered |
 | 2 | **SELECT TEMPLATE** — match skill type → `claude/templates/<type>.md` | Template chosen |
 | 3 | **PLAN** — multi-pass self-review (`claude/refs/self-review.md §2`) | Plan reviewed |
 | 4 | **GENERATE** — fill template; write Skill Summary (¶1), Negative Boundaries section. If Q7 or Q8 was skipped, pause and show auto-filled content for user confirmation before proceeding. | Draft complete, no placeholders |
