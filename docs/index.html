@@ -277,7 +277,7 @@
                 <div class="feature-card">
                     <div class="feature-icon">⚡</div>
                     <h3 class="feature-title">LEAN 快评模式</h3>
-                    <p class="feature-desc">17项结构检查，[STATIC] 确定性检查（335分，零方差） + [HEURISTIC] LLM启发式检查（165分），快速判断技能质量。</p>
+                    <p class="feature-desc">16项结构检查，[STATIC] 确定性检查（335分，零方差） + [HEURISTIC] LLM启发式检查（165分），快速判断技能质量。</p>
                     <ul class="feature-list">
                         <li>YAML frontmatter 完整性 [STATIC]</li>
                         <li>§N 格式段落 + Quality Gates [STATIC]</li>
@@ -314,12 +314,12 @@
                 <div class="feature-card">
                     <div class="feature-icon">🔄</div>
                     <h3 class="feature-title">自进化系统 (UTE)</h3>
-                    <p class="feature-desc">Use-to-Evolve 协议，3触发器自动监控技能质量，发现问题自动优化，无需人工干预。</p>
+                    <p class="feature-desc">Use-to-Evolve 协议，6触发器自动监控技能质量，发现问题自动优化，无需人工干预。</p>
                     <ul class="feature-list">
                         <li><strong>Threshold:</strong> 质量阈值监控</li>
                         <li><strong>Time:</strong> 新鲜度检查</li>
                         <li><strong>Usage:</strong> 使用率分析</li>
-                        <li>7维度9步优化循环</li>
+                        <li>8维度10步优化循环</li>
                     </ul>
                 </div>
             </div>
@@ -387,7 +387,7 @@
         <div class="container">
             <div class="section-header">
                 <h2 class="section-title">示例技能</h2>
-                <p class="section-subtitle">平均认证分数 878.3/1000，开箱即用</p>
+                <p class="section-subtitle">平均认证分数 920.7/1000，开箱即用</p>
             </div>
 
             <div class="examples-grid">
@@ -410,7 +410,7 @@
                 <div class="example-card">
                     <div class="example-header">
                         <div class="example-icon">🔍</div>
-                        <div class="example-tier">🥈 SILVER 820</div>
+                        <div class="example-tier">🥇 GOLD 947</div>
                     </div>
                     <h3 class="example-name">Code Reviewer</h3>
                     <p class="example-type">Workflow Automation</p>
@@ -514,19 +514,19 @@
                 <a href="https://github.com/theneoai/skill-writer/blob/main/skill-framework.md" class="doc-card" target="_blank">
                     <div class="doc-icon">📖</div>
                     <h3>框架规范</h3>
-                    <p>完整的框架定义和使用指南（582行）</p>
+                    <p>完整的框架定义和使用指南（2772行）</p>
                 </a>
 
                 <a href="https://github.com/theneoai/skill-writer/blob/main/eval/rubrics.md" class="doc-card" target="_blank">
                     <div class="doc-icon">🎯</div>
                     <h3>评估标准</h3>
-                    <p>1000分评分细则（237行）</p>
+                    <p>1000分评分细则（585行）</p>
                 </a>
 
                 <a href="https://github.com/theneoai/skill-writer/blob/main/optimize/strategies.md" class="doc-card" target="_blank">
                     <div class="doc-icon">🔧</div>
                     <h3>优化策略</h3>
-                    <p>7维度9步优化方法（319行）</p>
+                    <p>8维度10步优化方法（765行）</p>
                 </a>
 
                 <a href="https://github.com/theneoai/skill-writer/blob/main/refs/self-review.md" class="doc-card" target="_blank">
@@ -538,7 +538,7 @@
                 <a href="https://github.com/theneoai/skill-writer/blob/main/refs/evolution.md" class="doc-card" target="_blank">
                     <div class="doc-icon">🔄</div>
                     <h3>自进化系统</h3>
-                    <p>3触发器自动优化规范</p>
+                    <p>6触发器自动优化规范（360行）</p>
                 </a>
 
                 <a href="https://github.com/theneoai/skill-writer/tree/main/templates" class="doc-card" target="_blank">
@@ -611,6 +611,48 @@
                             <li>Mandatory Skill Summary + Negative Boundaries</li>
                             <li>skill_tier / triggers 元数据字段</li>
                             <li>179 Jest 测试（全平台覆盖）</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="roadmap-item completed">
+                    <div class="roadmap-marker">✅</div>
+                    <div class="roadmap-content">
+                        <h3>v3.2.0 - 已发布</h3>
+                        <ul>
+                            <li>Graph of Skills (GoS) — 6种边类型的技能依赖图</li>
+                            <li>GRAPH 模式：view / check / plan / bundle / diff</li>
+                            <li>D8 Composability 评分（LEAN +20 bonus pts）</li>
+                            <li>S10/S11/S12 图优化策略</li>
+                            <li>COLLECT 增强：bundle_context + graph_signals</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="roadmap-item completed">
+                    <div class="roadmap-marker">✅</div>
+                    <div class="roadmap-content">
+                        <h3>v3.3.0 - 已发布</h3>
+                        <ul>
+                            <li>三层路由模型：AGENTS.md + Hook + 触发词</li>
+                            <li>Layer -1 Hook Injection（UserPromptSubmit，≤50 token）</li>
+                            <li>INSTALL 4e/4f：自动生成 AGENTS.md + settings.json hook</li>
+                            <li>五层 Progressive Disclosure（Layer -1 ~ Layer 3）</li>
+                            <li>COLLECT trigger_signals + AGGREGATE Rule 4 触发词发现</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="roadmap-item completed">
+                    <div class="roadmap-marker">✅</div>
+                    <div class="roadmap-content">
+                        <h3>v3.4.0 - 已发布（当前版本）</h3>
+                        <ul>
+                            <li>Trigger 6：Validation Status Drift（自进化第6触发器）</li>
+                            <li>LEAN 16项检查体系：[STATIC] 335分零方差 + [HEURISTIC] 165分</li>
+                            <li>SkillX 三级架构：planning / functional / atomic</li>
+                            <li>Tier-Adjusted Phase 2 权重（按 skill_tier 动态调整）</li>
+                            <li>Honest Skill Labeling：generation_method + validation_status</li>
                         </ul>
                     </div>
                 </div>

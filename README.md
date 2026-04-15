@@ -919,7 +919,7 @@ See `refs/use-to-evolve.md §8` for full hook setup instructions. The hook scrip
 ```
 skill-writer/
 ├── claude/                        # Claude platform (direct-use files)
-│   ├── skill-writer.md            # SKILL.md v3.3.0 compliant skill file
+│   ├── skill-writer.md            # SKILL.md v3.4.0 compliant skill file
 │   ├── CLAUDE.md                  # Routing rules (merged into ~/.claude/CLAUDE.md)
 │   └── install.sh                 # Installs to ~/.claude/
 ├── openclaw/                      # OpenClaw platform
@@ -930,17 +930,36 @@ skill-writer/
 │   ├── skill-writer.md            # Same skill + Triggers footer
 │   ├── AGENTS.md                  # Routing rules
 │   └── install.sh                 # Installs to ~/.config/opencode/
+├── cursor/                        # Cursor platform (MDC format)
+│   ├── skill-writer.mdc           # MDC rule (alwaysApply, keyword-only triggers)
+│   └── install.sh                 # Installs to .cursor/rules/ (no Python required)
+├── gemini/                        # Gemini platform
+│   ├── skill-writer.md
+│   ├── GEMINI.md                  # Routing rules
+│   └── install.sh                 # Installs to ~/.gemini/skills/
+├── openai/                        # OpenAI platform
+│   ├── skill-writer.md
+│   ├── AGENTS.md                  # Routing rules
+│   └── install.sh                 # Installs to {project}/skills/
+├── kimi/                          # Kimi platform (bilingual metadata)
+│   ├── skill-writer.md
+│   ├── AGENTS.md                  # Routing rules
+│   └── install.sh                 # Installs to ~/.config/kimi/skills/
+├── hermes/                        # Hermes platform (local LLM)
+│   ├── skill-writer.md
+│   ├── AGENTS.md                  # Routing rules
+│   └── install.sh                 # Installs to ~/.hermes/skills/
 ├── refs/                          # Companion reference files (all platforms)
 │   ├── self-review.md             # Multi-pass self-review protocol
 │   ├── use-to-evolve.md           # UTE 2.0 self-improvement spec (L1/L2 architecture)
-│   ├── evolution.md               # 3-trigger evolution system
+│   ├── evolution.md               # 6-trigger evolution system (v3.4.0)
 │   ├── convergence.md             # Convergence detection rules
 │   ├── security-patterns.md       # CWE + OWASP ASI security patterns
 │   ├── session-artifact.md        # Session artifact schema (COLLECT mode)
 │   ├── edit-audit.md              # Edit Audit Guard (MICRO/MINOR/MAJOR/REWRITE)
 │   ├── skill-registry.md          # Skill Registry spec (SHA-256 IDs, push/pull/sync)
 │   ├── skill-graph.md             # Graph of Skills spec (v3.2.0)
-│   └── progressive-disclosure.md  # Five-layer loading pattern
+│   └── progressive-disclosure.md  # Five-layer loading pattern (Layer -1 ~ Layer 3)
 ├── templates/                     # Skill templates (4 types + UTE snippet)
 │   ├── base.md
 │   ├── api-integration.md
@@ -948,19 +967,26 @@ skill-writer/
 │   ├── workflow-automation.md
 │   └── use-to-evolve-snippet.md
 ├── eval/                          # Evaluation resources
-│   ├── rubrics.md                 # 1000-point scoring rubric
+│   ├── rubrics.md                 # 1000-point scoring rubric (585 lines)
 │   └── benchmarks.md              # Benchmark test cases
 ├── optimize/                      # Optimization resources
-│   ├── strategies.md              # 8-dimension strategy catalog (S1–S12)
+│   ├── strategies.md              # 8-dimension strategy catalog (S1–S12, 765 lines)
 │   └── anti-patterns.md           # Common pitfalls
 ├── examples/                      # Certified example skills
+│   ├── 00-starter/                # BRONZE ~730/1000 — learning reference
 │   ├── api-tester/                # GOLD 920/1000
 │   ├── code-reviewer/             # GOLD 947/1000
 │   └── doc-generator/             # GOLD 895/1000
-├── docs/                          # Documentation
+├── scripts/                       # CI/dev automation scripts
+│   ├── lint.sh                    # Shellcheck wrapper for all install scripts
+│   ├── validate.sh                # Dry-run all platform installers
+│   └── check-version.py           # Version consistency check across platform files
+├── docs/                          # Documentation and GitHub Pages site
+│   ├── index.html                 # GitHub Pages landing page
 │   ├── skill-creator-analysis.md  # Architecture analysis and design decisions
 │   └── mcp-integration.md         # MCP server integration guide
-├── skill-framework.md             # Complete specification (source of truth)
+├── Makefile                       # Dev targets: lint, validate, check-version, install, ci
+├── skill-framework.md             # Complete specification (source of truth, 2772 lines)
 └── install.sh                     # Top-level dispatcher → delegates to platform scripts
 ```
 
@@ -994,19 +1020,20 @@ skill-writer/
 │  │             │  │   (v3.3.0)  │  │   discovery (v3.3.0)     │  │
 │  └─────────────┘  └─────────────┘  └──────────────────────────┘  │
 │                                                                    │
-│  ┌──────────────────────────────────────────────────────────────┐  │
-│  │      GRAPH Mode (v3.2.0 — Graph of Skills)                  │  │
-│  │  • Typed dependency graph (6 edge types)                    │  │
-│  │  • Bundle retrieval (BFS + PageRank diffusion)              │  │
-│  │  • Health checks GRAPH-001–008                              │  │
-│  │  • D8 Composability scoring + S10/S11/S12 strategies        │  │
-│  │  • Progressive Disclosure Layer 0 (≤200-token bundle ctx)   │  │
-│  └──────────────────────────────────────────────────────────────┘  │
+│  ┌─────────────────────────────┐  ┌──────────────────────────┐   │
+│  │        SHARE Mode           │  │      GRAPH Mode          │   │
+│  │                             │  │      (v3.2.0)            │   │
+│  │ • BRONZE+ gate (≥350/500)   │  │  • 6 typed edge types    │   │
+│  │ • Package for 8 platforms   │  │  • Health checks 001–008 │   │
+│  │ • Registry push/pull        │  │  • Bundle BFS+PageRank   │   │
+│  │ • Honest label stamp        │  │  • D8 Composability      │   │
+│  │ • stable/beta/experimental  │  │  • Layer 0 bundle ctx    │   │
+│  └─────────────────────────────┘  └──────────────────────────┘   │
 │                                                                    │
 │  ┌────────────────────────────────────────────────────────────┐   │
 │  │                     Shared Resources                       │   │
 │  │  • CWE + OWASP ASI01–ASI10 Security Patterns              │   │
-│  │  • UTE 2.0 Self-Evolution (L1 enforced + L2 collective)    │   │
+│  │  • UTE 2.0 Self-Evolution — 6 triggers (L1 + L2)          │   │
 │  │  • Multi-Pass Self-Review (Generate/Review/Reconcile)      │   │
 │  │  • Skill Registry v2.0 + SkillRouter weighted ranking      │   │
 │  │    (quality threshold gate + usage_stats) — v3.3.0         │   │
@@ -1019,14 +1046,18 @@ skill-writer/
                                │
                                ▼
 ┌──────────────────────────────────────────────────────────────────┐
-│                    Platform-Specific Builder                      │
+│                    Platform-Specific Builder (8 platforms)        │
 ├──────────────────────────────────────────────────────────────────┤
 │                                                                    │
-│  ┌─────────┐ ┌─────────┐ ┌─────────────────────────────────────┐  │
-│  │ Claude  │ │OpenClaw │ │              OpenCode               │  │
-│  │install  │ │install  │ │             install.sh              │  │
-│  │  .sh    │ │  .sh    │ │                                     │  │
-│  └─────────┘ └─────────┘ └─────────────────────────────────────┘  │
+│  ┌────────┐ ┌─────────┐ ┌──────────┐ ┌────────┐ ┌──────────┐   │
+│  │ Claude │ │OpenClaw │ │ OpenCode │ │ Cursor │ │  Gemini  │   │
+│  │  .sh   │ │  .sh    │ │   .sh    │ │  .sh   │ │   .sh    │   │
+│  └────────┘ └─────────┘ └──────────┘ └────────┘ └──────────┘   │
+│                                                                    │
+│  ┌────────┐ ┌──────┐                                             │
+│  │ OpenAI │ │ Kimi │  Hermes install.sh                          │
+│  │  .sh   │ │ .sh  │                                             │
+│  └────────┘ └──────┘                                             │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
