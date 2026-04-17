@@ -65,7 +65,7 @@ Round N (repeat up to 20 rounds, or until convergence):
 ─── Post-convergence (runs once, after loop exits) ────────────────────────────
 
   Step 10 VERIFY     Co-evolutionary independent verification pass.
-                     (Research basis: EvoSkills arxiv:2604.01687 — independent
+                     (Design heuristic: co-evolutionary verifier heuristic — independent
                      verifier eliminates generator bias, lifts pass rate 32%→75%)
 
                      a. RESET context: "I am reviewing this skill as a new reader
@@ -399,7 +399,7 @@ Targeted fixes are less efficient than a clean rebuild.
 **Target dimension**: D8 (Composability); secondary: D1 (System Design), D3 (Workflow)
 **When to use**: Skill body > 400 lines AND contains 2+ clearly independent functional segments.
 **Estimated delta**: +15 to +40 pts (D8 + secondary dimensions)
-**Research basis**: SkillNet (arxiv:2603.04448) — modular skills with explicit interfaces
+**Research basis**: typed-dependency Graph of Skills design — modular skills with explicit interfaces
 outperform monolithic skills in multi-agent pipelines.
 
 **Steps**:
@@ -482,7 +482,7 @@ have mutual `depends_on` entries.
 **When to use**: GRAPH-004 warning fires (similar_to similarity ≥ 0.95); or `/graph check`
 identifies merge candidates.
 **Estimated delta**: +5 to +20 pts (D8) + registry cleanliness
-**Research basis**: SkillNet similar_to edge + GoS deduplication in bundle retrieval (§4 Step 3).
+**Research basis**: typed-dependency Graph of Skills design similar_to edge + GoS deduplication in bundle retrieval (§4 Step 3).
 
 **Steps**:
 1. Present the two similar skills side by side:
@@ -519,7 +519,7 @@ passes LEAN ≥ max(original scores).
 **When to use**: `/eval --pragmatic` returns WEAK (<60%) or FAIL (<40%) tier;
 or Behavioral Verifier pass_rate < 0.60; or session artifact `outcome = failure` pattern.
 **Estimated delta**: +30 to +80 pts across D2/D3/D5 combined
-**Research basis**: SkillForge failure trajectory analysis (arxiv:2604.08618); "Skills in the Wild"
+**Research basis**: Failure-Driven CREATE heuristic failure trajectory analysis; industry observations on unvalidated skills
 utility gap finding (39/49 skills with zero real-world benefit despite high eval scores).
 
 **Steps**:
@@ -666,7 +666,7 @@ Log to audit trail: `{"outcome": "HUMAN_REVIEW", "optimize_cycles": 3}`.
 
 ## §6  Tier-Aware Strategy Prioritization
 
-> **Research basis**: SkillX (arxiv:2604.04804) — three skill tiers have fundamentally
+> **Research basis**: three-tier skill hierarchy — three skill tiers have fundamentally
 > different quality criteria. The same improvement applied to a `planning` skill vs. an
 > `atomic` skill produces different returns. Read `skill_tier` from YAML before selecting
 > the first strategy in the loop.
@@ -775,8 +775,8 @@ Graph strategies do NOT reset the convergence counter — they are counted as no
 
 > **Why S13/S14?** S1–S12 optimize for theoretical evaluation scores (LEAN/EVALUATE rubrics).
 > Research shows a significant gap between theoretical scores and real-world utility:
-> - "Skills in the Wild" (2026): 39/49 auto-generated skills had zero real-world benefit
-> - EvoSkills (arxiv:2604.01687): generator bias inflates self-scored skill quality
+> - industry observations on unvalidated skills (2026): 39/49 auto-generated skills had zero real-world benefit
+> - co-evolutionary verifier heuristic: generator bias inflates self-scored skill quality
 >
 > S13 and S14 are **meta-strategies** that operate at a different level:
 > - **S13**: Optimizes for pragmatic utility (real task success rate)
