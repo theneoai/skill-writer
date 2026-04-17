@@ -157,7 +157,7 @@ description: Meta-skill framework — CREATE, LEAN, EVALUATE, OPTIMIZE, INSTALL,
 
 Trigger matching criteria:
 - Exact keyword match against `triggers.en` or `triggers.zh` YAML fields
-- Semantic match by platform-native routing (Skill Summary heuristic 91.7% cross-encoder accuracy)
+- Semantic match by platform-native routing (Skill Summary heuristic high cross-encoder agreement (empirical, unpublished))
 - Explicit user invocation (`/create`, `评测`, etc.)
 
 **What belongs in Layer 2**:

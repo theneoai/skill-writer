@@ -28,7 +28,7 @@ Skill Writer is a meta-skill that enables AI assistants to create, evaluate, and
 - **Eight Powerful Modes**: CREATE, LEAN, EVALUATE, OPTIMIZE, INSTALL, COLLECT, SHARE, and GRAPH
 - **Template-Based**: 4 built-in templates for common skill patterns
 - **Quality Assurance**: 1000-point scoring system with certification tiers
-- **Tier-Aware Evaluation**: Tier-adjusted scoring weights for `planning` / `functional` / `atomic` skills (three-tier skill hierarchy three-tier hierarchy)
+- **Tier-Aware Evaluation**: Tier-adjusted scoring weights for `planning` / `functional` / `atomic` skills (three-tier skill hierarchy)
 - **Reliable LEAN Scoring**: 16 checks split into `[STATIC]` (deterministic, 335 pts, zero variance) and `[HEURISTIC]` (LLM-judged, 165 pts) — score variance documented per phase
 - **Security Built-In**: CWE-based + OWASP Agentic Skills Top 10 (ASI01–ASI10) detection + supply-chain trust verification for pulled skills
 - **Continuous Improvement**: Automated optimization with convergence detection + co-evolutionary VERIFY step + persistent score history
@@ -895,7 +895,7 @@ Recommendations:
 
 Self-improvement protocol that enables skills to evolve through usage. Two-tier architecture:
 - **L1 (Single-user)** `[CORE]`: Post-invocation hook runs per session; persists state to `~/.claude/skills/.ute-state/`
-- **L2 (Collective)** `[EXTENDED]`: Requires external aggregation infrastructure (collective-evolution design-compatible). See `refs/use-to-evolve.md §10`.
+- **L2 (Collective)** `[EXTENDED]`: Requires external aggregation infrastructure (collective-evolution design compatible). See `refs/use-to-evolve.md §10`.
 
 ### UTE YAML Block
 

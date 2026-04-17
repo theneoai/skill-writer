@@ -1,8 +1,9 @@
 # skill-writer MCP server
 
-> **Status**: v3.5.0 — skeleton + tool surface shipped; full MCP SDK integration
->   and published Desktop/Cursor/VS Code configs pending v3.6.0.
-> **Full docs**: `docs/mcp-integration.md` and `skill-framework.md §17b`
+> **Status**: `[experimental]` — skeleton + tool surface only. Not wired to an
+>   installed MCP host. Do not base integrations on this. Moved from `mcp/` to
+>   `experimental/mcp/` during the 2026-04 design review.
+> **Full docs**: `experimental/mcp-integration.md` and `skill-framework.md §17b`
 
 ---
 

@@ -48,7 +48,7 @@ created: "{{DATE}}"
 updated: "{{DATE}}"
 type: api-integration
 
-# Skill tier (three-tier skill hierarchy three-tier hierarchy —)
+# Skill tier (three-tier skill hierarchy —)
 skill_tier: {{TIER}}          # planning | functional | atomic
 # api-integration skills are typically: functional (wraps one API)
 #   or planning (orchestrates multiple API calls across sub-skills)
@@ -120,7 +120,7 @@ use_to_evolve:
 
 <!-- REQUIRED — ≤5 sentences. Dense encoding of: WHAT / WHEN / WHO / NOT-FOR.
      Research: Skill Summary heuristic — skill body is the decisive routing signal
-     (91.7% cross-encoder attention on body). This paragraph determines whether your skill
+     (a large share of router attention on the body (empirical, unpublished)). This paragraph determines whether your skill
      gets selected from a large skill pool. Write it last, after you know the full skill.
 
      Format: [What it does]. [When to use it — canonical scenarios]. [Who it's for].

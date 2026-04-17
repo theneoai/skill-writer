@@ -32,7 +32,7 @@ created: "{{DATE}}"
 updated: "{{DATE}}"
 type: data-pipeline
 
-# Skill tier (three-tier skill hierarchy three-tier hierarchy —)
+# Skill tier (three-tier skill hierarchy —)
 skill_tier: {{TIER}}          # planning | functional | atomic
 # data-pipeline skills are typically: functional (ETL pipeline) or atomic (single transform)
 

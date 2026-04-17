@@ -38,4 +38,15 @@ When the user asks to **create, evaluate, optimize, install, or share a skill**:
 - Honest Skill Labeling — `generation_method` + `validation_status` YAML fields in all skills
 - Supply Chain Trust — SHA-256 signature verification on external skill install
 - GoS MVR — depends_on chain resolution without builder (CORE, LLM-native)
+
+**Added on `claude/review-skill-creator-design-8ZK8R`** (pending 3.5.0 release):
+- Real trigger-accuracy eval — `scripts/run_trigger_eval.py` majority-votes
+  API classifications; `scripts/optimize_description.py` does 60/40 train/test
+  description tuning. `agents/grader.md` runs as a fresh-context subagent to
+  break generator bias.
+- Canonical skill slimmed 2541 → 499 lines; per-mode detail in `refs/modes/*`.
+- Spec-pure emission — `scripts/emit_spec_pure.py` migrates extensions under
+  `x-skill-writer:` and strips runtime state to sidecar JSON.
+- `mcp/`, `gepa-optimize.py`, `mcp-integration.md` relocated to `experimental/`
+  — they are skeletons, not operational features.
 <!-- skill-writer:end -->
