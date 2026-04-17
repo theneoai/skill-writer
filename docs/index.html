@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Skill Writer - 让 AI 技能像软件一样可测试、可迭代</title>
+    <title data-i18n="page.title">Skill Writer - Make AI skills testable and iterable like software</title>
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -94,6 +94,24 @@
             .install-cmd-row { flex-direction: column; align-items: stretch; }
             .copy-btn { text-align: center; }
         }
+        /* ── Language Toggle ── */
+        .lang-toggle {
+            background: transparent;
+            border: 1.5px solid rgba(255,255,255,.25);
+            color: rgba(255,255,255,.85);
+            padding: 6px 12px;
+            border-radius: 14px;
+            font-size: 12.5px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-right: 12px;
+            transition: all .2s;
+            letter-spacing: .5px;
+        }
+        .lang-toggle:hover {
+            border-color: rgba(255,255,255,.5);
+            color: #fff;
+        }
     </style>
 </head>
 <body>
@@ -106,36 +124,32 @@
                     <span class="logo-text">Skill Writer</span>
                 </a>
                 <ul class="nav-links">
-                    <li><a href="#install">安装</a></li>
-                    <li><a href="#features">特性</a></li>
-                    <li><a href="#examples">示例</a></li>
-                    <li><a href="#docs">文档</a></li>
+                    <li><a href="#install" data-i18n="nav.install">Install</a></li>
+                    <li><a href="#features" data-i18n="nav.features">Features</a></li>
+                    <li><a href="#examples" data-i18n="nav.examples">Examples</a></li>
+                    <li><a href="#docs" data-i18n="nav.docs">Docs</a></li>
                     <li><a href="https://github.com/theneoai/skill-writer" target="_blank">GitHub</a></li>
                 </ul>
-                <a href="#install" class="btn btn-primary">立即安装</a>
+                <button class="lang-toggle" id="langToggle" aria-label="Toggle language">中文</button>
+                <a href="#install" class="btn btn-primary" data-i18n="nav.cta">Install now</a>
             </div>
         </nav>
 
         <div class="hero-content">
             <div class="container">
-                <div class="hero-badge">
-                    <span class="badge">🎉 v3.4.0 正式发布</span>
-                </div>
                 <h1 class="hero-title">
-                    让 AI 技能像软件一样<br>
-                    <span class="gradient-text">可测试、可迭代</span>
+                    <span data-i18n="hero.title1">Make AI skills testable</span><br>
+                    <span class="gradient-text" data-i18n="hero.title2">and iterable like software</span>
                 </h1>
-                <p class="hero-subtitle">
-                    生产级 AI 技能的 CI/CD 系统。通过 1000 分评估体系、多 LLM 审议机制和自进化系统，
-                    将你的 Prompt 从"能跑"变成"可靠"。
+                <p class="hero-subtitle" data-i18n="hero.subtitle">
+                    A CI/CD system for production-grade AI skills. Through a 1000-point evaluation system, multi-LLM review and self-evolution, turn your prompts from "it runs" into "it's reliable".
                 </p>
                 <div class="hero-badges">
                     <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License">
                     <img src="https://img.shields.io/badge/Framework-PLATINUM-brightgreen" alt="Framework">
-                    <img src="https://img.shields.io/badge/version-3.4.0-blue" alt="Version">
                 </div>
                 <div class="hero-cta">
-                    <a href="#quickstart" class="btn btn-primary btn-large">快速开始</a>
+                    <a href="#quickstart" class="btn btn-primary btn-large" data-i18n="hero.cta.primary">Get started</a>
                     <a href="https://github.com/theneoai/skill-writer" class="btn btn-secondary btn-large" target="_blank">
                         <svg class="icon" viewBox="0 0 24 24" width="20" height="20">
                             <path fill="currentColor" d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
@@ -151,19 +165,19 @@
                 <div class="stats-grid">
                     <div class="stat-item">
                         <div class="stat-number">1000</div>
-                        <div class="stat-label">分评估体系</div>
+                        <div class="stat-label" data-i18n="stats.points">Point evaluation</div>
                     </div>
                     <div class="stat-item">
                         <div class="stat-number">920</div>
-                        <div class="stat-label">平均认证分数</div>
+                        <div class="stat-label" data-i18n="stats.avg">Avg. certified score</div>
                     </div>
                     <div class="stat-item">
                         <div class="stat-number">8</div>
-                        <div class="stat-label">支持平台</div>
+                        <div class="stat-label" data-i18n="stats.platforms">Supported platforms</div>
                     </div>
                     <div class="stat-item">
                         <div class="stat-number">8</div>
-                        <div class="stat-label">工作模式</div>
+                        <div class="stat-label" data-i18n="stats.modes">Work modes</div>
                     </div>
                 </div>
             </div>
@@ -174,12 +188,12 @@
     <section id="install" class="install-section">
         <div class="container">
             <div class="section-header">
-                <h2 class="section-title">一键安装</h2>
-                <p class="section-subtitle">选择平台，复制命令，粘贴到你的 AI 助手即可</p>
+                <h2 class="section-title" data-i18n="install.title">One-click install</h2>
+                <p class="section-subtitle" data-i18n="install.subtitle">Pick a platform, copy the command, paste it into your AI assistant.</p>
             </div>
             <div class="install-widget">
                 <div class="install-tabs">
-                    <button class="install-tab active" data-panel="all">全部平台</button>
+                    <button class="install-tab active" data-panel="all" data-i18n="install.tab.all">All platforms</button>
                     <button class="install-tab" data-panel="claude">Claude</button>
                     <button class="install-tab" data-panel="opencode">OpenCode</button>
                     <button class="install-tab" data-panel="openclaw">OpenClaw</button>
@@ -193,73 +207,73 @@
                 <div class="install-panel active" id="ip-all">
                     <div class="install-cmd-row">
                         <code>curl -fsSL https://raw.githubusercontent.com/theneoai/skill-writer/main/install.sh | bash</code>
-                        <button class="copy-btn" onclick="copyInstall(this)">复制</button>
+                        <button class="copy-btn" onclick="copyInstall(this)" data-i18n="install.copy">Copy</button>
                     </div>
-                    <p class="install-hint">安装到本机所有支持的 AI 平台（Claude / OpenCode / OpenClaw / Cursor / Gemini / OpenAI / Kimi / Hermes）</p>
+                    <p class="install-hint" data-i18n="install.hint.all">Installs to all supported AI platforms detected on your machine (Claude / OpenCode / OpenClaw / Cursor / Gemini / OpenAI / Kimi / Hermes).</p>
                 </div>
 
                 <div class="install-panel" id="ip-claude">
                     <div class="install-cmd-row">
                         <code>read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-claude.md and install to claude</code>
-                        <button class="copy-btn" onclick="copyInstall(this)">复制</button>
+                        <button class="copy-btn" onclick="copyInstall(this)" data-i18n="install.copy">Copy</button>
                     </div>
-                    <p class="install-hint">安装到 <code>~/.claude/skills/</code>，同时写入 refs / templates / eval / optimize 伴侣文件</p>
+                    <p class="install-hint" data-i18n="install.hint.claude">Installs to <code>~/.claude/skills/</code> along with refs / templates / eval / optimize companion files.</p>
                 </div>
 
                 <div class="install-panel" id="ip-opencode">
                     <div class="install-cmd-row">
                         <code>read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-opencode.md and install to opencode</code>
-                        <button class="copy-btn" onclick="copyInstall(this)">复制</button>
+                        <button class="copy-btn" onclick="copyInstall(this)" data-i18n="install.copy">Copy</button>
                     </div>
-                    <p class="install-hint">安装到 <code>~/.config/opencode/skills/</code></p>
+                    <p class="install-hint" data-i18n="install.hint.opencode">Installs to <code>~/.config/opencode/skills/</code>.</p>
                 </div>
 
                 <div class="install-panel" id="ip-openclaw">
                     <div class="install-cmd-row">
                         <code>read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-openclaw.md and install to openclaw</code>
-                        <button class="copy-btn" onclick="copyInstall(this)">复制</button>
+                        <button class="copy-btn" onclick="copyInstall(this)" data-i18n="install.copy">Copy</button>
                     </div>
-                    <p class="install-hint">安装到 <code>~/.openclaw/skills/</code></p>
+                    <p class="install-hint" data-i18n="install.hint.openclaw">Installs to <code>~/.openclaw/skills/</code>.</p>
                 </div>
 
                 <div class="install-panel" id="ip-cursor">
                     <div class="install-cmd-row">
                         <code>read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-cursor.mdc and install to cursor</code>
-                        <button class="copy-btn" onclick="copyInstall(this)">复制</button>
+                        <button class="copy-btn" onclick="copyInstall(this)" data-i18n="install.copy">Copy</button>
                     </div>
-                    <p class="install-hint">安装 MDC rule 到 <code>.cursor/rules/</code>（项目级）或 <code>~/.cursor/rules/</code>（--global）</p>
+                    <p class="install-hint" data-i18n="install.hint.cursor">Installs the MDC rule to <code>.cursor/rules/</code> (project-scoped) or <code>~/.cursor/rules/</code> (<code>--global</code>).</p>
                 </div>
 
                 <div class="install-panel" id="ip-gemini">
                     <div class="install-cmd-row">
                         <code>read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-gemini.md and install to gemini</code>
-                        <button class="copy-btn" onclick="copyInstall(this)">复制</button>
+                        <button class="copy-btn" onclick="copyInstall(this)" data-i18n="install.copy">Copy</button>
                     </div>
-                    <p class="install-hint">安装到 <code>~/.gemini/skills/</code>，路由规则写入 <code>~/.gemini/GEMINI.md</code></p>
+                    <p class="install-hint" data-i18n="install.hint.gemini">Installs to <code>~/.gemini/skills/</code>; routing rules written to <code>~/.gemini/GEMINI.md</code>.</p>
                 </div>
 
                 <div class="install-panel" id="ip-openai">
                     <div class="install-cmd-row">
                         <code>read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-openai.md and install to openai</code>
-                        <button class="copy-btn" onclick="copyInstall(this)">复制</button>
+                        <button class="copy-btn" onclick="copyInstall(this)" data-i18n="install.copy">Copy</button>
                     </div>
-                    <p class="install-hint">安装到当前项目 <code>skills/skill-writer.md</code>，路由规则写入 <code>AGENTS.md</code></p>
+                    <p class="install-hint" data-i18n="install.hint.openai">Installs to the current project's <code>skills/skill-writer.md</code>; routing rules written to <code>AGENTS.md</code>.</p>
                 </div>
 
                 <div class="install-panel" id="ip-kimi">
                     <div class="install-cmd-row">
                         <code>read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-kimi.md and install to kimi</code>
-                        <button class="copy-btn" onclick="copyInstall(this)">复制</button>
+                        <button class="copy-btn" onclick="copyInstall(this)" data-i18n="install.copy">Copy</button>
                     </div>
-                    <p class="install-hint">安装到 <code>~/.config/kimi/skills/</code>，支持中英双语触发词</p>
+                    <p class="install-hint" data-i18n="install.hint.kimi">Installs to <code>~/.config/kimi/skills/</code>; supports bilingual EN/ZH triggers.</p>
                 </div>
 
                 <div class="install-panel" id="ip-hermes">
                     <div class="install-cmd-row">
                         <code>read https://github.com/theneoai/skill-writer/releases/latest/download/skill-writer-hermes.md and install to hermes</code>
-                        <button class="copy-btn" onclick="copyInstall(this)">复制</button>
+                        <button class="copy-btn" onclick="copyInstall(this)" data-i18n="install.copy">Copy</button>
                     </div>
-                    <p class="install-hint">安装到 <code>~/.hermes/skills/</code>，适用于本地 LLM 助手</p>
+                    <p class="install-hint" data-i18n="install.hint.hermes">Installs to <code>~/.hermes/skills/</code>; designed for local LLM assistants.</p>
                 </div>
             </div>
         </div>
@@ -269,57 +283,57 @@
     <section id="features" class="features">
         <div class="container">
             <div class="section-header">
-                <h2 class="section-title">核心特性</h2>
-                <p class="section-subtitle">行业领先的 AI 技能质量保障体系</p>
+                <h2 class="section-title" data-i18n="features.title">Core features</h2>
+                <p class="section-subtitle" data-i18n="features.subtitle">An industry-leading quality assurance system for AI skills.</p>
             </div>
 
             <div class="features-grid">
                 <div class="feature-card">
                     <div class="feature-icon">⚡</div>
-                    <h3 class="feature-title">LEAN 快评模式</h3>
-                    <p class="feature-desc">16项结构检查，[STATIC] 确定性检查（335分，零方差） + [HEURISTIC] LLM启发式检查（165分），快速判断技能质量。</p>
+                    <h3 class="feature-title" data-i18n="features.lean.title">LEAN fast evaluation</h3>
+                    <p class="feature-desc" data-i18n="features.lean.desc">16 structural checks: [STATIC] deterministic checks (335 pts, zero variance) + [HEURISTIC] LLM-judged checks (165 pts) for rapid skill quality signals.</p>
                     <ul class="feature-list">
-                        <li>YAML frontmatter 完整性 [STATIC]</li>
-                        <li>§N 格式段落 + Quality Gates [STATIC]</li>
-                        <li>触发词 EN/ZH 覆盖度 [STATIC]</li>
-                        <li>红线/错误处理/安全基线 [STATIC]</li>
-                        <li>模板匹配度 + 字段具体性 [HEURISTIC]</li>
+                        <li data-i18n="features.lean.li1">YAML frontmatter completeness [STATIC]</li>
+                        <li data-i18n="features.lean.li2">§N-formatted sections + Quality Gates [STATIC]</li>
+                        <li data-i18n="features.lean.li3">Trigger EN/ZH coverage [STATIC]</li>
+                        <li data-i18n="features.lean.li4">Red lines / error handling / security baseline [STATIC]</li>
+                        <li data-i18n="features.lean.li5">Template fit + field specificity [HEURISTIC]</li>
                     </ul>
                 </div>
 
                 <div class="feature-card">
                     <div class="feature-icon">🎯</div>
-                    <h3 class="feature-title">1000分评估体系</h3>
-                    <p class="feature-desc">4阶段深度评测：结构验证 → 文本质量 → 运行时测试 → 综合认证，量化每一个技能的质量。</p>
+                    <h3 class="feature-title" data-i18n="features.score.title">1000-point evaluation</h3>
+                    <p class="feature-desc" data-i18n="features.score.desc">A 4-phase deep evaluation: structure → text quality → runtime test → certification. Quantify every skill's quality.</p>
                     <ul class="feature-list">
-                        <li>Phase 1: 结构完整性 (100分)</li>
-                        <li>Phase 2: 文本质量分析 (300分)</li>
-                        <li>Phase 3: 运行时测试 (400分)</li>
-                        <li>Phase 4: 综合认证 (200分)</li>
+                        <li data-i18n="features.score.li1">Phase 1: Structural integrity (100 pts)</li>
+                        <li data-i18n="features.score.li2">Phase 2: Text-quality analysis (300 pts)</li>
+                        <li data-i18n="features.score.li3">Phase 3: Runtime testing (400 pts)</li>
+                        <li data-i18n="features.score.li4">Phase 4: Comprehensive certification (200 pts)</li>
                     </ul>
                 </div>
 
                 <div class="feature-card">
                     <div class="feature-icon">🤖</div>
-                    <h3 class="feature-title">多遍自审协议</h3>
-                    <p class="feature-desc">Generate/Review/Reconcile 三遍自审，在单一 LLM 会话内用独立视角发现盲点，VERIFY 步骤消除分数膨胀。</p>
+                    <h3 class="feature-title" data-i18n="features.review.title">Multi-pass self-review</h3>
+                    <p class="feature-desc" data-i18n="features.review.desc">Generate/Review/Reconcile triple self-review uncovers blind spots within a single LLM session; VERIFY eliminates score inflation.</p>
                     <ul class="feature-list">
-                        <li><strong>Generate:</strong> 生成初稿技能</li>
-                        <li><strong>Review:</strong> 安全审计 + 质量检查</li>
-                        <li><strong>Reconcile:</strong> 差异整合 + 修正</li>
-                        <li><strong>VERIFY:</strong> 收敛后独立再评估</li>
+                        <li data-i18n="features.review.li1"><strong>Generate:</strong> draft the skill</li>
+                        <li data-i18n="features.review.li2"><strong>Review:</strong> security audit + quality check</li>
+                        <li data-i18n="features.review.li3"><strong>Reconcile:</strong> reconcile diffs + fix issues</li>
+                        <li data-i18n="features.review.li4"><strong>VERIFY:</strong> independent re-evaluation after convergence</li>
                     </ul>
                 </div>
 
                 <div class="feature-card">
                     <div class="feature-icon">🔄</div>
-                    <h3 class="feature-title">自进化系统 (UTE)</h3>
-                    <p class="feature-desc">Use-to-Evolve 协议，6触发器自动监控技能质量，发现问题自动优化，无需人工干预。</p>
+                    <h3 class="feature-title" data-i18n="features.ute.title">Self-evolution (UTE)</h3>
+                    <p class="feature-desc" data-i18n="features.ute.desc">The Use-to-Evolve protocol monitors skill quality via 6 triggers, optimizing automatically without human intervention.</p>
                     <ul class="feature-list">
-                        <li><strong>Threshold:</strong> 质量阈值监控</li>
-                        <li><strong>Time:</strong> 新鲜度检查</li>
-                        <li><strong>Usage:</strong> 使用率分析</li>
-                        <li>8维度10步优化循环</li>
+                        <li data-i18n="features.ute.li1"><strong>Threshold:</strong> quality threshold monitoring</li>
+                        <li data-i18n="features.ute.li2"><strong>Time:</strong> freshness check</li>
+                        <li data-i18n="features.ute.li3"><strong>Usage:</strong> usage-rate analysis</li>
+                        <li data-i18n="features.ute.li4">8-dimension, 10-step optimization loop</li>
                     </ul>
                 </div>
             </div>
@@ -330,8 +344,8 @@
     <section class="certification">
         <div class="container">
             <div class="section-header">
-                <h2 class="section-title">认证等级</h2>
-                <p class="section-subtitle">5级认证体系，让质量一目了然</p>
+                <h2 class="section-title" data-i18n="cert.title">Certification tiers</h2>
+                <p class="section-subtitle" data-i18n="cert.subtitle">A 4-tier certification system for at-a-glance quality.</p>
             </div>
 
             <div class="tiers-grid">
@@ -339,7 +353,7 @@
                     <div class="tier-badge">🏆</div>
                     <h3 class="tier-name">PLATINUM</h3>
                     <div class="tier-score">≥ 950</div>
-                    <p class="tier-desc">卓越品质，各项指标优秀</p>
+                    <p class="tier-desc" data-i18n="cert.platinum">Exceptional quality — excellent across all metrics.</p>
                     <ul class="tier-features">
                         <li>Phase 2 ≥ 270</li>
                         <li>Phase 3 ≥ 360</li>
@@ -350,7 +364,7 @@
                     <div class="tier-badge">🥇</div>
                     <h3 class="tier-name">GOLD</h3>
                     <div class="tier-score">≥ 900</div>
-                    <p class="tier-desc">高品质，适合生产环境</p>
+                    <p class="tier-desc" data-i18n="cert.gold">High quality — fit for production use.</p>
                     <ul class="tier-features">
                         <li>Phase 2 ≥ 255</li>
                         <li>Phase 3 ≥ 340</li>
@@ -361,7 +375,7 @@
                     <div class="tier-badge">🥈</div>
                     <h3 class="tier-name">SILVER</h3>
                     <div class="tier-score">≥ 800</div>
-                    <p class="tier-desc">良好品质，基本可用</p>
+                    <p class="tier-desc" data-i18n="cert.silver">Good quality — usable in most contexts.</p>
                     <ul class="tier-features">
                         <li>Phase 2 ≥ 225</li>
                         <li>Phase 3 ≥ 300</li>
@@ -372,7 +386,7 @@
                     <div class="tier-badge">🥉</div>
                     <h3 class="tier-name">BRONZE</h3>
                     <div class="tier-score">≥ 700</div>
-                    <p class="tier-desc">及格品质，需要改进</p>
+                    <p class="tier-desc" data-i18n="cert.bronze">Passing quality — needs improvement.</p>
                     <ul class="tier-features">
                         <li>Phase 2 ≥ 195</li>
                         <li>Phase 3 ≥ 265</li>
@@ -386,8 +400,8 @@
     <section id="examples" class="examples">
         <div class="container">
             <div class="section-header">
-                <h2 class="section-title">示例技能</h2>
-                <p class="section-subtitle">平均认证分数 920.7/1000，开箱即用</p>
+                <h2 class="section-title" data-i18n="examples.title">Example skills</h2>
+                <p class="section-subtitle" data-i18n="examples.subtitle">Average certified score 920.7/1000 — ready out of the box.</p>
             </div>
 
             <div class="examples-grid">
@@ -398,13 +412,12 @@
                     </div>
                     <h3 class="example-name">API Tester</h3>
                     <p class="example-type">API Integration</p>
-                    <p class="example-desc">HTTP API 测试自动化，支持 TEST/VALIDATE/BATCH 三种模式，自动环境变量注入，完整的错误处理。</p>
+                    <p class="example-desc" data-i18n="examples.apiTester.desc">Automates HTTP API testing with TEST/VALIDATE/BATCH modes, auto-injected env vars, and full error handling.</p>
                     <div class="example-code">
-                        <pre><code># 测试单个接口
-"test this API endpoint: GET /api/users"
+                        <pre><code>"test this API endpoint: GET /api/users"
 "validate the response from https://api.example.com/users"</code></pre>
                     </div>
-                    <a href="https://github.com/theneoai/skill-writer/tree/main/examples/api-tester" class="example-link" target="_blank">查看详情 →</a>
+                    <a href="https://github.com/theneoai/skill-writer/tree/main/examples/api-tester" class="example-link" target="_blank" data-i18n="examples.view">View details →</a>
                 </div>
 
                 <div class="example-card">
@@ -414,13 +427,12 @@
                     </div>
                     <h3 class="example-name">Code Reviewer</h3>
                     <p class="example-type">Workflow Automation</p>
-                    <p class="example-desc">智能代码审查助手，多步骤工作流，安全漏洞检测（CWE-798/89/78/22），自动回滚机制。</p>
+                    <p class="example-desc" data-i18n="examples.codeReviewer.desc">Intelligent code-review assistant: multi-step workflow, security scanning (CWE-798/89/78/22), automatic rollback.</p>
                     <div class="example-code">
-                        <pre><code># 审查代码
-"review my code for security issues"
+                        <pre><code>"review my code for security issues"
 "scan this PR for vulnerabilities"</code></pre>
                     </div>
-                    <a href="https://github.com/theneoai/skill-writer/tree/main/examples/code-reviewer" class="example-link" target="_blank">查看详情 →</a>
+                    <a href="https://github.com/theneoai/skill-writer/tree/main/examples/code-reviewer" class="example-link" target="_blank" data-i18n="examples.view">View details →</a>
                 </div>
 
                 <div class="example-card">
@@ -430,13 +442,12 @@
                     </div>
                     <h3 class="example-name">Doc Generator</h3>
                     <p class="example-type">Data Pipeline</p>
-                    <p class="example-desc">自动化文档生成，ETVF 数据管道，支持 Markdown/JSON/HTML 多格式输出，完整的 Schema 验证。</p>
+                    <p class="example-desc" data-i18n="examples.docGen.desc">Automated doc generation with an ETVF data pipeline — outputs Markdown/JSON/HTML with full schema validation.</p>
                     <div class="example-code">
-                        <pre><code># 生成文档
-"generate documentation for this function"
+                        <pre><code>"generate documentation for this function"
 "create API docs for this module"</code></pre>
                     </div>
-                    <a href="https://github.com/theneoai/skill-writer/tree/main/examples/doc-generator" class="example-link" target="_blank">查看详情 →</a>
+                    <a href="https://github.com/theneoai/skill-writer/tree/main/examples/doc-generator" class="example-link" target="_blank" data-i18n="examples.view">View details →</a>
                 </div>
             </div>
         </div>
@@ -446,28 +457,28 @@
     <section id="quickstart" class="quickstart">
         <div class="container">
             <div class="section-header">
-                <h2 class="section-title">快速开始</h2>
-                <p class="section-subtitle">5分钟上手 Skill Writer</p>
+                <h2 class="section-title" data-i18n="quickstart.title">Quick start</h2>
+                <p class="section-subtitle" data-i18n="quickstart.subtitle">Get up and running with Skill Writer in 5 minutes.</p>
             </div>
 
             <div class="quickstart-steps">
                 <div class="step">
                     <div class="step-number">1</div>
                     <div class="step-content">
-                        <h3>安装 Skill Writer</h3>
+                        <h3 data-i18n="quickstart.step1.title">Install Skill Writer</h3>
                         <div class="code-block">
                             <pre><code>curl -fsSL https://raw.githubusercontent.com/theneoai/skill-writer/main/install.sh | bash</code></pre>
                         </div>
-                        <p style="margin-top:8px;font-size:13px;opacity:.7">将上方命令粘贴到你的 AI 助手中即可。</p>
+                        <p style="margin-top:8px;font-size:13px;opacity:.7" data-i18n="quickstart.step1.hint">Paste the command above into your AI assistant.</p>
                     </div>
                 </div>
 
                 <div class="step">
                     <div class="step-number">2</div>
                     <div class="step-content">
-                        <h3>创建技能</h3>
+                        <h3 data-i18n="quickstart.step2.title">Create a skill</h3>
                         <div class="code-block">
-                            <pre><code>"创建一个 GitHub Issue 管理技能"
+                            <pre><code>"Create a GitHub Issue management skill"
 "Create a weather API skill"</code></pre>
                         </div>
                     </div>
@@ -476,9 +487,9 @@
                 <div class="step">
                     <div class="step-number">3</div>
                     <div class="step-content">
-                        <h3>快速评估</h3>
+                        <h3 data-i18n="quickstart.step3.title">Lean-evaluate</h3>
                         <div class="code-block">
-                            <pre><code>"快评这个技能"
+                            <pre><code>"lean evaluate this skill"
 "lean evaluate"</code></pre>
                         </div>
                     </div>
@@ -487,17 +498,17 @@
                 <div class="step">
                     <div class="step-number">4</div>
                     <div class="step-content">
-                        <h3>完整评测 &amp; 优化</h3>
+                        <h3 data-i18n="quickstart.step4.title">Full evaluation &amp; optimization</h3>
                         <div class="code-block">
-                            <pre><code>"评测这个技能"
-"优化这个技能"</code></pre>
+                            <pre><code>"evaluate this skill"
+"optimize this skill"</code></pre>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div class="quickstart-cta">
-                <a href="https://github.com/theneoai/skill-writer#readme" class="btn btn-primary btn-large" target="_blank">查看完整文档</a>
+                <a href="https://github.com/theneoai/skill-writer#readme" class="btn btn-primary btn-large" target="_blank" data-i18n="quickstart.cta">Read the full docs</a>
             </div>
         </div>
     </section>
@@ -506,153 +517,72 @@
     <section id="docs" class="documentation">
         <div class="container">
             <div class="section-header">
-                <h2 class="section-title">文档</h2>
-                <p class="section-subtitle">深入了解 Skill Writer</p>
+                <h2 class="section-title" data-i18n="docs.title">Documentation</h2>
+                <p class="section-subtitle" data-i18n="docs.subtitle">Go deeper with Skill Writer.</p>
             </div>
 
             <div class="docs-grid">
                 <a href="https://github.com/theneoai/skill-writer/blob/main/skill-framework.md" class="doc-card" target="_blank">
                     <div class="doc-icon">📖</div>
-                    <h3>框架规范</h3>
-                    <p>完整的框架定义和使用指南（2772行）</p>
+                    <h3 data-i18n="docs.framework.title">Framework spec</h3>
+                    <p data-i18n="docs.framework.desc">Complete framework definition and usage guide.</p>
                 </a>
 
                 <a href="https://github.com/theneoai/skill-writer/blob/main/eval/rubrics.md" class="doc-card" target="_blank">
                     <div class="doc-icon">🎯</div>
-                    <h3>评估标准</h3>
-                    <p>1000分评分细则（585行）</p>
+                    <h3 data-i18n="docs.rubrics.title">Evaluation rubrics</h3>
+                    <p data-i18n="docs.rubrics.desc">The 1000-point scoring rubric.</p>
                 </a>
 
                 <a href="https://github.com/theneoai/skill-writer/blob/main/optimize/strategies.md" class="doc-card" target="_blank">
                     <div class="doc-icon">🔧</div>
-                    <h3>优化策略</h3>
-                    <p>8维度10步优化方法（765行）</p>
+                    <h3 data-i18n="docs.strategies.title">Optimization strategies</h3>
+                    <p data-i18n="docs.strategies.desc">8-dimension, 10-step optimization methodology.</p>
                 </a>
 
                 <a href="https://github.com/theneoai/skill-writer/blob/main/refs/self-review.md" class="doc-card" target="_blank">
                     <div class="doc-icon">🤖</div>
-                    <h3>审议协议</h3>
-                    <p>多遍自审协议 (Generate/Review/Reconcile)</p>
+                    <h3 data-i18n="docs.review.title">Self-review protocol</h3>
+                    <p data-i18n="docs.review.desc">Multi-pass self-review (Generate/Review/Reconcile).</p>
                 </a>
 
                 <a href="https://github.com/theneoai/skill-writer/blob/main/refs/evolution.md" class="doc-card" target="_blank">
                     <div class="doc-icon">🔄</div>
-                    <h3>自进化系统</h3>
-                    <p>6触发器自动优化规范（360行）</p>
+                    <h3 data-i18n="docs.evolution.title">Self-evolution</h3>
+                    <p data-i18n="docs.evolution.desc">The 6-trigger automatic optimization spec.</p>
                 </a>
 
                 <a href="https://github.com/theneoai/skill-writer/tree/main/templates" class="doc-card" target="_blank">
                     <div class="doc-icon">📋</div>
-                    <h3>模板库</h3>
-                    <p>快速开始模板集合</p>
+                    <h3 data-i18n="docs.templates.title">Templates</h3>
+                    <p data-i18n="docs.templates.desc">A collection of quick-start templates.</p>
                 </a>
             </div>
         </div>
     </section>
 
     <!-- Roadmap -->
-    <section class="roadmap">
+    <section id="roadmap" class="roadmap">
         <div class="container">
             <div class="section-header">
-                <h2 class="section-title">路线图</h2>
-                <p class="section-subtitle">Skill Writer 的未来规划</p>
+                <h2 class="section-title" data-i18n="roadmap.title">Roadmap</h2>
+                <p class="section-subtitle" data-i18n="roadmap.subtitle">Where Skill Writer is heading next.</p>
             </div>
 
             <div class="roadmap-timeline">
                 <div class="roadmap-item completed">
                     <div class="roadmap-marker">✅</div>
                     <div class="roadmap-content">
-                        <h3>v1.0.0 - 已发布</h3>
+                        <h3 data-i18n="roadmap.current.title">Current — shipped</h3>
                         <ul>
-                            <li>1000分评估体系</li>
-                            <li>多LLM审议机制</li>
-                            <li>3个认证示例技能</li>
-                            <li>完整GitHub社区配置</li>
-                            <li>双语支持</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="roadmap-item completed">
-                    <div class="roadmap-marker">✅</div>
-                    <div class="roadmap-content">
-                        <h3>v2.0.0 - 已发布</h3>
-                        <ul>
-                            <li>LEAN 快评模式（500分，约1秒）</li>
-                            <li>UTE 自进化协议</li>
-                            <li>LoongFlow 编排机制</li>
-                            <li>方差门控认证</li>
-                            <li>6平台完整支持</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="roadmap-item completed">
-                    <div class="roadmap-marker">✅</div>
-                    <div class="roadmap-content">
-                        <h3>v3.0.0 - 已发布</h3>
-                        <ul>
-                            <li>COLLECT + AGGREGATE 模式（UTE 2.0 L2）</li>
-                            <li>Session Artifact 会话记录协议</li>
-                            <li>Edit Audit Guard 编辑防护</li>
-                            <li>Skill Registry 技能注册表</li>
-                            <li>扩展平台支持（Cursor / Gemini / OpenAI / Kimi / Hermes）</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="roadmap-item completed">
-                    <div class="roadmap-marker">✅</div>
-                    <div class="roadmap-content">
-                        <h3>v3.1.0 - 已发布</h3>
-                        <ul>
-                            <li>OWASP Agentic Skills Top 10（ASI01–ASI10）安全检测</li>
-                            <li>Co-evolutionary VERIFY Step 10（防分数膨胀）</li>
-                            <li>Mandatory Skill Summary + Negative Boundaries</li>
-                            <li>skill_tier / triggers 元数据字段</li>
-                            <li>179 Jest 测试（全平台覆盖）</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="roadmap-item completed">
-                    <div class="roadmap-marker">✅</div>
-                    <div class="roadmap-content">
-                        <h3>v3.2.0 - 已发布</h3>
-                        <ul>
-                            <li>Graph of Skills (GoS) — 6种边类型的技能依赖图</li>
-                            <li>GRAPH 模式：view / check / plan / bundle / diff</li>
-                            <li>D8 Composability 评分（LEAN +20 bonus pts）</li>
-                            <li>S10/S11/S12 图优化策略</li>
-                            <li>COLLECT 增强：bundle_context + graph_signals</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="roadmap-item completed">
-                    <div class="roadmap-marker">✅</div>
-                    <div class="roadmap-content">
-                        <h3>v3.3.0 - 已发布</h3>
-                        <ul>
-                            <li>三层路由模型：AGENTS.md + Hook + 触发词</li>
-                            <li>Layer -1 Hook Injection（UserPromptSubmit，≤50 token）</li>
-                            <li>INSTALL 4e/4f：自动生成 AGENTS.md + settings.json hook</li>
-                            <li>五层 Progressive Disclosure（Layer -1 ~ Layer 3）</li>
-                            <li>COLLECT trigger_signals + AGGREGATE Rule 4 触发词发现</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="roadmap-item completed">
-                    <div class="roadmap-marker">✅</div>
-                    <div class="roadmap-content">
-                        <h3>v3.4.0 - 已发布（当前版本）</h3>
-                        <ul>
-                            <li>Trigger 6：Validation Status Drift（自进化第6触发器）</li>
-                            <li>LEAN 16项检查体系：[STATIC] 335分零方差 + [HEURISTIC] 165分</li>
-                            <li>three-tier skill hierarchy 三级架构：planning / functional / atomic</li>
-                            <li>Tier-Adjusted Phase 2 权重（按 skill_tier 动态调整）</li>
-                            <li>Honest Skill Labeling：generation_method + validation_status</li>
+                            <li data-i18n="roadmap.current.li1">Three-tier skill hierarchy: planning / functional / atomic</li>
+                            <li data-i18n="roadmap.current.li2">LEAN 16-check system: [STATIC] 335 pts (zero variance) + [HEURISTIC] 165 pts</li>
+                            <li data-i18n="roadmap.current.li3">Self-evolution (UTE) with 6 triggers including Validation Status Drift</li>
+                            <li data-i18n="roadmap.current.li4">Honest skill labeling: generation_method + validation_status fields</li>
+                            <li data-i18n="roadmap.current.li5">Graph of Skills (GoS): typed skill dependency graph</li>
+                            <li data-i18n="roadmap.current.li6">OWASP Agentic Skills Top 10 (ASI01–ASI10) security scanning</li>
+                            <li data-i18n="roadmap.current.li7">8-platform support (Claude / OpenClaw / OpenCode / Cursor / Gemini / OpenAI / Kimi / Hermes)</li>
+                            <li data-i18n="roadmap.current.li8">Real trigger-accuracy evaluation that breaks generator self-bias</li>
                         </ul>
                     </div>
                 </div>
@@ -660,12 +590,12 @@
                 <div class="roadmap-item planned">
                     <div class="roadmap-marker">📅</div>
                     <div class="roadmap-content">
-                        <h3>v4.0.0 - 计划中</h3>
+                        <h3 data-i18n="roadmap.next.title">Next — planned</h3>
                         <ul>
-                            <li>技能市场 / 注册表 Web UI</li>
-                            <li>VS Code 插件</li>
-                            <li>团队协作功能</li>
-                            <li>企业版（SSO、审计日志）</li>
+                            <li data-i18n="roadmap.next.li1">Skill marketplace / registry web UI</li>
+                            <li data-i18n="roadmap.next.li2">VS Code extension</li>
+                            <li data-i18n="roadmap.next.li3">Team collaboration features</li>
+                            <li data-i18n="roadmap.next.li4">Enterprise edition (SSO, audit logs)</li>
                         </ul>
                     </div>
                 </div>
@@ -677,33 +607,33 @@
     <section class="community">
         <div class="container">
             <div class="section-header">
-                <h2 class="section-title">加入社区</h2>
-                <p class="section-subtitle">与开发者一起成长</p>
+                <h2 class="section-title" data-i18n="community.title">Join the community</h2>
+                <p class="section-subtitle" data-i18n="community.subtitle">Grow together with fellow developers.</p>
             </div>
 
             <div class="community-grid">
                 <a href="https://github.com/theneoai/skill-writer/discussions" class="community-card" target="_blank">
                     <div class="community-icon">💬</div>
-                    <h3>Discussions</h3>
-                    <p>提问、分享想法、交流经验</p>
+                    <h3 data-i18n="community.discussions.title">Discussions</h3>
+                    <p data-i18n="community.discussions.desc">Ask questions, share ideas, exchange experience.</p>
                 </a>
 
                 <a href="https://github.com/theneoai/skill-writer/issues" class="community-card" target="_blank">
                     <div class="community-icon">🐛</div>
-                    <h3>Issues</h3>
-                    <p>报告Bug、请求功能</p>
+                    <h3 data-i18n="community.issues.title">Issues</h3>
+                    <p data-i18n="community.issues.desc">Report bugs and request features.</p>
                 </a>
 
-                <a href="https://github.com/theneoai/skill-writer/releases" class="community-card" target="_blank">
-                    <div class="community-icon">🎉</div>
-                    <h3>Releases</h3>
-                    <p>查看最新版本和更新日志</p>
+                <a href="https://github.com/theneoai/skill-writer/blob/main/CHANGELOG.md" class="community-card" target="_blank">
+                    <div class="community-icon">📝</div>
+                    <h3 data-i18n="community.changelog.title">Changelog</h3>
+                    <p data-i18n="community.changelog.desc">See what's new and in progress.</p>
                 </a>
 
                 <a href="https://github.com/theneoai/skill-writer/blob/main/.github/CONTRIBUTING.md" class="community-card" target="_blank">
                     <div class="community-icon">🤝</div>
-                    <h3>贡献指南</h3>
-                    <p>了解如何参与项目</p>
+                    <h3 data-i18n="community.contrib.title">Contributing</h3>
+                    <p data-i18n="community.contrib.desc">Learn how to get involved with the project.</p>
                 </a>
             </div>
         </div>
@@ -716,35 +646,35 @@
                 <div class="footer-brand">
                     <span class="logo-icon">🏆</span>
                     <span class="logo-text">Skill Writer</span>
-                    <p class="footer-tagline">让每一次 Prompt 都值得信赖</p>
+                    <p class="footer-tagline" data-i18n="footer.tagline">Make every prompt worthy of trust.</p>
                 </div>
 
                 <div class="footer-links">
                     <div class="footer-column">
-                        <h4>产品</h4>
+                        <h4 data-i18n="footer.product">Product</h4>
                         <ul>
-                            <li><a href="#features">特性</a></li>
-                            <li><a href="#examples">示例</a></li>
-                            <li><a href="#docs">文档</a></li>
-                            <li><a href="#roadmap">路线图</a></li>
+                            <li><a href="#features" data-i18n="nav.features">Features</a></li>
+                            <li><a href="#examples" data-i18n="nav.examples">Examples</a></li>
+                            <li><a href="#docs" data-i18n="nav.docs">Docs</a></li>
+                            <li><a href="#roadmap" data-i18n="footer.roadmap">Roadmap</a></li>
                         </ul>
                     </div>
 
                     <div class="footer-column">
-                        <h4>资源</h4>
+                        <h4 data-i18n="footer.resources">Resources</h4>
                         <ul>
                             <li><a href="https://github.com/theneoai/skill-writer" target="_blank">GitHub</a></li>
-                            <li><a href="https://github.com/theneoai/skill-writer/blob/main/CHANGELOG.md" target="_blank">更新日志</a></li>
-                            <li><a href="https://github.com/theneoai/skill-writer/issues" target="_blank">问题反馈</a></li>
+                            <li><a href="https://github.com/theneoai/skill-writer/blob/main/CHANGELOG.md" target="_blank" data-i18n="footer.changelog">Changelog</a></li>
+                            <li><a href="https://github.com/theneoai/skill-writer/issues" target="_blank" data-i18n="footer.issues">Issues</a></li>
                         </ul>
                     </div>
 
                     <div class="footer-column">
-                        <h4>社区</h4>
+                        <h4 data-i18n="footer.community">Community</h4>
                         <ul>
-                            <li><a href="https://github.com/theneoai/skill-writer/discussions" target="_blank">讨论区</a></li>
-                            <li><a href="https://github.com/theneoai/skill-writer/blob/main/.github/CONTRIBUTING.md" target="_blank">贡献指南</a></li>
-                            <li><a href="https://github.com/theneoai/skill-writer/blob/main/.github/CODE_OF_CONDUCT.md" target="_blank">行为准则</a></li>
+                            <li><a href="https://github.com/theneoai/skill-writer/discussions" target="_blank" data-i18n="footer.discussions">Discussions</a></li>
+                            <li><a href="https://github.com/theneoai/skill-writer/blob/main/.github/CONTRIBUTING.md" target="_blank" data-i18n="footer.contrib">Contributing</a></li>
+                            <li><a href="https://github.com/theneoai/skill-writer/blob/main/.github/CODE_OF_CONDUCT.md" target="_blank" data-i18n="footer.coc">Code of Conduct</a></li>
                         </ul>
                     </div>
                 </div>
@@ -759,6 +689,186 @@
 
     <script src="assets/js/main.js"></script>
     <script>
+        // ── i18n dictionary (EN default, ZH overlay) ──
+        var I18N_ZH = {
+            'page.title': 'Skill Writer - 让 AI 技能像软件一样可测试、可迭代',
+            'nav.install': '安装',
+            'nav.features': '特性',
+            'nav.examples': '示例',
+            'nav.docs': '文档',
+            'nav.cta': '立即安装',
+            'hero.title1': '让 AI 技能像软件一样',
+            'hero.title2': '可测试、可迭代',
+            'hero.subtitle': '生产级 AI 技能的 CI/CD 系统。通过 1000 分评估体系、多 LLM 审议机制和自进化系统，将你的 Prompt 从"能跑"变成"可靠"。',
+            'hero.cta.primary': '快速开始',
+            'stats.points': '分评估体系',
+            'stats.avg': '平均认证分数',
+            'stats.platforms': '支持平台',
+            'stats.modes': '工作模式',
+            'install.title': '一键安装',
+            'install.subtitle': '选择平台，复制命令，粘贴到你的 AI 助手即可。',
+            'install.tab.all': '全部平台',
+            'install.copy': '复制',
+            'install.copied': '已复制 ✓',
+            'install.hint.all': '安装到本机所有支持的 AI 平台（Claude / OpenCode / OpenClaw / Cursor / Gemini / OpenAI / Kimi / Hermes）。',
+            'install.hint.claude': '安装到 <code>~/.claude/skills/</code>，同时写入 refs / templates / eval / optimize 伴侣文件。',
+            'install.hint.opencode': '安装到 <code>~/.config/opencode/skills/</code>。',
+            'install.hint.openclaw': '安装到 <code>~/.openclaw/skills/</code>。',
+            'install.hint.cursor': '安装 MDC rule 到 <code>.cursor/rules/</code>（项目级）或 <code>~/.cursor/rules/</code>（<code>--global</code>）。',
+            'install.hint.gemini': '安装到 <code>~/.gemini/skills/</code>，路由规则写入 <code>~/.gemini/GEMINI.md</code>。',
+            'install.hint.openai': '安装到当前项目 <code>skills/skill-writer.md</code>，路由规则写入 <code>AGENTS.md</code>。',
+            'install.hint.kimi': '安装到 <code>~/.config/kimi/skills/</code>，支持中英双语触发词。',
+            'install.hint.hermes': '安装到 <code>~/.hermes/skills/</code>，适用于本地 LLM 助手。',
+            'features.title': '核心特性',
+            'features.subtitle': '行业领先的 AI 技能质量保障体系。',
+            'features.lean.title': 'LEAN 快评模式',
+            'features.lean.desc': '16 项结构检查：[STATIC] 确定性检查（335 分，零方差） + [HEURISTIC] LLM 启发式检查（165 分），快速判断技能质量。',
+            'features.lean.li1': 'YAML frontmatter 完整性 [STATIC]',
+            'features.lean.li2': '§N 格式段落 + Quality Gates [STATIC]',
+            'features.lean.li3': '触发词 EN/ZH 覆盖度 [STATIC]',
+            'features.lean.li4': '红线 / 错误处理 / 安全基线 [STATIC]',
+            'features.lean.li5': '模板匹配度 + 字段具体性 [HEURISTIC]',
+            'features.score.title': '1000 分评估体系',
+            'features.score.desc': '4 阶段深度评测：结构验证 → 文本质量 → 运行时测试 → 综合认证，量化每一个技能的质量。',
+            'features.score.li1': 'Phase 1：结构完整性（100 分）',
+            'features.score.li2': 'Phase 2：文本质量分析（300 分）',
+            'features.score.li3': 'Phase 3：运行时测试（400 分）',
+            'features.score.li4': 'Phase 4：综合认证（200 分）',
+            'features.review.title': '多遍自审协议',
+            'features.review.desc': 'Generate / Review / Reconcile 三遍自审，在单一 LLM 会话内用独立视角发现盲点；VERIFY 步骤消除分数膨胀。',
+            'features.review.li1': '<strong>Generate：</strong>生成初稿技能',
+            'features.review.li2': '<strong>Review：</strong>安全审计 + 质量检查',
+            'features.review.li3': '<strong>Reconcile：</strong>差异整合 + 修正',
+            'features.review.li4': '<strong>VERIFY：</strong>收敛后独立再评估',
+            'features.ute.title': '自进化系统（UTE）',
+            'features.ute.desc': 'Use-to-Evolve 协议，6 触发器自动监控技能质量，发现问题自动优化，无需人工干预。',
+            'features.ute.li1': '<strong>Threshold：</strong>质量阈值监控',
+            'features.ute.li2': '<strong>Time：</strong>新鲜度检查',
+            'features.ute.li3': '<strong>Usage：</strong>使用率分析',
+            'features.ute.li4': '8 维度 10 步优化循环',
+            'cert.title': '认证等级',
+            'cert.subtitle': '4 级认证体系，让质量一目了然。',
+            'cert.platinum': '卓越品质，各项指标优秀。',
+            'cert.gold': '高品质，适合生产环境。',
+            'cert.silver': '良好品质，基本可用。',
+            'cert.bronze': '及格品质，需要改进。',
+            'examples.title': '示例技能',
+            'examples.subtitle': '平均认证分数 920.7/1000，开箱即用。',
+            'examples.apiTester.desc': 'HTTP API 测试自动化，支持 TEST / VALIDATE / BATCH 三种模式，自动环境变量注入，完整的错误处理。',
+            'examples.codeReviewer.desc': '智能代码审查助手：多步骤工作流，安全漏洞检测（CWE-798/89/78/22），自动回滚机制。',
+            'examples.docGen.desc': '自动化文档生成，ETVF 数据管道，支持 Markdown / JSON / HTML 多格式输出，完整的 Schema 验证。',
+            'examples.view': '查看详情 →',
+            'quickstart.title': '快速开始',
+            'quickstart.subtitle': '5 分钟上手 Skill Writer。',
+            'quickstart.step1.title': '安装 Skill Writer',
+            'quickstart.step1.hint': '将上方命令粘贴到你的 AI 助手中即可。',
+            'quickstart.step2.title': '创建技能',
+            'quickstart.step3.title': '快速评估',
+            'quickstart.step4.title': '完整评测 & 优化',
+            'quickstart.cta': '查看完整文档',
+            'docs.title': '文档',
+            'docs.subtitle': '深入了解 Skill Writer。',
+            'docs.framework.title': '框架规范',
+            'docs.framework.desc': '完整的框架定义和使用指南。',
+            'docs.rubrics.title': '评估标准',
+            'docs.rubrics.desc': '1000 分评分细则。',
+            'docs.strategies.title': '优化策略',
+            'docs.strategies.desc': '8 维度 10 步优化方法。',
+            'docs.review.title': '审议协议',
+            'docs.review.desc': '多遍自审协议（Generate / Review / Reconcile）。',
+            'docs.evolution.title': '自进化系统',
+            'docs.evolution.desc': '6 触发器自动优化规范。',
+            'docs.templates.title': '模板库',
+            'docs.templates.desc': '快速开始模板集合。',
+            'roadmap.title': '路线图',
+            'roadmap.subtitle': 'Skill Writer 的未来规划。',
+            'roadmap.current.title': '当前 — 已发布',
+            'roadmap.current.li1': '三级技能架构：planning / functional / atomic',
+            'roadmap.current.li2': 'LEAN 16 项检查：[STATIC] 335 分（零方差）+ [HEURISTIC] 165 分',
+            'roadmap.current.li3': '自进化系统（UTE）6 触发器，含 Validation Status Drift',
+            'roadmap.current.li4': 'Honest Skill Labeling：generation_method + validation_status',
+            'roadmap.current.li5': 'Graph of Skills (GoS)：类型化技能依赖图',
+            'roadmap.current.li6': 'OWASP Agentic Skills Top 10（ASI01–ASI10）安全检测',
+            'roadmap.current.li7': '8 平台支持（Claude / OpenClaw / OpenCode / Cursor / Gemini / OpenAI / Kimi / Hermes）',
+            'roadmap.current.li8': '真实触发词准确度评测（打破生成器自偏差）',
+            'roadmap.next.title': '下一步 — 计划中',
+            'roadmap.next.li1': '技能市场 / 注册表 Web UI',
+            'roadmap.next.li2': 'VS Code 插件',
+            'roadmap.next.li3': '团队协作功能',
+            'roadmap.next.li4': '企业版（SSO、审计日志）',
+            'community.title': '加入社区',
+            'community.subtitle': '与开发者一起成长。',
+            'community.discussions.title': 'Discussions',
+            'community.discussions.desc': '提问、分享想法、交流经验。',
+            'community.issues.title': 'Issues',
+            'community.issues.desc': '报告 Bug、请求功能。',
+            'community.changelog.title': '更新日志',
+            'community.changelog.desc': '查看已发布和进行中的改动。',
+            'community.contrib.title': '贡献指南',
+            'community.contrib.desc': '了解如何参与项目。',
+            'footer.tagline': '让每一次 Prompt 都值得信赖。',
+            'footer.product': '产品',
+            'footer.resources': '资源',
+            'footer.community': '社区',
+            'footer.roadmap': '路线图',
+            'footer.changelog': '更新日志',
+            'footer.issues': '问题反馈',
+            'footer.discussions': '讨论区',
+            'footer.contrib': '贡献指南',
+            'footer.coc': '行为准则'
+        };
+
+        var I18N_EN = {}; // EN is the source-of-truth in the HTML markup
+
+        function applyLang(lang) {
+            var dict = (lang === 'zh') ? I18N_ZH : I18N_EN;
+            document.documentElement.lang = (lang === 'zh') ? 'zh-CN' : 'en';
+
+            // Cache original EN strings (innerHTML) the first time we switch.
+            if (lang === 'zh' && !document._i18nCached) {
+                document.querySelectorAll('[data-i18n]').forEach(function(el) {
+                    el._i18nEN = el.innerHTML;
+                });
+                var titleEl = document.querySelector('title[data-i18n]');
+                if (titleEl) titleEl._i18nEN = titleEl.textContent;
+                document._i18nCached = true;
+            }
+
+            document.querySelectorAll('[data-i18n]').forEach(function(el) {
+                var key = el.getAttribute('data-i18n');
+                if (lang === 'zh') {
+                    if (dict[key]) el.innerHTML = dict[key];
+                } else {
+                    if (el._i18nEN != null) el.innerHTML = el._i18nEN;
+                }
+            });
+
+            var titleEl = document.querySelector('title[data-i18n]');
+            if (titleEl) {
+                if (lang === 'zh' && dict['page.title']) titleEl.textContent = dict['page.title'];
+                else if (titleEl._i18nEN) titleEl.textContent = titleEl._i18nEN;
+            }
+
+            var btn = document.getElementById('langToggle');
+            if (btn) btn.textContent = (lang === 'zh') ? 'EN' : '中文';
+
+            try { localStorage.setItem('sw-lang', lang); } catch (e) {}
+        }
+
+        (function initLang() {
+            var saved = null;
+            try { saved = localStorage.getItem('sw-lang'); } catch (e) {}
+            var lang = (saved === 'zh' || saved === 'en') ? saved : 'en'; // default EN
+            applyLang(lang);
+            var btn = document.getElementById('langToggle');
+            if (btn) {
+                btn.addEventListener('click', function() {
+                    var cur = document.documentElement.lang === 'zh-CN' ? 'zh' : 'en';
+                    applyLang(cur === 'zh' ? 'en' : 'zh');
+                });
+            }
+        })();
+
         // ── Install section tab switching ──
         document.querySelectorAll('.install-tab').forEach(function(tab) {
             tab.addEventListener('click', function() {
@@ -773,15 +883,18 @@
         // ── Copy install command ──
         function copyInstall(btn) {
             var code = btn.previousElementSibling.textContent.trim();
+            var lang = document.documentElement.lang === 'zh-CN' ? 'zh' : 'en';
+            var copiedLabel = lang === 'zh' ? '已复制 ✓' : 'Copied ✓';
+            var copyLabel = lang === 'zh' ? '复制' : 'Copy';
+            function restore() {
+                btn.textContent = copyLabel;
+                btn.classList.remove('copied');
+            }
             navigator.clipboard.writeText(code).then(function() {
-                btn.textContent = '已复制 ✓';
+                btn.textContent = copiedLabel;
                 btn.classList.add('copied');
-                setTimeout(function() {
-                    btn.textContent = '复制';
-                    btn.classList.remove('copied');
-                }, 2000);
+                setTimeout(restore, 2000);
             }).catch(function() {
-                // fallback for older browsers
                 var ta = document.createElement('textarea');
                 ta.value = code;
                 ta.style.position = 'fixed';
@@ -790,12 +903,9 @@
                 ta.select();
                 document.execCommand('copy');
                 document.body.removeChild(ta);
-                btn.textContent = '已复制 ✓';
+                btn.textContent = copiedLabel;
                 btn.classList.add('copied');
-                setTimeout(function() {
-                    btn.textContent = '复制';
-                    btn.classList.remove('copied');
-                }, 2000);
+                setTimeout(restore, 2000);
             });
         }
     </script>

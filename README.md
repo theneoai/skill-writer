@@ -1,8 +1,9 @@
 # Skill Writer
 
+**Language**: **English** · [简体中文](README.zh.md)
+
 A cross-platform meta-skill for creating, evaluating, and optimizing AI assistant skills through natural language interaction.
 
-[![Version](https://img.shields.io/badge/version-3.4.0-blue.svg)](https://github.com/theneoai/skill-writer)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platforms](https://img.shields.io/badge/platforms-8-orange.svg)](#supported-platforms)
 
