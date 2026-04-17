@@ -6,9 +6,11 @@ main README, which created a false impression that they were operational.
 
 What lives here:
 
-| Subfolder | Status | Notes |
-|-----------|--------|-------|
+| Path | Status | Notes |
+|------|--------|-------|
 | `mcp/` | Skeleton only | MCP tool server that delegates mode execution back to the host LLM. Not wired to an installed MCP host. Do not base integrations on this. |
+| `mcp-integration.md` | Draft doc | Companion integration guide for `mcp/`. Kept alongside the skeleton. |
+| `gepa-optimize.py` | Skeleton only | Reflective prompt-evolution runner (S15 strategy). `--dry-run` prints the plan; real execution raises `NotImplementedError`. |
 
 Deprecation policy: if an experimental feature has not moved out of this
 directory after two minor releases, it is removed entirely.

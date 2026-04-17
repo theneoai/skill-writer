@@ -316,7 +316,7 @@ on next session. Improvement opportunity: add retry logic to error handling sect
 > **`[EXTENDED]`**: Full pipeline requires external storage backend.
 > Minimum viable: user exports artifact as JSON and provides it as input to AGGREGATE mode.
 
-### Storage layout (collective-evolution design-compatible)
+### Storage layout (collective-evolution design compatible)
 
 ```
 storage-root/

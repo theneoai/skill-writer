@@ -7,6 +7,79 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 2026-04-17 — skill-creator design review (`claude/review-skill-creator-design-8ZK8R`)
+
+Full punch list from a head-to-head comparison with Anthropic's `skill-creator`.
+Seven P-priority items addressed; no breaking changes to installed skills.
+
+#### Real trigger-accuracy evaluation (breaks generator bias)
+- `scripts/run_trigger_eval.py` — classifies each query against the skill's
+  `(name, description)` via the Anthropic API, majority-votes over N runs,
+  reports precision / recall / f1 / accuracy. Handles the Cursor MDC dual
+  frontmatter case.
+- `scripts/optimize_description.py` — iterative description tuner with 60/40
+  train/test split; selects the best candidate by test-f1 to prevent rubric
+  overfit. Matches the pattern in Anthropic skill-creator's `run_loop.py`.
+- `scripts/aggregate_benchmark.py` — aggregates grader outputs to
+  `benchmark.json` + `benchmark.md`.
+- `agents/grader.md` — independent grader prompt (fresh context, strict JSON
+  output contract). The only mechanism in the repo that actually isolates
+  evaluation from generation.
+- `eval/trigger-eval.example.json` — 20-query starter set (10 should-trigger,
+  10 should-not-trigger, bilingual).
+- CREATE mode gains a **test-first sub-phase** between PLAN and GENERATE.
+  Skills delivered without a real trigger eval are flagged
+  `validation_status: lean-only` and SHARE mode blocks them until `/eval` runs.
+
+#### Canonical skill slimmed (2541 → 499 lines)
+- Extracted §3 and §6–§20 from `claude/skill-writer.md` into
+  `refs/mode-router.md` + `refs/modes/{create,lean,elicit,evaluate,optimize,
+  self-evolution,security,audit,ute,install,memory,collect,graph}.md`.
+- Main file keeps stub sections with pointers — progressive-disclosure
+  pattern. All 8 platform mirrors rebuilt via `build-platforms.py`; sync
+  verified.
+
+#### Spec-pure frontmatter emission
+- `scripts/emit_spec_pure.py` — migrates flat frontmatter to the agentskills.io
+  v1.0 layout: top-level keys limited to `{name, description, version, license,
+  author, spec_version, tags}`; everything else under the `x-skill-writer:`
+  namespace; runtime state (`cumulative_invocations`, `pending_patches`,
+  `last_ute_check`, `total_micro_patches_applied`, `certified_lean_score`)
+  stripped to sidecar JSON.
+- `templates/base.md` now demonstrates the nested layout.
+
+#### Roadmap skeletons relocated
+- `mcp/` → `experimental/mcp/`
+- `scripts/gepa-optimize.py` → `experimental/gepa-optimize.py`
+- `docs/mcp-integration.md` → `experimental/mcp-integration.md`
+- `experimental/README.md` explicitly labels them as non-operational.
+- All doc cross-references (install.md, strategies.md, skill-framework*,
+  CI workflows, examples) updated to the new paths.
+
+#### Honest research citations
+- `scripts/sanitize_refs.py` — one-shot cleanup script replacing fake arxiv
+  IDs and vendor-branded names (`SkillRouter`, `SkillRL`, `SkillClaw`,
+  `SkillForge`, `EvoSkills`, `SkillNet`, `SkillProbe`, `SkillX`, `ToxicSkills`,
+  `ClawHavoc`) with honest heuristic labels (e.g. `Skill Summary heuristic`,
+  `Failure-Driven CREATE heuristic`). 486 replacements across 32 files, plus
+  a follow-up pass for CJK-punctuation-adjacent occurrences on 8 platform
+  files.
+- `91.7% cross-encoder accuracy` → `high cross-encoder agreement (empirical,
+  unpublished)` — the number has no citable source.
+
+#### Makefile + discoverability
+- New targets: `eval-trigger`, `optimize-description`, `emit-spec-pure`.
+- Removed: `mcp-selftest`.
+- PATH CONVENTION block in `claude/skill-writer.md` now lists `scripts/` and
+  `agents/` so the in-session LLM knows these exist.
+
+### Migration notes
+- No installed skill changes shape. The real-eval pipeline is opt-in — if you
+  never run `scripts/run_trigger_eval.py`, the rubric pipeline still works.
+- `mcp/` path consumers: update imports/references to `experimental/mcp/`.
+- `validation_status: lean-only` skills are not broken, but SHARE mode will
+  now prompt for a real eval before publication.
+
 ---
 
 ## [3.5.0-dev] - 2026-04-17 (in progress on `claude/research-architecture-review-pEXSL`)
@@ -51,7 +124,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   available; `--only PLATFORM` for single-target builds. Ships in v3.5.0 as
   migration mode — full sync flip is `[ROADMAP v3.6.0]`.
 
-#### MCP-native integration (`mcp/server.py`, `mcp/README.md`, `docs/mcp-integration.md`)
+#### MCP-native integration (`experimental/mcp/server.py`, `experimental/mcp/README.md`, `experimental/mcp-integration.md`) — since relocated to `experimental/`
 - **Zero-LLM MCP server** — exposes 7 tools
   (`lean` / `evaluate` / `optimize` / `check_spec` / `build_platforms` /
   `verify_sig` / `list_skills`) that return structured *plans* for the host's
@@ -59,7 +132,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Detects the official MCP Python SDK; falls back to a stdlib stdio JSON-RPC
   loop (keeps zero-build promise).
 - Install configs for Claude Desktop, Cursor, VS Code Copilot + MCP.
-- `python3 mcp/server.py --selftest` validates the 7-tool handler table.
+- `python3 experimental/mcp/server.py --selftest` validates the 7-tool handler table.
 
 #### CLEAR production dimensions (`eval/rubrics.md §9a`)
 - Opt-in (`/eval --clear`) D9 Cost (50 pts) + D10 Latency (50 pts) dimensions
@@ -68,12 +141,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Production envelope fields added under `extends.production:` —
   `cost_budget_usd`, `est_tokens_p50/p95`, `latency_budget_ms`, `est_p95_ms`.
 
-#### GEPA reflective optimization (`optimize/strategies.md §4a`, `scripts/gepa-optimize.py`)
+#### GEPA reflective optimization (`optimize/strategies.md §4a`, `experimental/gepa-optimize.py`) — since relocated to `experimental/`
 - **S15 — Reflective Prompt Evolution** strategy added (arXiv 2507.19457):
   100–500 rollouts vs 10K+ RL; reflect-and-crossover loop on a Pareto frontier.
-- `scripts/gepa-optimize.py` skeleton with stage stubs (seed/evaluate/reflect/
-  crossover/select/verify). `--dry-run` prints the plan; real execution raises
-  `NotImplementedError` until v3.6.0. Marked `[ROADMAP v3.6.0]` throughout.
+- `experimental/gepa-optimize.py` skeleton with stage stubs (seed/evaluate/
+  reflect/crossover/select/verify). `--dry-run` prints the plan; real
+  execution raises `NotImplementedError` until v3.6.0. Labelled
+  `[experimental]` and excluded from default build/install targets.
 
 #### Framework-index for 2772-line spec (`skill-framework-index.md`)
 - Section-by-section TOC with line ranges, load triggers, and external cross-refs
@@ -378,7 +452,7 @@ v3.2.0 implements the Graph of Skills framework inspired by typed-dependency Gra
 - **ASI01 Prompt Injection as P1 pattern** — new `refs/security-patterns.md §1.2`; detection heuristics for goal hijack and external content injection; −50 pts
 - **P2 advisory patterns** — new `refs/security-patterns.md §1.3`: Missing Negative Boundaries + Executable Script Risk (2.12× higher vulnerability per Negative Boundaries heuristic)
 - **reinforcement-style evolution design lesson distillation** — `refs/session-artifact.md` new fields: `lesson_type: strategic_pattern | failure_lesson | neutral` + `lesson_summary` (≤3 sentences); `skill-framework.md §18 COLLECT` new Step 4 CLASSIFY LESSON TYPE
-- **`skill_tier` metadata field** — `templates/base.md` YAML: `planning | functional | atomic` (three-tier skill hierarchy three-tier hierarchy,)
+- **`skill_tier` metadata field** — `templates/base.md` YAML: `planning | functional | atomic` (three-tier skill hierarchy,)
 - **`triggers` metadata field** — `templates/base.md` YAML: 3–8 EN + 2–5 ZH canonical trigger phrases; scored in LEAN metadata dimension
 - **Inversion Q7 + Q8** — two new mandatory elicitation questions: negative scenarios (Q7) and trigger phrase examples (Q8); template-specific follow-up prompts added
 
@@ -409,7 +483,7 @@ Community sources: OWASP Agentic Top 10 (2026), SKILL.md Pattern, agentskills.io
 
 - **COLLECT Mode (§18)** — structured session artifact recording; fires after every skill invocation when UTE is enabled; enables collective skill evolution via the AGGREGATE pipeline
 - **AGGREGATE Mode** — multi-session distillation pipeline (Summarize → Aggregate → Execute) synthesizing N session artifacts into ranked improvement signals
-- **`refs/session-artifact.md`** — canonical Session Artifact schema (skill_id, outcome, prm_signal, dimension_observations, causal-chain summary); collective-evolution design-compatible format
+- **`refs/session-artifact.md`** — canonical Session Artifact schema (skill_id, outcome, prm_signal, dimension_observations, causal-chain summary); collective-evolution design compatible format
 - **`refs/edit-audit.md`** — Edit Audit Guard: classifies OPTIMIZE changes as MICRO/MINOR/MAJOR/REWRITE; blocks destructive rewrites (>50% content change); prevents skill drift
 - **`refs/skill-registry.md`** — Skill Registry spec: deterministic SHA-256[:12] IDs, 20-entry version history, push/pull/sync SHARE protocol, conflict resolution with LLM-based merge
 - **UTE 2.0 two-tier architecture** — L1 (single-user, `[ENFORCED]`, current behavior) + L2 (collective, `[ASPIRATIONAL]`, requires COLLECT + AGGREGATE pipeline)

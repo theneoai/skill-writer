@@ -55,7 +55,7 @@ Heuristic checks only. Fast, no LLM.
 | `interface.modes` array present | 5 | |
 | `tags` array with ≥ 2 entries | 5 | |
 | `triggers` field present (EN ≥ 3, ZH ≥ 2) | 5 | v3.1.0: trigger phrase coverage required |
-| `skill_tier` declared (planning/functional/atomic) | 5 | v3.1.0: three-tier skill hierarchy three-tier hierarchy |
+| `skill_tier` declared (planning/functional/atomic) | 5 | v3.1.0: three-tier skill hierarchy |
 | ≥ 3 `## §N` sections | 10 | Identity, Loop, at least one mode |
 | Identity section present (name/role/purpose) | 10 | |
 | Red Lines / 严禁 section present | 10 | |

@@ -3,8 +3,9 @@
 > **Purpose**: Lightweight TOC + loader map for the canonical `skill-framework.md`.
 > **Status**: v3.5.0 introduces this index so readers (human and LLM) can
 >   navigate the 2772-line framework doc without loading all of it into context.
->   This is the first step toward the v3.6.0 split into meta-skill.md (core,
->   ≤500 lines) + per-mode companion files.
+>   The canonical platform skill (`claude/skill-writer.md`) has already been
+>   slimmed to ≤ 500 lines with per-mode details extracted to `refs/modes/*`
+>   (see §4 below). `skill-framework.md` itself remains the long-form reference.
 > **Load strategy**: LLMs SHOULD read this index first, then fetch only the
 >   specific §N section they need via Read with `offset=...` and a small
 >   `limit=...`.
@@ -85,21 +86,28 @@ refs/*.md files, loaded on demand.
 
 ---
 
-## §4  v3.6.0 split plan
+## §4  Canonical skill split (delivered)
 
-In v3.6.0 `skill-framework.md` will be refactored into:
+The canonical platform skill (`claude/skill-writer.md`, mirrored to the other
+7 platforms) is now slimmed to ≤ 500 lines. Per-mode details live in `refs/`:
 
-| Future file                  | Content |
-|------------------------------|---|
-| `meta-skill.md`              | Identity, Mode Router, Quick Start (§§1, 3, 0) — ≤500 lines |
-| `refs/modes/create.md`       | §§6, 8 + CREATE-specific details |
-| `refs/modes/evaluate.md`     | §9 (was already partly in eval/) |
-| `refs/modes/optimize.md`     | §10 (was already partly in optimize/) |
-| `refs/modes/install.md`      | §§17, 17b |
-| `refs/modes/collect.md`      | §19 |
-| `refs/modes/graph.md`        | §20 |
-| `refs/memory-architecture.md`| §18 |
-| `refs/audit-trail.md`        | §14 |
+| File                            | Holds §                                    |
+|---------------------------------|--------------------------------------------|
+| `refs/mode-router.md`           | §3 Mode Router (full dispatch logic)       |
+| `refs/modes/create.md`          | §6 CREATE (incl. test-first sub-phase)     |
+| `refs/modes/lean.md`            | §7 LEAN                                    |
+| `refs/modes/elicit.md`          | §8 Inversion elicitation                   |
+| `refs/modes/evaluate.md`        | §9 EVALUATE                                |
+| `refs/modes/optimize.md`        | §10 OPTIMIZE                               |
+| `refs/modes/self-evolution.md`  | §11 Self-evolution triggers                |
+| `refs/modes/security.md`        | §12 Security scan baseline                 |
+| `refs/modes/audit.md`           | §14 Audit trail `[EXTENDED]`               |
+| `refs/modes/ute.md`             | §16 UTE injection + deprecation lifecycle  |
+| `refs/modes/install.md`         | §17 INSTALL mode                           |
+| `refs/modes/memory.md`          | §18 Memory architecture `[EXTENDED]`       |
+| `refs/modes/collect.md`         | §19 COLLECT + AGGREGATE                    |
+| `refs/modes/graph.md`           | §20 GRAPH                                  |
 
-Until then, treat this index as the navigation layer. The canonical file
-remains `skill-framework.md` for now.
+Main skill files carry stub sections with pointers; deep content is read on
+demand. `skill-framework.md` remains the long-form reference and is indexed
+by §1 above.

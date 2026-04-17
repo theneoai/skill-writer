@@ -458,7 +458,7 @@ compatible with collective-evolution design's storage spec.
 
 > **Research basis**: 得物 AI Coding component reuse practice (2026) — multi-factor weighted
 > ranking with quality threshold gate prevents AI from "going with wrong result" (将错就错).
-> Extends the existing Skill Summary heuristic (91.7% cross-encoder accuracy) with usage-signal weighting.
+> Extends the existing Skill Summary heuristic (high cross-encoder agreement (empirical, unpublished)) with usage-signal weighting.
 
 ### §11.1  Ranking Formula
 

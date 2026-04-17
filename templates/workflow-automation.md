@@ -32,7 +32,7 @@ created: "{{DATE}}"
 updated: "{{DATE}}"
 type: workflow-automation
 
-# Skill tier (three-tier skill hierarchy three-tier hierarchy —)
+# Skill tier (three-tier skill hierarchy —)
 skill_tier: {{TIER}}          # planning | functional | atomic
 # workflow-automation skills are typically: planning (multi-step orchestration) or functional
 
