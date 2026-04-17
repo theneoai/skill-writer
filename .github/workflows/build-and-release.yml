@@ -30,7 +30,13 @@ jobs:
             echo "✓ All 8 platform directories present"
           fi
 
-      - name: Validate YAML frontmatter in skill files
+      - name: Validate frontmatter (agentskills.io v1.0 compat)
+        run: python3 scripts/check-spec-compat.py
+
+      - name: Validate platform mirrors match canonical
+        run: python3 scripts/build-platforms.py --check
+
+      - name: Validate skill-writer business rules (tier, triggers, sections)
         run: |
           python3 - <<'EOF'
           import os, sys, re
@@ -52,14 +58,11 @@ jobs:
               continue
 
             content = open(skill_file).read()
-
-            # Extract YAML frontmatter (skip mdc's leading --- block for cursor)
             matches = list(re.finditer(r'^---\n', content, re.MULTILINE))
             if len(matches) < 2:
               errors.append(f'{skill_file}: no YAML frontmatter found')
               continue
 
-            # Find the skill-writer YAML frontmatter (contains 'name: skill-writer')
             fm_start = -1
             fm_end = -1
             for i, m in enumerate(matches[:-1]):
@@ -75,26 +78,23 @@ jobs:
 
             frontmatter = content[fm_start:fm_end]
 
-            # Check required fields
             for field in required_fields:
               if not re.search(rf'^{re.escape(field)}[:\s]', frontmatter, re.MULTILINE):
                 errors.append(f'{skill_file}: missing required field "{field}"')
 
-            # Check use_to_evolve subfields
             for uf in ute_fields:
               if uf not in frontmatter:
                 errors.append(f'{skill_file}: use_to_evolve missing subfield "{uf}"')
 
-            # Check skill_tier value
-            if 'skill_tier: planning' not in frontmatter and 'skill_tier: functional' not in frontmatter and 'skill_tier: atomic' not in frontmatter:
+            if 'skill_tier: planning' not in frontmatter \
+               and 'skill_tier: functional' not in frontmatter \
+               and 'skill_tier: atomic' not in frontmatter:
               errors.append(f'{skill_file}: skill_tier must be planning|functional|atomic')
 
-            # Check description length
             desc_match = re.search(r'^description:\s+"(.+)"', frontmatter, re.MULTILINE)
             if desc_match and len(desc_match.group(1)) > 1024:
               errors.append(f'{skill_file}: description exceeds 1024 chars ({len(desc_match.group(1))})')
 
-            # Check triggers
             if 'triggers:' not in frontmatter:
               errors.append(f'{skill_file}: missing triggers field')
             else:
@@ -109,25 +109,20 @@ jobs:
                 if count < 2:
                   errors.append(f'{skill_file}: triggers.zh needs ≥2 phrases (found {count})')
 
-            # Check Skill Summary section
             if '## Skill Summary' not in content:
               errors.append(f'{skill_file}: missing "## Skill Summary" section')
-
-            # Check Negative Boundaries section
             if 'Negative Boundaries' not in content:
               errors.append(f'{skill_file}: missing "Negative Boundaries" section')
 
-            print(f'✓ {skill_file}: frontmatter valid')
+            print(f'✓ {skill_file}: business rules valid')
 
-          if warnings:
-            for w in warnings:
-              print(f'⚠ {w}')
+          for w in warnings:
+            print(f'⚠ {w}')
           if errors:
             for e in errors:
               print(f'✗ ERROR: {e}', file=sys.stderr)
             sys.exit(1)
-          else:
-            print(f'\n✓ All skill files pass validation')
+          print('\n✓ All skill files pass business-rule validation')
           EOF
 
       - name: Check install scripts are executable
