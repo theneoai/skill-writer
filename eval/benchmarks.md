@@ -434,6 +434,79 @@ When an anchor case fails, it indicates a structural routing defect — not just
 
 ---
 
+## §10b  BENCHMARK Mode Benchmarks
+
+> BENCHMARK mode runs parallel A/B empirical evaluation (with-skill vs baseline) and
+> reports delta_pass_rate, token overhead, non-discriminating rate, and a PASS/MARGINAL/FAIL verdict.
+> These cases verify trigger routing, verdict computation, and edge case handling.
+
+### BENCHMARK Mode Trigger Cases
+
+| ID | Input | Expected Mode | Notes |
+|----|-------|--------------|-------|
+| BM-T-01 | `"benchmark"` | BENCHMARK | Canonical single-word trigger |
+| BM-T-02 | `"run benchmark"` | BENCHMARK | Canonical phrase |
+| BM-T-03 | `"A/B test this skill"` | BENCHMARK | A/B phrasing |
+| BM-T-04 | `"基准测试"` | BENCHMARK | ZH canonical trigger |
+| BM-T-05 | `"对比测试"` | BENCHMARK | ZH alternate trigger |
+| BM-T-06 | `"benchmark my skill against baseline"` | BENCHMARK | Natural language form |
+| BM-T-07 | `"empirical evaluation with test cases"` | BENCHMARK | Empirical keyword |
+| BM-T-08 | `"compare skill version v1.2 vs v1.3"` | BENCHMARK | Version-comparison form |
+
+### BENCHMARK Verdict Computation Cases
+
+| ID | delta_pass_rate | pass_rate (α) | nd_rate | Expected Verdict |
+|----|----------------|--------------|---------|-----------------|
+| BM-V-01 | 0.30 | 0.80 | 0.15 | BENCHMARK_PASS |
+| BM-V-02 | 0.15 | 0.70 | 0.20 | BENCHMARK_PASS (exact threshold) |
+| BM-V-03 | 0.20 | 0.65 | 0.10 | BENCHMARK_MARGINAL (rate < 0.70) |
+| BM-V-04 | 0.08 | 0.60 | 0.25 | BENCHMARK_MARGINAL (delta < 0.15) |
+| BM-V-05 | 0.03 | 0.45 | 0.10 | BENCHMARK_FAIL (both below thresholds) |
+| BM-V-06 | 0.20 | 0.75 | 0.55 | BENCHMARK_INCONCLUSIVE (nd_rate ≥ 0.50) |
+| BM-V-07 | -0.05 | 0.40 | 0.20 | BENCHMARK_FAIL (negative delta) |
+
+### BENCHMARK Token Overhead Classification Cases
+
+| ID | token_overhead_pct | Expected Token Verdict | Recommended Action |
+|----|-------------------|----------------------|-------------------|
+| BM-K-01 | 25% | LOW | No action needed |
+| BM-K-02 | 55% | MODERATE | Monitor; note in report |
+| BM-K-03 | 110% | HIGH | Apply S15 Skill Body Slimming |
+| BM-K-04 | 180% | CRITICAL | Block SHARE; must slim first |
+| BM-K-05 | 30% (boundary) | LOW (≤ 30%) | Acceptable |
+| BM-K-06 | 31% (boundary) | MODERATE (> 30%) | Note, monitor |
+| BM-K-07 | 150% (boundary) | HIGH (≤ 150%) | Recommend S15 |
+| BM-K-08 | 151% (boundary) | CRITICAL (> 150%) | Block SHARE |
+
+### Non-Discriminating Assertion Detection Cases
+
+| ID | Scenario | Expected Detection |
+|----|----------|-------------------|
+| BM-N-01 | Assertion "Response is not empty" — passes in both α and β in 80% of cases | Flagged as non-discriminating (rate 0.80 ≥ 0.60) |
+| BM-N-02 | Assertion "Uses skill-specific format" — passes in α only in 70% of cases | Not non-discriminating (different outcomes) |
+| BM-N-03 | All assertions pass in both α and β (nd_rate = 1.00) | BENCHMARK_INCONCLUSIVE |
+| BM-N-04 | Assertion passes in both outputs in 50% of cases | Borderline — not flagged (< 0.60 threshold) |
+
+### Frozen Anchor Cases — BENCHMARK Triggers (6 cases, 18 pts)
+
+These 6 anchors are added to §10a (frozen anchor set) for v3.5.0+.
+Each correct prediction = 3 pts. All 6 correct = 18 pts (added to anchor_score max).
+
+| Anchor ID | Input | Expected Mode | Rationale |
+|-----------|-------|--------------|-----------|
+| ANC-021 | `"benchmark"` | BENCHMARK | Canonical single-word trigger |
+| ANC-022 | `"基准测试"` | BENCHMARK | ZH canonical — must always match |
+| ANC-023 | `"run benchmark"` | BENCHMARK | Two-word canonical |
+| ANC-024 | `"A/B test this skill"` | BENCHMARK | A/B phrasing must not route to EVALUATE |
+| ANC-025 | `"benchmark the trigger accuracy"` | BENCHMARK | Conflicts with EVALUATE — BENCHMARK wins |
+| ANC-026 | `"对比测试"` | BENCHMARK | ZH alternate — must not route to EVALUATE |
+
+> **Note**: ANC-025 deliberately conflicts with EVALUATE keyword "benchmark". In v3.5.0+,
+> explicit "benchmark" keyword always routes to BENCHMARK mode, not EVALUATE, since
+> BENCHMARK is more specific. Update §1 `CF-E-08` — that case now correctly routes to BENCHMARK.
+
+---
+
 ## §11  Adding Custom Benchmark Cases
 
 When creating a new skill with `skill-writer.md CREATE mode`, add at least:

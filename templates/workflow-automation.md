@@ -79,6 +79,19 @@ use_to_evolve:
   generation_method: "auto-generated"   # auto-generated | human-authored | hybrid
   validation_status: "lean-only"        # unvalidated | lean-only | full-eval | pragmatic-verified
 
+  # ── Token & Cost Budget (v3.5.0) ─────────────────────────────────────────────
+  # Declared at CREATE time; updated by BENCHMARK mode with measured values.
+  # Used by D9 Cost Efficiency scoring and BENCHMARK token_overhead analysis.
+  production:
+    cost_budget_usd: {{COST_BUDGET_USD}}    # e.g. 0.10 for planning workflow-automation
+    est_tokens_p50: {{EST_TOKENS_P50}}      # estimated median tokens per invocation
+    est_tokens_p95: {{EST_TOKENS_P95}}      # estimated p95 tokens (worst-case load)
+    baseline_model: "claude-sonnet-4-6"     # model these estimates are calibrated for
+    # Filled by BENCHMARK after first empirical run:
+    # measured_tokens_p50: null
+    # measured_tokens_p95: null
+    # benchmark_delta_pass_rate: null
+
 # Graph of Skills — optional (v3.2.0, research: typed-dependency Graph of Skills design)
 # graph:
 #   composes:                # Sub-skills this planning skill coordinates

@@ -26,7 +26,7 @@ Skill Writer is a meta-skill that enables AI assistants to create, evaluate, and
 - **Agent Install**: One-line install via "read [URL] and install" — works in any supported platform
 - **Zero CLI Interface**: Natural language interaction - no commands to memorize
 - **Cross-Platform**: Works on 8 platforms — Claude, OpenClaw, OpenCode, Cursor, Gemini, OpenAI, Kimi, Hermes
-- **Eight Powerful Modes**: CREATE, LEAN, EVALUATE, OPTIMIZE, INSTALL, COLLECT, SHARE, and GRAPH
+- **Nine Powerful Modes**: CREATE, LEAN, EVALUATE, OPTIMIZE, BENCHMARK, INSTALL, COLLECT, SHARE, and GRAPH
 - **Template-Based**: 4 built-in templates for common skill patterns
 - **Quality Assurance**: 1000-point scoring system with certification tiers
 - **Tier-Aware Evaluation**: Tier-adjusted scoring weights for `planning` / `functional` / `atomic` skills (three-tier skill hierarchy)
@@ -34,6 +34,7 @@ Skill Writer is a meta-skill that enables AI assistants to create, evaluate, and
 - **Security Built-In**: CWE-based + OWASP Agentic Skills Top 10 (ASI01–ASI10) detection + supply-chain trust verification for pulled skills
 - **Continuous Improvement**: Automated optimization with convergence detection + co-evolutionary VERIFY step + persistent score history
 - **Self-Evolution**: UTE (Use-to-Evolve) L1 in-session always active; L2 collective with hooks/backend
+- **Empirical A/B Benchmarking**: BENCHMARK mode runs parallel API calls (skill vs. baseline), blind-grades via Comparator agent, reports delta_pass_rate + token overhead + PASS/FAIL verdict (v3.5.0)
 - **Honest Skill Labeling**: `generation_method` + `validation_status` fields prevent unvalidated skills from silently reaching production
 - **Behavioral Verifier**: Optional task-sample testing produces a `pragmatic_success_rate` independent of theoretical score
 - **Multi-Pass Self-Review**: Generate/Review/Reconcile quality protocol
@@ -61,12 +62,13 @@ Not all features require infrastructure. This table shows what works out-of-the-
 | Trust-chain verification for pulled skills | `[EXTENDED]` | Registry with Ed25519 dual-layer signing (v3.5.0) |
 | Real trigger-accuracy eval (`scripts/run_trigger_eval.py`) | `[CORE]` | Needs `ANTHROPIC_API_KEY` + a trigger-eval JSON set |
 | Iterative description optimizer (`scripts/optimize_description.py`) | `[CORE]` | Needs `ANTHROPIC_API_KEY`; 60/40 train/test split |
+| BENCHMARK A/B empirical test (`scripts/run_benchmark.py`) | `[CORE]` | Needs `ANTHROPIC_API_KEY` + `anthropic` package |
 
 > **Legend**:
 > - `[CORE]` — shipped and works anywhere with zero setup.
 > - `[EXTENDED]` — shipped but needs opt-in infra (hooks, backend, signing).
 >
-> **Unsure?** Assume `[CORE]` only. All 8 modes work fully without any backend — `[EXTENDED]` adds persistence and collective learning.
+> **Unsure?** Assume `[CORE]` only. All 9 modes work fully without any backend — `[EXTENDED]` adds persistence and collective learning.
 >
 > Features previously listed as `[ROADMAP]` (GoS full bundle retrieval, GEPA S15 reflective OPTIMIZE, MCP tool server) are no longer advertised here. See `experimental/` for skeleton code; do not base production workflows on it.
 
@@ -89,7 +91,7 @@ All platforms receive the same skill file, companion files (refs/, templates/, e
 
 | Feature | Claude | OpenClaw | OpenCode | Cursor | Gemini | OpenAI | Kimi | Hermes |
 |---------|--------|----------|----------|--------|--------|--------|------|--------|
-| All 8 modes | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| All 9 modes (incl. BENCHMARK) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Companion files | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | UTE L1 (in-session) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | UTE L1 cross-session | ✅ (hooks) | — | — | — | — | — | — | — |
@@ -105,12 +107,13 @@ All platforms receive the same skill file, companion files (refs/, templates/, e
 
 > **START HERE →** New to skill-writer? Follow this dependency flow:
 > ```
-> 1. INSTALL  → install skill-writer to your platform (one-liner below)
-> 2. CREATE   → describe a skill you want and answer 8 questions
-> 3. LEAN     → quick quality check (5s, 500 pts) — is the structure solid?
-> 4. EVALUATE → full quality score (60s, 1000 pts) — what certification tier?
-> 5. OPTIMIZE → improve to target tier (up to 20 rounds with convergence guard)
-> 6. SHARE    → package and distribute to your team or registry
+> 1. INSTALL   → install skill-writer to your platform (one-liner below)
+> 2. CREATE    → describe a skill you want and answer 8 questions
+> 3. LEAN      → quick quality check (5s, 500 pts) — is the structure solid?
+> 4. EVALUATE  → full quality score (60s, 1000 pts) — what certification tier?
+> 5. OPTIMIZE  → improve to target tier (up to 20 rounds with convergence guard)
+> 6. BENCHMARK → empirical A/B test — does the skill actually improve outputs?  [v3.5.0]
+> 7. SHARE     → package and distribute to your team or registry
 > ```
 > Each step feeds the next. Skip ahead only if you already have a skill file.
 
@@ -680,6 +683,97 @@ Data flow: api-tester → report-generator via "test-results-json"
 - `check graph health` / `检查技能图健康`
 - `resolve bundle for [skill]` / `解析技能包`
 - `plan skill decomposition` / `规划技能分解`
+
+### BENCHMARK Mode *(v3.5.0 — Empirical A/B Evaluation)*
+
+BENCHMARK runs parallel A/B evaluation: two concurrent API calls per test case (with-skill vs. baseline) using real Anthropic API calls. A blind Comparator agent grades both outputs. An Analyzer agent synthesizes the results into a pass/fail verdict with improvement recommendations.
+
+**Why BENCHMARK?** EVALUATE and LEAN score skills on theoretical rubrics. BENCHMARK measures whether the skill *actually improves model outputs* compared to no skill at all. A BENCHMARK_PASS is the only way to prove real skill impact.
+
+#### How it works
+
+```
+Test Case
+    │
+    ├── Executor (with_skill)  ──┐
+    │                            ├── Comparator (blind) ──► per-case result
+    └── Executor (baseline)   ──┘
+                                         ↓ (all cases)
+                                 Analyzer ──► benchmark.json + verdict
+```
+
+1. **Dual Executor**: Two subagents run in parallel — one with the skill in the system prompt, one without.
+2. **Blind Comparator**: A third agent grades both outputs against the test assertions without knowing which is which. Prevents generator bias.
+3. **Analyzer**: Cross-case synthesis — finds failure patterns, flags non-discriminating assertions, assesses token overhead, generates prioritized recommendations.
+
+#### Verdicts
+
+| Verdict | Condition |
+|---------|-----------|
+| `BENCHMARK_PASS` | delta_pass_rate ≥ 0.15 AND pass_rate ≥ 0.70 |
+| `BENCHMARK_MARGINAL` | delta ≥ 0.05 OR pass_rate ≥ 0.50 |
+| `BENCHMARK_FAIL` | delta < 0.05 AND pass_rate < 0.50 |
+| `BENCHMARK_INCONCLUSIVE` | non_discriminating_rate ≥ 0.50 — evals don't measure skill impact |
+
+#### Token Overhead Assessment
+
+BENCHMARK measures how many extra tokens the skill costs per invocation:
+
+| token_overhead_pct | Verdict | Recommended Action |
+|--------------------|---------|-------------------|
+| ≤ 30% | LOW | Acceptable |
+| 31–80% | MODERATE | Monitor |
+| 81–150% | HIGH | Apply S15 Skill Body Slimming |
+| > 150% | CRITICAL | Block SHARE until slimmed |
+
+#### Running BENCHMARK via CLI
+
+```bash
+# Basic run (dry-run mode — no real API calls)
+python3 scripts/run_benchmark.py \
+  --skill my-skill.md \
+  --cases test-cases.json \
+  --dry-run
+
+# Real API run with parallel workers
+ANTHROPIC_API_KEY=sk-... python3 scripts/run_benchmark.py \
+  --skill my-skill.md \
+  --cases test-cases.json \
+  --out benchmarks/run1 \
+  --workers 4
+
+# Compare two skill versions
+python3 scripts/run_benchmark.py \
+  --skill my-skill-v2.md \
+  --cases test-cases.json \
+  --mode compare \
+  --skill-version v2.0.0
+
+# Aggregate comparator outputs (comparative format)
+python3 scripts/aggregate_benchmark.py \
+  --inputs benchmarks/run1/tc-*.json \
+  --mode comparative \
+  --skill my-skill \
+  --json-out benchmarks/run1/benchmark.json \
+  --md-out  benchmarks/run1/benchmark.md
+```
+
+> **Requirements**: `ANTHROPIC_API_KEY` + Python 3.8+ + `anthropic` package (`pip install anthropic`)
+
+#### Feature Availability
+
+| Feature | Availability | Requirement |
+|---------|-------------|-------------|
+| BENCHMARK mode (in-session, no CLI) | `[CORE]` | None — AI runs it in conversation |
+| `scripts/run_benchmark.py` (real parallel API calls) | `[CORE]` | `ANTHROPIC_API_KEY` + `anthropic` package |
+| Blind Comparator / Analyzer agents | `[CORE]` | Included in `agents/` |
+| Aggregate comparative format | `[CORE]` | `scripts/aggregate_benchmark.py --mode comparative` |
+
+#### Triggers (EN/ZH)
+- `benchmark` / `基准测试`
+- `run benchmark` / `对比测试`
+- `A/B test this skill`
+- `empirical evaluation`
 
 ## Sharing Your Created Skills
 

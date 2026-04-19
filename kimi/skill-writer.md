@@ -33,17 +33,22 @@ triggers:
     - "graph view"
     - "share my skill"
     - "collect session"
+    - "benchmark"
+    - "run benchmark"
+    - "A/B test this skill"
   zh:
     - "创建技能"
     - "评测技能"
     - "优化技能"
     - "安装skill-writer"
     - "技能图"
+    - "基准测试"
+    - "对比测试"
 
 interface:
   input: user-natural-language
   output: structured-skill
-  modes: [create, lean, evaluate, optimize, install, share, collect, graph]
+  modes: [create, lean, evaluate, optimize, install, share, collect, graph, benchmark]
   platforms: [claude, opencode, openclaw]
 
 extends:

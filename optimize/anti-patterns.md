@@ -643,6 +643,171 @@ Only LOCAL and TRUSTED-tier skills can win similarity deduplication.
 
 ---
 
+## Category I — Token Bloat Anti-Patterns
+
+> v3.5.0: New category addressing excessive skill token footprint revealed by BENCHMARK mode.
+> Token overhead is computed as `(avg_tokens_with_skill - avg_tokens_baseline) / avg_tokens_baseline × 100`.
+> Thresholds: LOW ≤30%, MODERATE 31–80%, HIGH 81–150%, CRITICAL >150%.
+
+### I1 — Unrestricted Example Overload (TOKEN_BLOAT_EXAMPLES)
+
+**Symptom**: Skill body contains 5+ usage examples per mode; BENCHMARK reports HIGH or CRITICAL
+token overhead; `est_tokens_p50` was never declared in YAML `production:` block.
+
+**Detection**: `benchmark_delta_pass_rate` exists but `token_overhead_pct > 80`.
+
+**Anti-pattern signature**:
+```markdown
+## §4 Examples
+
+### Example 1: Basic query
+User: "fetch current temperature in Tokyo"
+Assistant: [200-word worked example]
+
+### Example 2: Batch query
+...   ← 4 more examples each 100–200 words
+```
+
+**Fix** (S15 Skill Body Slimming):
+1. Trim examples to 2 maximum (one positive, one edge case).
+2. Convert multi-step workflow prose to condensed table format.
+3. Remove YAML comments (they don't help at runtime, only at authorship time).
+4. Deduplicate overlapping trigger phrases (keep 3–5, remove near-duplicates).
+5. Declare `production.est_tokens_p50` in YAML after running BENCHMARK once.
+Target: 30–50% token reduction without LEAN score regression.
+
+---
+
+### I2 — Missing Token Budget Declaration (NO_TOKEN_BUDGET)
+
+**Symptom**: Skill in production has no `production:` block in YAML; BENCHMARK cannot
+validate against declared budget; cost tracking impossible.
+
+**Anti-pattern signature**:
+```yaml
+# BAD: production block absent
+name: my-skill
+validation_status: "pragmatic-verified"
+# no production: block
+
+# GOOD: token budget declared
+production:
+  cost_budget_usd: 0.05
+  est_tokens_p50: 1800
+  est_tokens_p95: 3200
+  baseline_model: "claude-sonnet-4-6"
+```
+
+**Fix**: Add `production:` block (see `templates/base.md §production`).
+After first BENCHMARK run, fill in `measured_tokens_p50` with actual measured value.
+
+---
+
+### I3 — Over-Documented Workflow (WORKFLOW_VERBOSITY)
+
+**Symptom**: `§ Workflow` section has 8+ phases written as prose paragraphs;
+tokens_in consistently exceeds budget by 2×; skill passes EVALUATE but BENCHMARK reports CRITICAL overhead.
+
+**Root Cause**: Workflow written for human readers, not LLM execution.
+At runtime, 80% of the workflow text is scanned and discarded each invocation.
+
+**Fix** (S15 step 2 — compress workflows to tables):
+```markdown
+# BAD: prose workflow (150 tokens)
+Step 1: First, parse the user's input by extracting the query intent using the
+  trigger keyword matching algorithm defined in §1. Then verify the confidence
+  score exceeds 0.85 before proceeding to Step 2...
+
+# GOOD: table workflow (40 tokens)
+| Step | Action | Exit Gate |
+|------|--------|-----------|
+| 1 | Parse intent; extract trigger | confidence ≥ 0.85 |
+| 2 | Validate input against schema | no {{PLACEHOLDER}} |
+| 3 | Execute; format output | output schema valid |
+```
+
+---
+
+## Category J — Non-Discriminating Eval Anti-Patterns
+
+> v3.5.0: New category. Non-discriminating assertions are test cases that pass whether
+> or not the skill is present — they measure model capability, not skill impact.
+> Detected by BENCHMARK Comparator agent and reported by Analyzer agent.
+
+### J1 — Generic Quality Assertions (NON_DISCRIMINATING_GENERIC)
+
+**Symptom**: BENCHMARK reports `non_discriminating_rate ≥ 0.50`; Analyzer flags assertions
+that pass in both alpha (with-skill) and beta (baseline) runs.
+
+**Signature** (assertions that are always non-discriminating):
+```
+"The response is not empty"
+"The output is relevant to the input"
+"The response is grammatically correct"
+"The output does not contain placeholder text"
+```
+
+**Root Cause**: Test cases verify base model quality, not skill-specific behavior.
+A BENCHMARK with nd_rate ≥ 0.50 will report BENCHMARK_INCONCLUSIVE — no verdict.
+
+**Fix**: Replace with skill-specific assertions referencing the skill's unique behavior:
+```
+# BAD (generic — always passes)
+"The response is not empty"
+
+# GOOD (skill-specific — only passes when skill is active)
+"Response uses the §3 Workflow phase headers defined in the skill"
+"Output contains the skill-mandated JSON fields: {status, data, errors}"
+"Response follows the 3-line Skill Summary format from the skill's §1"
+```
+
+**Rule**: Every assertion must reference something found ONLY in the skill spec.
+If the assertion would pass even with an empty system prompt — it is non-discriminating.
+
+---
+
+### J2 — Threshold Assertions Without Skill Context (NON_DISCRIMINATING_THRESHOLD)
+
+**Symptom**: Assertions check thresholds (length, count, format) that any capable model
+would meet without skill guidance; nd_rate rises but not to INCONCLUSIVE — score appears
+valid but is inflated.
+
+**Signature**:
+```
+"Response is under 500 words"          ← any model would do this for short prompts
+"Uses markdown formatting"             ← any modern LLM defaults to markdown
+"Subject line is under 72 characters"  ← trivial for any commit message generator
+```
+
+**Fix**: Anchor the assertion to the skill's declared constraint, not the general model behavior:
+```
+# BAD
+"Subject line is under 72 characters"
+
+# GOOD
+"Subject line uses conventional commit type prefix (feat/fix/docs/...) as specified in §2"
+```
+
+---
+
+### J3 — BENCHMARK_INCONCLUSIVE Not Treated as FAIL (INCONCLUSIVE_IGNORED)
+
+**Symptom**: Developer runs BENCHMARK, gets BENCHMARK_INCONCLUSIVE, and re-runs
+with the same test cases — still INCONCLUSIVE. Does not update assertions.
+
+**Root Cause**: INCONCLUSIVE means the evals don't distinguish skill from no-skill.
+Re-running won't help. The evals themselves must be fixed.
+
+**Detection**: `nd_rate ≥ 0.50` in benchmark.json.
+
+**Fix**:
+1. Run `/opt --from-benchmark benchmarks/<run>/benchmark.json` — Analyzer lists exact assertions to replace.
+2. Replace all flagged non-discriminating assertions with skill-specific checks (see J1 fix).
+3. Re-run BENCHMARK after fixing assertions — not before.
+4. Target: nd_rate ≤ 0.25 before BENCHMARK verdict is trustworthy.
+
+---
+
 ## Anti-Pattern Severity Table
 
 | ID | Category | Severity | Auto-route to |
@@ -671,9 +836,17 @@ Only LOCAL and TRUSTED-tier skills can win similarity deduplication.
 | H2 | Skill Injection via external body | **ERROR** (ABORT on P0) | ASI01 scan before load |
 | H3 | Unpinned Dependency | WARNING | Add version_constraint to depends_on |
 | H4 | Similarity Hijack | WARNING | Trust-tier check in GRAPH dedup |
+| I1 | Token Bloat (examples) | WARNING | S15 — trim examples to 2, compress workflow |
+| I2 | Missing Token Budget | WARNING | Add production: block with est_tokens_p50 |
+| I3 | Workflow Verbosity | WARNING | S15 — convert prose to table format |
+| J1 | Non-Discriminating Generic Assertions | WARNING | Replace with skill-specific assertions |
+| J2 | Non-Discriminating Threshold Assertions | WARNING | Anchor assertions to skill constraints |
+| J3 | INCONCLUSIVE Verdict Ignored | WARNING | Fix assertions first; do not re-run unchanged |
 
 **ERROR = ABORT**: Skill must not be delivered. Fix required before any further evaluation.
 **S8** = Strengthen Security Baseline (OWASP + CWE) — see `optimize/strategies.md §4 S8`
 **S9** = Full Structural Rebuild / re-evaluate — see `optimize/strategies.md §4 S9`
 **G-category**: Run `/eval --pragmatic` and Behavioral Verifier to address utility gaps.
 **H-category**: Supply chain issues must be resolved before skill can be loaded into context.
+**I-category**: Apply S15 Skill Body Slimming — see `optimize/strategies.md §9`.
+**J-category**: Run BENCHMARK, read Analyzer output, update assertions before re-running.

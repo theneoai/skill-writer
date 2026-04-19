@@ -42,6 +42,7 @@ No confirmation needed. These commands are LLM-evaluated (not platform CLI comma
 | `/collect` | COLLECT mode | `/采集` |
 | `/aggregate` | AGGREGATE mode (multi-session synthesis) | `/聚合` |
 | `/graph` | GRAPH mode (skill graph view, health, bundle planning) | `/技能图` |
+| `/benchmark` | BENCHMARK mode (parallel A/B empirical evaluation) | `/基准测试` |
 | `/skip` | Accept current result as-is (TEMP_CERT if below BRONZE) | `/跳过` |
 | `/deprecate` | Mark skill as deprecated; check dependents; update lifecycle_status | `/废弃` |
 
@@ -101,6 +102,9 @@ User Input
 │           skill.*graph,graph.*view,graph.*check,graph.*plan,    │
 │           graph.*bundle,bundle.*plan,skill.*depend.*,           │
 │           /graph view,/graph check,/graph plan,/graph bundle]   │
+│ BENCHMARK[基准测试,对比测试,A/B测试,实测 |                        │
+│           benchmark,a/b test,ab test,empirical,                 │
+│           run benchmark,compare versions,delta pass rate]       │
 │                                                                 │
 │ confidence HIGH   → AUTO-ROUTE (no confirmation)                │
 │ confidence MEDIUM → show "I'll run [MODE] — confirm? (yes/no)"  │
@@ -163,6 +167,12 @@ Not sure which mode to use. Please choose:
                Outputs JSON you can save and later feed to /aggregate for evidence-based /opt.
                Best for: After an important skill invocation or when a trigger missed
                Time: ~10s
+
+  8. /benchmark — Run parallel A/B empirical evaluation (with-skill vs. baseline)
+               Spawns two concurrent API calls per test case, blind-grades via Comparator,
+               then synthesizes pass/fail rates, token overhead, and delta_pass_rate.
+               Best for: Verifying that a skill actually improves model outputs
+               Time: ~2-5 min (depends on test case count)
 
 Type a number, the /command, or describe what you want to do in plain language.
 (Cursor/IDE users: type the number or keyword phrase — IDE intercepts /commands)

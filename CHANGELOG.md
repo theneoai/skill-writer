@@ -82,6 +82,122 @@ Seven P-priority items addressed; no breaking changes to installed skills.
 
 ---
 
+## [3.5.0] - 2026-04-19 (`claude/compare-skill-tools-3HmwA`)
+
+### Added — Parallel A/B BENCHMARK mode (skill-creator architectural alignment)
+
+This release adds a full empirical evaluation pipeline modeled on Anthropic's `skill-creator`
+agent architecture. Four independent agents + a Python harness enable real parallel A/B testing
+with blind grading, non-discriminating assertion detection, and token overhead measurement.
+
+#### Four new agents (`agents/`)
+
+- **`agents/executor.md`** — Runs a skill (or baseline) against a single prompt; returns raw
+  output + token/latency metadata. Two modes: `with_skill` (skill body in system prompt) and
+  `baseline` (empty system prompt). Never knows about the comparison context.
+- **`agents/comparator.md`** — Blind A/B comparison agent. Never sees the skill body. Grades
+  both alpha and beta outputs against assertions, determines winner (alpha/beta/equivalent),
+  winner_margin (clear/marginal), delta_score, and per-assertion discriminating analysis.
+  Flags non-discriminating assertions (both outputs pass → not measuring skill impact).
+- **`agents/analyzer.md`** — Cross-case synthesis. Input: full `benchmark.json`. Output:
+  structured analysis with `top_failure_modes`, `non_discriminating_assertions` (≥ 60% threshold),
+  `high_variance_cases`, `token_assessment` (LOW/MODERATE/HIGH/CRITICAL), and prioritized
+  `recommendations` referencing specific S1–S16 strategies.
+- **`agents/grader.md`** (updated) — Added `comparative` and `discriminating_check` grading modes
+  alongside the existing `single` mode. All three have distinct JSON schemas.
+
+#### `scripts/run_benchmark.py` — parallel A/B execution harness
+
+- **`run_pair()`**: Spawns two concurrent API calls via `ThreadPoolExecutor(max_workers=2)` — true
+  parallel execution, not sequential. Returns paired alpha/beta results with token metadata.
+- **`grade_pair()`**: Invokes Comparator agent to blind-grade a pair; handles JSON extraction from
+  markdown code blocks.
+- **`aggregate_results()`**: Computes `pass_rate`, `baseline_pass_rate`, `delta_pass_rate`,
+  `token_overhead_pct`, latency stats, `non_discriminating_rate`, variance (stdev of delta_scores).
+- **`compute_verdict()`**: BENCHMARK_PASS (delta≥0.15 AND rate≥0.70), BENCHMARK_MARGINAL,
+  BENCHMARK_FAIL, BENCHMARK_INCONCLUSIVE (nd_rate≥0.50).
+- **`run_analyzer()`**: Invokes Analyzer agent with full benchmark.json for cross-case synthesis.
+- **`to_markdown()`**: Generates `benchmark.md` with summary table, per-case results, recommendations.
+- CLI: `--skill`, `--cases`, `--out`, `--mode ab|compare`, `--model`, `--workers`, `--skill-version`, `--dry-run`
+- Output: `benchmarks/<ISO-timestamp>/benchmark.json` + `benchmark.md`
+- Exit codes: 0=success, 1=error, 2=BENCHMARK_FAIL
+
+#### `scripts/aggregate_benchmark.py` — upgraded to support comparative format
+
+- Auto-detects input format: `benchmark_json` (pre-aggregated), `comparative` (comparator outputs),
+  or `single` (legacy grader outputs with `expectations[]`).
+- **Comparative aggregation**: Computes `pass_rate`, `baseline_pass_rate`, `delta_pass_rate`,
+  `token_overhead_pct`, latency stats, `non_discriminating_rate`, variance, `alpha_wins/beta_wins/equivalent`.
+- **Verdict computation**: Same PASS/MARGINAL/FAIL/INCONCLUSIVE logic as `run_benchmark.py`.
+- **Markdown output**: Full `benchmark.md` with verdict, summary table, per-case results, non-discriminating assertion list.
+- Backward-compatible: legacy `single` mode still works unchanged.
+- New CLI flags: `--mode auto|single|comparative`, `--skill`.
+
+#### `refs/modes/benchmark.md` — BENCHMARK mode spec (added in prior session)
+
+Full 7-step workflow, simulated fallback [CORE], report format, verdict thresholds,
+non-discriminating detection, COMPARE sub-mode, integration with EVALUATE/OPTIMIZE.
+
+#### Routing and trigger sync
+
+- **`refs/mode-router.md`**: Added `/benchmark` slash command, `基准测试`/`对比测试` ZH triggers,
+  `BENCHMARK` row in Priority 1 keyword routing, and BENCHMARK entry in the low-confidence mode menu.
+- **All 7 non-Claude platform files** (`opencode`, `openclaw`, `gemini`, `openai`, `kimi`, `hermes`):
+  Added `benchmark`, `run benchmark`, `A/B test this skill` to `triggers.en`; added `基准测试`,
+  `对比测试` to `triggers.zh`; added `benchmark` to `interface.modes` array.
+- **`claude/skill-writer.md`** and **`claude/CLAUDE.md`**: Updated in prior session with BENCHMARK
+  routing row, Workflow F (empirical path), and v3.5.0 quick reference block.
+
+#### Template updates — `production:` block in all 4 templates
+
+- **`templates/api-integration.md`**, **`templates/data-pipeline.md`**, **`templates/workflow-automation.md`**:
+  Added `production:` block under `use_to_evolve:` with `cost_budget_usd`, `est_tokens_p50`,
+  `est_tokens_p95`, `baseline_model`, and commented-out post-BENCHMARK fields
+  (`measured_tokens_p50`, `benchmark_delta_pass_rate`).
+- **`templates/base.md`**: Already updated in prior session.
+
+#### Evaluation test cases — `eval/benchmarks.md §10b`
+
+Added §10b BENCHMARK Mode Benchmarks:
+- 8 trigger routing cases (BM-T-01..08) covering EN/ZH canonical triggers, A/B phrasing, empirical keyword
+- 7 verdict computation cases (BM-V-01..07) covering all 4 verdict types + edge cases
+- 8 token overhead classification cases (BM-K-01..08) with boundary values
+- 4 non-discriminating assertion detection cases (BM-N-01..04)
+- 6 frozen anchor cases (ANC-021..026) added to §10a set (+18 pts to anchor scoring max)
+
+#### Anti-patterns — Categories I and J (`optimize/anti-patterns.md`)
+
+- **Category I** (Token Bloat): I1 Token Bloat via Examples, I2 Missing Token Budget Declaration,
+  I3 Workflow Verbosity — all mapped to S15 Skill Body Slimming.
+- **Category J** (Non-Discriminating Evals): J1 Generic Quality Assertions, J2 Threshold Assertions,
+  J3 BENCHMARK_INCONCLUSIVE Ignored — linked to BENCHMARK Analyzer recommendations.
+- Severity table extended with I1–I3 (WARNING → S15) and J1–J3 (WARNING → fix assertions).
+
+#### `eval/rubrics.md` §5a update (prior session)
+
+- Added optional empirical A/B sub-track in Phase 3 EVALUATE.
+- When `--empirical` flag set and ND rate < 40%, replaces heuristic Trigger Routing score with
+  `empirical_pass_rate × 120`.
+
+### Changed
+
+- `optimize/strategies.md §9`: Renamed prior S15 (GEPA Reflective) to S15 Skill Body Slimming;
+  added S16 Benchmark-Driven Fix. Both documented with step-by-step procedures.
+- `eval/benchmarks.md §10 (Minimum Pass Criteria)`: Updated row count to reflect new BENCHMARK anchor cases.
+- `README.md`: Updated to 9 modes, added BENCHMARK to Quick Start flow, added BENCHMARK mode section,
+  added token tracking to feature list, updated platform feature matrix.
+
+### Migration notes
+
+- **No breaking changes**. BENCHMARK is opt-in (`/benchmark`, `benchmark`, `基准测试`).
+- `scripts/run_benchmark.py` requires `anthropic` package and `ANTHROPIC_API_KEY`.
+  Run with `--dry-run` first to test without API calls.
+- `scripts/aggregate_benchmark.py` is backward-compatible. Existing `single`-mode grader files
+  still work. New `--mode comparative` flag unlocks the v3.5.0 comparative format.
+- Installed skills are not affected — only the evaluation infrastructure changed.
+
+---
+
 ## [3.5.0-dev] - 2026-04-17 (in progress on `claude/research-architecture-review-pEXSL`)
 
 ### Added — Spec compatibility, supply-chain hardening, MCP, CLEAR, GEPA roadmap
