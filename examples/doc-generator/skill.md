@@ -44,8 +44,8 @@ interface:
   modes: [generate, batch, convert]
 
 pipeline:
-  input_schema: "schemas/input.yaml"
-  output_schema: "schemas/output.yaml"
+  input_schema: "(inline — see §4 Input Schema)"
+  output_schema: "(inline — see §5 Output Schema)"
   max_record_count: 10000
   chunk_size: 100
 
@@ -68,18 +68,6 @@ use_to_evolve:
 ## Skill Summary
 
 doc-generator extracts, transforms, validates, and formats documentation from code files, API specs, and data sources using an ETVF pipeline. Use it when you need to generate API reference docs, README files, or convert existing docs to markdown — for single files or batch processing entire projects. Designed for developers and technical writers who need consistent, structured documentation output. This skill does NOT write new code comments or features, review code quality, or perform UI testing — see Negative Boundaries.
-
----
-
-## §N  Negative Boundaries
-
-**Do NOT use this skill for**:
-
-- **Writing inline code comments**: If the user asks "add JSDoc comments to my functions", use a code annotation skill. This skill extracts and formats existing documentation, it doesn't write comments into source files.
-- **Code review or quality assessment**: If the user asks "review my code" or "check for bugs", route to the code-reviewer skill.
-- **Generating test cases**: If the user asks "write tests for this API", use a test generation skill.
-- **Content writing / marketing copy**: If the user asks "write a blog post about my API", use a content generation skill. This skill produces technical reference documentation only.
-- **Real-time API introspection**: This skill processes files you provide. It cannot connect to live APIs and auto-discover endpoints — provide an OpenAPI spec or code files as input.
 
 ---
 
@@ -117,7 +105,24 @@ doc-generator extracts, transforms, validates, and formats documentation from co
 
 ---
 
-## §2  Data Pipeline — ETVF Flow
+## §2  Negative Boundaries
+
+**Do NOT use this skill for**:
+
+- **Writing inline code comments**: If the user asks "add JSDoc comments to my functions", use a code annotation skill. This skill extracts and formats existing documentation, it doesn't write comments into source files.
+- **Code review or quality assessment**: If the user asks "review my code" or "check for bugs", route to the code-reviewer skill.
+- **Generating test cases**: If the user asks "write tests for this API", use a test generation skill.
+- **Content writing / marketing copy**: If the user asks "write a blog post about my API", use a content generation skill. This skill produces technical reference documentation only.
+- **Real-time API introspection**: This skill processes files you provide. It cannot connect to live APIs and auto-discover endpoints — provide an OpenAPI spec or code files as input.
+
+**The following trigger phrases should NOT activate this skill**:
+- "add JSDoc comments" → code annotation skill
+- "review my code" | "check for bugs" → code-reviewer skill
+- "write tests" → test generation skill
+
+---
+
+## §3  Data Pipeline — ETVF Flow
 
 ### Extract Phase
 | Step | Operation | Output |
@@ -153,7 +158,7 @@ doc-generator extracts, transforms, validates, and formats documentation from co
 
 ---
 
-## §3  Input Schema
+## §4  Input Schema
 
 ```yaml
 input_schema:
@@ -211,7 +216,7 @@ input_schema:
 
 ---
 
-## §4  Output Schema
+## §5  Output Schema
 
 ```yaml
 output_schema:
@@ -292,7 +297,7 @@ output_schema:
 
 ---
 
-## §5  GENERATE Mode
+## §6  GENERATE Mode
 
 **Triggers**: generate, create, doc, 生成, 创建, 文档
 
@@ -325,7 +330,7 @@ Status: PASS | Quality: 92/100 | APIs: 15 documented
 
 ---
 
-## §6  BATCH Mode
+## §7  BATCH Mode
 
 **Triggers**: batch, process, directory, 批量, 处理, 目录
 
@@ -361,7 +366,7 @@ Quality: 88/100 (PASS)
 
 ---
 
-## §7  CONVERT Mode
+## §8  CONVERT Mode
 
 **Triggers**: convert, transform, format, 转换, 格式化
 
@@ -395,7 +400,7 @@ Status: PASS | Pages: 12 | Size: 245KB
 
 ---
 
-## §8  Quality Gates
+## §9  Quality Gates
 
 | Metric | Threshold | Description |
 |--------|-----------|-------------|
@@ -414,7 +419,7 @@ Status: PASS | Pages: 12 | Size: 245KB
 
 ---
 
-## §9  Error Handling
+## §10  Error Handling
 
 ### Error Categories
 | Code | Category | Severity | Action |
@@ -442,7 +447,7 @@ Status: PASS | Pages: 12 | Size: 245KB
 
 ---
 
-## §10  Usage Examples
+## §11  Usage Examples
 
 ### Example 1: 生成单个文件的API文档 (Generate API docs for single file)
 

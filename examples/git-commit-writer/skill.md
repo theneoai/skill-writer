@@ -45,7 +45,7 @@ use_to_evolve:
   check_cadence: {lightweight: 10, full_recompute: 50, tier_drift: 100}
   micro_patch_enabled: true
   feedback_detection: true
-  certified_lean_score: null
+  certified_lean_score: 493
   last_ute_check: null
   pending_patches: 0
   total_micro_patches_applied: 0
@@ -193,6 +193,7 @@ a structured, machine-parseable commit message.
 | Input is not a diff or description | Return guidance: "Please paste a git diff or describe what changed" | Prompt user for valid input |
 | Confidence < 0.70 after 2 clarification attempts | HUMAN_REVIEW: output raw analysis + ask user to pick type manually | Present top-3 candidates with rationale |
 | Breaking change with production impact (BREAKING CHANGE footer) | HUMAN_REVIEW: flag explicitly before generating footer | Require explicit user confirmation: "This will mark a breaking change — confirm?" |
+| Input is a merge commit message ("Merge branch 'x' into 'y'") | VALIDATE: flag as auto-generated merge commit; do not reformat | Return PASS with note: "Merge commits are exempt from Conventional Commits spec" |
 
 **Escalation Decision Matrix**:
 

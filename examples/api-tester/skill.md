@@ -34,6 +34,9 @@ triggers:
     - "测试这个API"
     - "验证API响应"
     - "批量API测试"
+    - "API安全扫描"
+    - "检查API端点"
+    - "校验API响应"
 
 interface:
   input: user-natural-language
@@ -70,18 +73,6 @@ api-tester automates HTTP API testing: it executes requests, validates responses
 
 ---
 
-## §N  Negative Boundaries
-
-**Do NOT use this skill for**:
-
-- **Load / performance testing**: If you ask "run 1000 concurrent requests" or "benchmark API throughput", use a dedicated load-testing tool (k6, wrk). This skill executes single requests and small batches, not stress tests.
-- **UI / browser testing**: If the user asks "test my login page" or "check if the button works", route to a browser automation skill. api-tester operates at the HTTP level only.
-- **Unit testing code**: If the user asks "test my Python function" or "write a Jest test", this skill is not appropriate — use a code-testing skill instead.
-- **Generating mock servers**: This skill consumes APIs; it does not create them. Route to an API scaffolding skill for "build me a mock API".
-- **Production traffic replay**: Do not use to replay production logs against live systems without explicit user confirmation. Always confirm the target environment.
-
----
-
 ## §1  Identity
 
 **Name**: api-tester
@@ -94,11 +85,6 @@ api-tester automates HTTP API testing: it executes requests, validates responses
 3. **Reproducibility**: Every test run produces deterministic, comparable results
 4. **Transparency**: Full audit trail with request/response logging
 
-**Design Patterns**:
-- **Template Method**: Standardized test execution flow with customizable validation steps
-- **Strategy Pattern**: Pluggable authentication and validation strategies
-- **Observer Pattern**: Event-driven reporting and logging
-
 **Red Lines (严禁)**:
 - 严禁 hardcode credentials, tokens, or API keys in test scripts (CWE-798)
 - 严禁 execute tests against production endpoints without explicit confirmation
@@ -109,7 +95,24 @@ api-tester automates HTTP API testing: it executes requests, validates responses
 
 ---
 
-## §2  Loop — Plan-Execute-Summarize
+## §2  Negative Boundaries
+
+**Do NOT use this skill for**:
+
+- **Load / performance testing**: If you ask "run 1000 concurrent requests" or "benchmark API throughput", use a dedicated load-testing tool (k6, wrk). This skill executes single requests and small batches, not stress tests.
+- **UI / browser testing**: If the user asks "test my login page" or "check if the button works", route to a browser automation skill. api-tester operates at the HTTP level only.
+- **Unit testing code**: If the user asks "test my Python function" or "write a Jest test", this skill is not appropriate — use a code-testing skill instead.
+- **Generating mock servers**: This skill consumes APIs; it does not create them. Route to an API scaffolding skill for "build me a mock API".
+- **Production traffic replay**: Do not use to replay production logs against live systems without explicit user confirmation. Always confirm the target environment.
+
+**The following trigger phrases should NOT activate this skill**:
+- "run 1000 requests" | "benchmark throughput" → load testing tool (k6, wrk)
+- "test my login page" | "check the button" → browser automation skill
+- "write a Jest test" | "test my function" → code-testing skill
+
+---
+
+## §3  Loop — Plan-Execute-Summarize
 
 | Phase | Description | Exit Criteria |
 |-------|-------------|---------------|
@@ -122,7 +125,7 @@ api-tester automates HTTP API testing: it executes requests, validates responses
 
 ---
 
-## §3  TEST Mode
+## §4  TEST Mode
 
 **Triggers**: test, execute, run, call, send, 测试, 执行, 运行, 调用, 发送
 
@@ -176,7 +179,7 @@ api-tester automates HTTP API testing: it executes requests, validates responses
 
 ---
 
-## §4  VALIDATE Mode
+## §5  VALIDATE Mode
 
 **Triggers**: validate, verify, check, schema, assert, 验证, 校验, 检查, 断言
 
@@ -218,7 +221,7 @@ api-tester automates HTTP API testing: it executes requests, validates responses
 
 ---
 
-## §5  BATCH Mode
+## §6  BATCH Mode
 
 **Triggers**: batch, bulk, multiple, suite, collection, 批量, 多个, 测试集, 集合
 
@@ -262,7 +265,7 @@ api-tester automates HTTP API testing: it executes requests, validates responses
 
 ---
 
-## §6  Quality Gates
+## §7  Quality Gates
 
 | Metric | Threshold | Description |
 |--------|-----------|-------------|
@@ -275,7 +278,7 @@ api-tester automates HTTP API testing: it executes requests, validates responses
 
 ---
 
-## §7  Security Baseline
+## §8  Security Baseline
 
 **CWE Compliance Checklist**:
 
@@ -297,7 +300,7 @@ api-tester automates HTTP API testing: it executes requests, validates responses
 
 ---
 
-## §8  Error Handling
+## §9  Error Handling
 
 | Error Type | HTTP Status | Recovery Action |
 |------------|-------------|-----------------|
@@ -316,7 +319,7 @@ api-tester automates HTTP API testing: it executes requests, validates responses
 
 ---
 
-## §9  Usage Examples
+## §10  Usage Examples
 
 ### Example 1 — Single API Test
 
