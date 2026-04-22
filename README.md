@@ -1090,7 +1090,9 @@ skill-writer/
 │   ├── edit-audit.md              # Edit Audit Guard (MICRO/MINOR/MAJOR/REWRITE)
 │   ├── skill-registry.md          # Skill Registry spec (SHA-256 IDs, push/pull/sync)
 │   ├── skill-graph.md             # Graph of Skills spec (v3.2.0)
-│   └── progressive-disclosure.md  # Five-layer loading pattern (Layer -1 ~ Layer 3)
+│   ├── progressive-disclosure.md  # Five-layer loading pattern (Layer -1 ~ Layer 3)
+│   ├── mode-router.md             # Mode routing and dispatch rules
+│   └── modes/                     # Per-mode reference files (create, evaluate, optimize, …)
 ├── templates/                     # Skill templates (4 types + UTE snippet)
 │   ├── base.md
 │   ├── api-integration.md
@@ -1107,17 +1109,42 @@ skill-writer/
 │   ├── 00-starter/                # BRONZE ~730/1000 — learning reference
 │   ├── api-tester/                # GOLD 920/1000
 │   ├── code-reviewer/             # GOLD 947/1000
-│   └── doc-generator/             # GOLD 895/1000
+│   ├── doc-generator/             # GOLD 895/1000
+│   ├── git-commit-writer/         # PLATINUM 1007/1020 — full lifecycle walkthrough
+│   ├── data-pipeline-demo/        # Functional tier reference (v3.5.0)
+│   └── mcp-bridge/                # Atomic tier reference — MCP tool delegation (v3.5.0)
+├── agents/                        # BENCHMARK mode agent specs
+│   ├── executor.md                # Parallel test executor
+│   ├── comparator.md              # Blind Comparator agent
+│   ├── analyzer.md                # Result analyser
+│   └── grader.md                  # Blind grader
+├── spec/                          # External compatibility specs
+│   └── agent-skills-compat.md     # agentskills.io v1.0 frontmatter compatibility
 ├── scripts/                       # CI/dev automation scripts
 │   ├── lint.sh                    # Shellcheck wrapper for all install scripts
 │   ├── validate.sh                # Dry-run all platform installers
-│   └── check-version.py           # Version consistency check across platform files
+│   ├── check-version.py           # Version consistency check across platform files
+│   ├── check-spec-compat.py       # agentskills.io v1.0 frontmatter validator
+│   ├── build-platforms.py         # Platform sync / drift checker
+│   ├── run_trigger_eval.py        # Trigger-accuracy evaluation (needs ANTHROPIC_API_KEY)
+│   ├── run_benchmark.py           # Empirical A/B benchmark (needs ANTHROPIC_API_KEY)
+│   ├── aggregate_benchmark.py     # Aggregate multiple benchmark runs
+│   ├── optimize_description.py    # Iterative description optimizer
+│   ├── emit_spec_pure.py          # Extract pure spec from skill-framework.md
+│   └── …                          # Additional dev and analysis utilities
 ├── docs/                          # Documentation and GitHub Pages site
 │   ├── index.html                 # GitHub Pages landing page
 │   ├── skill-creator-analysis.md  # Architecture analysis and design decisions
-│   └── mcp-integration.md         # MCP server integration guide
+│   ├── sandboxing.md              # Sandboxing and isolation guidance
+│   └── supply-chain-security.md   # Supply-chain trust and signing guide
+├── experimental/                  # Skeleton code for future features (not production-ready)
+│   ├── mcp-integration.md         # MCP server integration guide
+│   └── mcp/                       # MCP server skeleton
 ├── Makefile                       # Dev targets: lint, validate, check-version, install, ci
+├── platforms.yaml                 # Platform metadata registry
 ├── skill-framework.md             # Complete specification (source of truth, 2772 lines)
+├── skill-framework-index.md       # Quick-reference index to skill-framework.md sections
+├── README.zh.md                   # 简体中文版文档
 └── install.sh                     # Top-level dispatcher → delegates to platform scripts
 ```
 
@@ -1360,7 +1387,7 @@ MIT License - See [LICENSE](LICENSE) file for details.
 ### Completed
 
 - [x] Core engine with CREATE, LEAN, EVALUATE, OPTIMIZE, INSTALL, COLLECT, SHARE, GRAPH modes
-- [x] 3-platform direct-file architecture (Claude, OpenClaw, OpenCode) — no build pipeline
+- [x] 8-platform direct-file architecture (Claude, OpenClaw, OpenCode, Cursor, Gemini, OpenAI, Kimi, Hermes) — no build pipeline
 - [x] SKILL.md v3.3.0 compliance: skill_tier, triggers, 11-field use_to_evolve, Skill Summary, Negative Boundaries
 - [x] LEAN fast-evaluation mode with [STATIC]/[HEURISTIC] reliability labels
 - [x] UTE 2.0 self-improvement protocol (L1 enforced + L2 collective)
@@ -1387,7 +1414,7 @@ MIT License - See [LICENSE](LICENSE) file for details.
 - [x] **v3.3.0** — Progressive Disclosure Layer -1 (Hook Injection): ≤50-token per-message skill-awareness nudge; five-layer architecture
 - [x] **v3.3.0** — Skill Summary heuristic Weighted Ranking: multi-factor rank formula (trigger×0.4 + lean×0.3 + usage×0.2 + quality×0.1); quality threshold gate (0.35)
 - [x] **v3.3.0** — Trigger Discovery Pipeline: `trigger_signals` in session artifact; AGGREGATE Rule 4 promotes observed user language to canonical triggers
-- [x] **v3.3.0** — Simplified 3-platform direct-file architecture; removed Node.js build pipeline
+- [x] **v3.3.0** — Simplified 8-platform direct-file architecture; removed Node.js build pipeline
 
 ### Planned
 
