@@ -224,6 +224,130 @@ MVR Bundle Result:
 
 ---
 
+## §2b  Prerequisite-Aware Bundle Retrieval `[CORE — enhanced MVR]` (v3.6.0)
+
+> **Research basis**: Graph of Skills prerequisite-aware retrieval (arXiv:2604.05333, April 2026).
+> Key finding: standard flat nearest-neighbor retrieval misses prerequisite skills —
+> semantically weak but functionally required dependencies that enable correct execution.
+> Prerequisite-aware traversal achieves **+43.6% reward** and **-37.8% token cost**
+> vs. loading all available skills. This section upgrades the MVR (§2a) with a
+> prerequisite traversal step that can run `[CORE]` using only YAML reading.
+
+### §2b.1  The Prerequisite Gap
+
+Standard MVR (§2a) seeds from a trigger match and expands `depends_on` chains.
+The prerequisite gap occurs when:
+1. Skill A matches the trigger well (high semantic similarity)
+2. Skill B is required to execute A correctly (precondition of A)
+3. B is NOT linked via `depends_on` (legacy skill with no graph block)
+4. B has LOW semantic similarity to the original query
+5. → Vector retrieval misses B; A fails because its precondition is unmet
+
+**Solution**: Extend seed expansion to check `preconditions` and `postconditions`
+fields (introduced by gRaSP, see `scripts/skill_graph.py`):
+
+```yaml
+# Example skill with precondition declarations
+name: api-tester
+preconditions:
+  - "ANTHROPIC_API_KEY is set"
+  - "schema-validator skill is installed"
+postconditions:
+  - "test-report.json written to out/"
+  - "all endpoint schemas validated"
+```
+
+### §2b.2  Enhanced MVR with Prerequisite Traversal
+
+```
+PREREQUISITE-AWARE MVR — 7-Step Algorithm [CORE]
+
+Steps 1–2: Same as §2a.1 (SEED + EXPAND via depends_on)
+
+Step 2b — PRECONDITION SCAN (new step, inserted after EXPAND)
+  For each skill in current bundle:
+    Read skill's `preconditions:` list from YAML frontmatter (if present).
+    For each precondition string:
+      IF precondition references another skill:
+        → Search installed skills for one whose `postconditions:` satisfies it
+        → If found: add to bundle as required=true (even if no depends_on edge)
+        → If not found: flag as UNMET_PRECONDITION (warn user)
+      IF precondition references a tool/env:
+        → Add to bundle.required_env list for user to verify
+
+  Matching heuristic (CORE — no vector search):
+    "schema-validator skill is installed"
+      → Search skill names for "schema-validator" exact match → add if found
+    "ANTHROPIC_API_KEY is set"
+      → Add to bundle.required_env ["ANTHROPIC_API_KEY"]
+
+Steps 3–5: Same as §2a.1 (DEDUPLICATE + TOPOLOGICAL SORT + TOKEN BUDGET)
+
+Step 6 — POSTCONDITION CHAIN VERIFY (new step)
+  For each pair of skills (A, B) where A appears before B in topological order:
+    Check if any of A's postconditions satisfies any of B's preconditions.
+    If NO chain exists between sequential skills: → WARN "B has no upstream satisfier"
+    (This is advisory — does not block bundle delivery)
+
+Step 7 — REPORT UNMET PRECONDITIONS
+  List all UNMET_PRECONDITION items before delivering bundle:
+  "⚠ Bundle missing: schema-validator (required by api-tester precondition).
+   Install it before running this bundle."
+```
+
+### §2b.3  Prerequisite-Aware Bundle vs. Flat MVR
+
+| Scenario | MVR (§2a) | Prereq-Aware (§2b) |
+|---------|-----------|-------------------|
+| A depends_on B (YAML declared) | ✓ Resolved | ✓ Resolved |
+| A requires B (precondition only, no graph edge) | ✗ Missed | ✓ Resolved via postcondition match |
+| Env dependency (API key) | ✗ Not tracked | ✓ Surfaced in required_env |
+| Unmet dependency warning | ✗ Silent miss | ✓ Explicit warning |
+| Token cost vs. loading all skills | Better | Better + -37.8% from research |
+
+### §2b.4  SkillFlow Three-Stage Pipeline (for large skill libraries) `[CORE]`
+
+> **Research basis**: SkillFlow (arXiv:2504.06188, IBPA/UC Davis, March 2026).
+> Production-tested on ~36K community SKILL.md bundles. Key insight: at scale,
+> two-stage retrieval (vector + LLM select) is insufficient — a cross-encoder
+> reranking stage dramatically improves precision without full LLM calls per candidate.
+
+When the installed skills directory contains more than **~50 skills**, apply the
+SkillFlow three-stage pipeline instead of the direct SEED step:
+
+```
+SKILLFLOW PIPELINE (50+ skills) [CORE]
+
+Stage 1 — COARSE FILTER (vector-free approximation)
+  When a true vector index is unavailable:
+  → Compute keyword overlap between query and each skill's {name, description, triggers}
+  → Keep top-15 by keyword overlap score (Jaccard coefficient over trigrams)
+  → Takes: skill list + query string
+
+Stage 2 — CROSS-ENCODER RERANKING (LLM-assisted)
+  For each of the top-15 candidates from Stage 1:
+  → Ask LLM: "Given this user request: [query], does this skill description: [desc]
+               match? Score 0–10 for relevance. Reply with JSON: {score: N, reason: '...'}"
+  → Sort by score; keep top-3
+  → Merge with mandatory CORE skills (always included regardless of ranking)
+
+Stage 3 — PREREQUISITE EXPANSION
+  Apply §2b.2 Prerequisite-Aware MVR starting from the top-3 selected skills.
+  Token budget: 12,000 tokens (same as MVR §2a Step 5).
+
+Result: execution-complete bundle with 3–8 skills, within token budget.
+```
+
+**When to use SkillFlow vs. direct MVR**:
+
+| Library Size | Algorithm | Why |
+|-------------|----------|-----|
+| < 50 skills | Direct MVR (§2a) | Simple, fast, all skills fit in context |
+| 50–200 skills | SkillFlow + Prereq (§2b) | Too many to scan; need coarse filter |
+| > 200 skills | SkillFlow + vector index | Stage 1 needs real embeddings at this scale |
+
+---
+
 ## §3  Bundle Retrieval Protocol `[EXTENDED]`
 
 ### §3.1  Concept

@@ -5,6 +5,88 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.6.0] — 2026-04-28
+
+### 2026-04-28 — Industry research synthesis + optimization (`claude/research-industry-optimization-soO1F`)
+
+Research synthesis from 13 peer-reviewed papers (2025-2026) across prompt optimization,
+agentic security, evaluation calibration, graph retrieval, and self-evolution. All changes
+are backward-compatible — no installed skills require modification.
+
+#### S19: DEEVO Debate-Driven Evolutionary Optimization (optimize/strategies.md)
+- New strategy `S19` implements DEEVO (Dubey et al. 2025, arXiv:2506.00178) — replaces
+  GEPA's fitness-score signal with Elo-rated structured debates between competing skill variants
+- Enables optimization in subjective/open-ended domains where no ground truth exists
+- Compatible with existing A/B benchmark infrastructure; uses same `--deevo` flag on
+  `scripts/run_gepa_optimize.py`
+- Selection matrix updated: GEPA plateau in subjective domain → S19; after S19 → S18 + S20
+
+#### S20: TEE Uncertainty Decomposition (optimize/strategies.md, eval/rubrics.md)
+- New strategy `S20` implements Total Evaluation Error (TEE) decomposition (Bose et al. 2026,
+  arXiv:2604.11581) — decomposes evaluation variance into Systematic Bias + Random Variance
+- Reports per-dimension Coefficient of Variation (CV); flags dimensions with CV > 0.07 as NOISY
+- Detects agreeableness bias (>96% TPR, <25% TNR) that inflates Phase 3 scores near ceiling
+- `scripts/run_multi_eval.py` gains `--tee` flag: outputs `tee_analysis` block in report JSON
+- `eval/rubrics.md §6.6`: Phase 4 now emits calibration advisory for scores near tier boundaries
+
+#### Evaluation Calibration Protocol (refs/eval-calibration.md — new file)
+- New companion file with full agreeableness bias detection, regression-based calibration
+  (Huang et al. 2025, arXiv:2510.12462; Zhang et al. 2025, arXiv:2506.22316), and TEE workflow
+- Documents `calibrated_score` computation (discount factor from false-positive rate on known-FAIL skills)
+- GOLD/PLATINUM certification now requires calibration check before registry push
+- Defines `evaluation_calibration:` YAML block for certifying skills with uncertainty metadata
+
+#### Security: ASI07/ASI08 Escalation to P1-Conditional (refs/security-patterns.md)
+- `ASI07` (Insecure Skill Composition) escalated from P2 advisory to P1-conditional (−30 pts)
+  when skill dynamically routes to other skills from untrusted caller input without allowlist
+- `ASI08` (Memory & State Poisoning) escalated to P1-conditional (−30 pts) when skill
+  reads from persistent cross-session memory without integrity verification
+- Both match OWASP Top 10 for Agentic Applications 2026 tier-1 risk classifications
+- Security scan log format updated: `asi07_escalated_to_p1`, `asi08_escalated_to_p1` fields
+
+#### Security: Compression-as-Security Primitive (refs/security-patterns.md §9 — new)
+- New §9 implements SecurityLingua approach (Microsoft Research 2025, extending LLMLingua):
+  semantic compression as an ingestion-time security filter before P0 scan
+- Surfaces obfuscated injections hidden in verbose UNTRUSTED skill bodies (verbose jailbreaks
+  rely on length/redundancy; compression exposes hidden intent)
+- New P0 severity class: `OBFUSC` — compression reveals hidden intent → ABORT
+- Protocol: compress to 20% → scan both original and compressed → surface to user before install
+- Severity table updated: P0 now includes OBFUSC alongside CWE-798/89/78
+
+#### Convergence Detection: Momentum Signal (refs/convergence.md — Signal 4)
+- New Signal 4 (Momentum Check) added as a second-derivative stopping criterion
+- Computes trend of round-to-round deltas; DECELERATING momentum for 3+ rounds triggers
+  strategy switch (S14) rather than full stop
+- New convergence signal `momentum_stall`: DECELERATING + STABLE trend → S14 switch or VERIFY
+- Score history format updated: `momentum` field added to per-round convergence entry
+
+#### Graph of Skills: Prerequisite-Aware Retrieval (refs/skill-graph.md §2b — new)
+- New §2b implements prerequisite-aware bundle retrieval (arXiv:2604.05333, April 2026):
+  +43.6% reward, -37.8% token cost vs. flat loading — seeds from semantic match, then traverses
+  precondition→postcondition chains to surface functionally required but semantically weak deps
+- Uses existing `preconditions:` / `postconditions:` gRaSP YAML fields (scripts/skill_graph.py)
+- New §2b.4: SkillFlow three-stage pipeline (arXiv:2504.06188) for libraries with 50+ skills:
+  keyword filter → cross-encoder reranking → prerequisite expansion; production-tested at 36K scale
+- MVR limitations table updated to reflect new [CORE] prerequisite traversal capability
+
+#### UTE: R-Few Anchor Calibration + SoK Taxonomy (refs/use-to-evolve.md §11–12 — new)
+- §11: R-Few anchor-calibrated evolution (Wu et al. 2025, arXiv:2512.02472) — prevents UTE
+  drift using 1–5% anchor data; anchor-calibrated micro-patch protocol gates patches on
+  anchor_pass_rate ≥ 0.67 before presenting to user
+- `ute_anchors:` YAML block and `.skill-anchors.json` companion file format defined
+- §12: SoK skill taxonomy (arXiv:2602.20867) mapped to UTE configuration:
+  Atomic/Composite/Adaptive/Meta-Skill types with appropriate micro-patch scope per type
+- Meta-type skills now validated: `micro_patch_enabled: true` on meta-type → EVALUATE Phase 4 ERROR
+
+#### Anti-Patterns: Categories K and L (optimize/anti-patterns.md)
+- Category K (Evaluation Calibration): K1 Agreeableness Bias Blindspot (ERROR for GOLD/PLAT),
+  K2 Point Estimate Certification, K3 Noisy Dimension Certification, K4 Stale Calibration
+- Category L (Self-Evolution): L1 Unanchored UTE Evolution, L2 Tier Mismatch in UTE Scope,
+  L3 Meta-Skill UTE Contamination (ERROR — disables micro-patches on planning-tier meta-skills)
+- Severity table updated with K/L categories; references to S20 and eval-calibration.md added
+
+---
+
 ## [Unreleased]
 
 ### 2026-04-17 — skill-creator design review (`claude/review-skill-creator-design-8ZK8R`)

@@ -3,6 +3,8 @@
 > **Purpose**: Common mistakes that degrade skill quality, trigger failures, or create security issues.
 > **Load**: During OPTIMIZE mode and during review pass.
 > **Format**: Each anti-pattern has a symptom, root cause, and specific fix.
+> **v3.6.0**: Added Category K (Evaluation Calibration — agreeableness bias, TEE variance, stale calibration)
+> and Category L (Self-Evolution — unanchored UTE, tier mismatch, meta-skill contamination).
 
 ---
 
@@ -842,6 +844,13 @@ Re-running won't help. The evals themselves must be fixed.
 | J1 | Non-Discriminating Generic Assertions | WARNING | Replace with skill-specific assertions |
 | J2 | Non-Discriminating Threshold Assertions | WARNING | Anchor assertions to skill constraints |
 | J3 | INCONCLUSIVE Verdict Ignored | WARNING | Fix assertions first; do not re-run unchanged |
+| K1 | Agreeableness Bias Blindspot | **ERROR** (GOLD/PLAT) | S20 + calibration check before certifying |
+| K2 | Point Estimate Certification | WARNING | Run S18 multi-run; use conservative tier near boundary |
+| K3 | Noisy Dimension Certification | WARNING | Fix noisy dim (CV > 0.07) before certifying |
+| K4 | Stale Calibration Anchoring | WARNING | Re-run calibration per domain and model version |
+| L1 | Unanchored UTE Evolution | WARNING | Set certified_lean_score before enabling micro-patches |
+| L2 | Tier Mismatch in UTE Scope | WARNING | Align UTE patch type to skill_tier (atomic/functional/planning) |
+| L3 | Meta-Skill UTE Contamination | **ERROR** | Disable micro_patch_enabled for all planning-tier meta-skills |
 
 **ERROR = ABORT**: Skill must not be delivered. Fix required before any further evaluation.
 **S8** = Strengthen Security Baseline (OWASP + CWE) — see `optimize/strategies.md §4 S8`
@@ -850,3 +859,189 @@ Re-running won't help. The evals themselves must be fixed.
 **H-category**: Supply chain issues must be resolved before skill can be loaded into context.
 **I-category**: Apply S15 Skill Body Slimming — see `optimize/strategies.md §9`.
 **J-category**: Run BENCHMARK, read Analyzer output, update assertions before re-running.
+**K-category**: Run S20 (TEE decomposition) + calibration check — see `refs/eval-calibration.md`.
+**L-category**: Run S19 (DEEVO) or revisit R-Few anchor calibration for UTE self-evolution.
+
+---
+
+## Category K — Evaluation Calibration Anti-Patterns (v3.6.0)
+
+> **Research basis**: arXiv:2604.11581 (TEE), arXiv:2510.12462 and arXiv:2506.22316 (LLM-as-Judge bias).
+> These patterns address the systematic inflation of skill quality scores due to LLM judge biases.
+
+### K1 — Agreeableness Bias Blindspot (AGREEABLENESS_UNCHECKED)
+
+**Symptom**: Skill certified at GOLD or PLATINUM without a calibration check. EVALUATE
+Phase 3 scores are consistently at or near the maximum (380–400/400) across all runs.
+
+**Root Cause**: LLM judges exhibit agreeableness bias — they rate almost all outputs as
+"mostly good" (TPR > 96%, TNR < 25%). A genuinely FAIL-tier skill may score BRONZE/SILVER
+under an agreeableness-biased judge, inflating certification.
+
+**Anti-pattern signature**:
+```yaml
+# CAUGHT BY: S20 agreeableness check
+# Phase 3 score appears near-maximum on every independent eval run
+# Known-FAIL calibration skills score ≥ 350/500 on LEAN
+certified_tier: "GOLD"   # ← inflated; actual tier likely SILVER or BRONZE
+```
+
+**Fix**:
+1. Create 3 known-FAIL calibration skills (see `refs/eval-calibration.md §2.1`)
+2. Run LEAN on each — if any scores ≥ 400/500, agreeableness bias confirmed
+3. Apply calibration discount (see `refs/eval-calibration.md §2.2`)
+4. Re-certify with calibrated score; update `evaluation_calibration:` block in YAML
+
+**Severity**: WARNING for SILVER targets; **ERROR** (blocks registry push) for GOLD/PLATINUM.
+
+---
+
+### K2 — Point Estimate Certification (MISSING_UNCERTAINTY)
+
+**Symptom**: Skill certified from a single EVALUATE run near a tier boundary (within 30 pts).
+No S18 multi-run or S20 TEE analysis was performed.
+
+**Root Cause**: Single-run evaluations have variance of ±20–40 pts from prompt framing,
+temperature, and context effects (TEE random variance component). Near tier boundaries,
+this variance determines the tier — but single-run reports present a false certainty.
+
+**Anti-pattern signature**:
+```yaml
+# CAUGHT BY: SHARE gate check — certified_lean_score within 30 pts of tier boundary
+certified_lean_score: 702   # ← within 30 pts of BRONZE floor (700); high risk of mis-tier
+validation_status: "full-eval"
+# No s18_runs or calibration block present
+```
+
+**Fix**:
+1. Run S18 (3–5 passes) → compute median + CI
+2. If CI width > 40 pts: apply S20 dimension calibration; fix noisy dimensions
+3. If score is within 30 pts of a tier boundary: use conservative (lower) tier
+4. Add `evaluation_calibration.runs: N` to YAML frontmatter
+
+---
+
+### K3 — Noisy Dimension Certification (NOISY_DIM_IGNORED)
+
+**Symptom**: S18 multi-run report shows one dimension with CV > 0.07 but certification
+proceeds using the mean score. The noisy dimension masks real quality variance.
+
+**Root Cause**: Certification averages across dimensions. A noisy D3 Workflow can swing
+±25 pts between runs — the mean looks acceptable (42/45) but the range is 30–45.
+Certifying on the mean treats noise as signal.
+
+**Anti-pattern signature**:
+```
+# CAUGHT BY: S20 TEE output
+dimension_cv:
+  workflow: 0.092   # ← CV > 0.07; NOISY
+  errorHandling: 0.035
+  ...
+# Developer proceeds with certification without fixing workflow dimension
+```
+
+**Fix**:
+1. Identify noisy dimensions (CV > 0.07) from S20 output
+2. Apply targeted strategy for that dimension (e.g., S4 for D3 Workflow)
+3. Re-run S18 after fix — verify CV drops below 0.07
+4. Only certify after all critical dimensions show CV < 0.07
+
+---
+
+### K4 — Calibration Anchoring (STALE_CALIBRATION)
+
+**Symptom**: Developer applies a fixed calibration discount from a previous run to all
+future evaluations without re-running the calibration check.
+
+**Root Cause**: Agreeableness bias rate varies by model version, prompt phrasing, and
+skill domain. A 9% discount valid for code-review skills may be inappropriate for
+data-pipeline skills.
+
+**Fix**: Run calibration check freshly for each certification context:
+- When certifying a new skill domain → always re-run §2.1 agreeableness check
+- When the underlying model version changes → re-run calibration
+- Never hard-code a discount factor across different skill types
+
+---
+
+## Category L — Self-Evolution Anti-Patterns (v3.6.0)
+
+> **Research basis**: R-Few (arXiv:2512.02472, Dec 2025) — self-evolution with 1–5% anchor data.
+> SoK: Agentic Skills (arXiv:2602.20867, Feb 2026) — formal taxonomy of skill types.
+> These patterns address common mistakes in UTE self-evolution configuration and skill taxonomy.
+
+### L1 — Unannotated UTE Evolution (UNANCHORED_EVOLUTION)
+
+**Symptom**: UTE self-evolution is enabled (`use_to_evolve.enabled: true`) but the skill
+has never been evaluated with a ground-truth anchor set. Micro-patches accumulate without
+any validation that they improve real-world performance.
+
+**Root Cause**: UTE L1 detects feedback signals (corrections, rephrasing) and proposes
+micro-patches based on those signals. Without anchor calibration, there is no check that
+the patches actually improve outcomes — they may overfit to a single user's vocabulary.
+
+**Research context** (R-Few, arXiv:2512.02472): Self-evolving LLM frameworks using even
+1–5% "anchor" human-annotated data significantly outperform unannotated self-play loops.
+Anchor data prevents overfitting to noisy feedback signals.
+
+**Anti-pattern signature**:
+```yaml
+# CAUGHT BY: UTE audit check
+use_to_evolve:
+  enabled: true
+  total_micro_patches_applied: 8    # ← many patches applied
+  certified_lean_score: null        # ← no baseline anchor set
+  validation_status: "lean-only"   # ← never validated after patching
+```
+
+**Fix**:
+1. Before enabling UTE micro-patches, run EVALUATE → record `certified_lean_score`
+2. After every 5 micro-patches, re-run LEAN and compare to `certified_lean_score`
+3. If LEAN drops > 20 pts below baseline → roll back the last batch of patches
+4. Maintain a small anchor set (3–5 real task samples) as ground truth for UTE validation
+
+---
+
+### L2 — Tier Mismatch in UTE Evolution Scope (WRONG_TIER_EVOLUTION)
+
+**Symptom**: UTE evolves a `planning` skill using atomic-skill micro-patch strategies (trigger
+keyword changes), or evolves an `atomic` skill using planning-skill strategies (workflow
+restructuring). The patches improve rubric scores but degrade actual utility.
+
+**Root Cause**: SoK (arXiv:2602.20867) establishes that Atomic, Composite, and Meta-Skills
+have fundamentally different evolution requirements. Atomic skills evolve by tightening
+constraints; planning skills evolve by improving delegation clarity — these are orthogonal.
+
+**Fix** (before enabling UTE on any skill):
+1. Verify `skill_tier` matches actual skill complexity (see anti-patterns F1–F4)
+2. For `planning` tier: UTE should detect delegation failures (sub-skill not found, wrong mode)
+3. For `atomic` tier: UTE should detect constraint violations and boundary escapes
+4. For `functional` tier: UTE can detect any trigger miss or output format deviation
+
+**UTE scope by tier**:
+| Tier | Valid UTE Micro-Patches | Invalid (escalate to OPTIMIZE) |
+|------|------------------------|-------------------------------|
+| `atomic` | Tighten constraint wording, add rejection examples | Add new modes or workflow phases |
+| `functional` | Expand trigger keywords, fix output schema | Restructure identity or add sub-skills |
+| `planning` | Update delegation step targets, fix orchestration | Add atomic constraints or examples |
+
+---
+
+### L3 — Meta-Skill UTE Contamination (META_SKILL_SELF_MODIFICATION)
+
+**Symptom**: A `planning`-tier meta-skill (like skill-writer itself) has UTE enabled without
+scoping guards. UTE micro-patches modify the meta-skill's own routing logic, causing cascading
+failures across all skills it manages.
+
+**Root Cause**: Meta-skills that create/manage other skills should not self-modify via UTE
+at the same cadence as regular skills. A patch to skill-writer's mode router, even if locally
+valid, may invalidate hundreds of installed skills.
+
+**Detection**: `skill_tier: planning` AND `use_to_evolve.enabled: true` AND
+`use_to_evolve.micro_patch_enabled: true` AND skill body manages or creates other skills.
+
+**Fix**:
+1. Set `micro_patch_enabled: false` for all meta-skills (planning tier that manages other skills)
+2. Limit UTE to `feedback_detection: true` only — detect signals, propose via SUGGEST not auto-patch
+3. Any evolution of a meta-skill MUST go through full OPTIMIZE → EVALUATE → HUMAN_REVIEW cycle
+4. Add to Security Baseline: "Meta-skill: UTE micro-patches disabled; all changes require human review"
