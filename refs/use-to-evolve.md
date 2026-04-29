@@ -3,6 +3,9 @@
 > **Purpose**: Protocol for injecting self-improvement capability into any skill.
 > **Load**: When §15 (UTE Injection) of `claude/skill-writer.md` is accessed.
 > **Main doc**: `claude/skill-writer.md §15`
+> **v3.6.0**: Added §11 (R-Few anchor-calibrated evolution — prevents UTE drift with minimal
+> annotation budget) and §12 (SoK skill taxonomy — scopes UTE micro-patches by skill type to
+> prevent meta-skill contamination).
 
 ---
 
@@ -458,3 +461,139 @@ Even without an external backend, L2 benefits are accessible manually:
 4. Apply improvements via standard OPTIMIZE mode
 
 This manual flow degrades gracefully to near-L2 quality with zero infrastructure cost.
+
+---
+
+## §11  R-Few Anchor-Calibrated Evolution (v3.6.0) `[CORE]`
+
+> **Research basis**: Wu et al. 2025, *"Guided Self-Evolving Alignment Without Explicit
+> Human Annotation"* (arXiv:2512.02472, December 2025). R-Few uses 1–5% "anchor"
+> human-annotated data to guide self-play evolution loops, achieving near-RLHF performance
+> with near-zero annotation budget. The anchor set acts as a calibration ground truth —
+> preventing self-evolution from drifting into local optima that feel correct to the model
+> but fail real user needs.
+
+### §11.1  Anchor Set Concept
+
+An **anchor set** is a small, curated collection of ground-truth skill invocations:
+```
+Anchor: {input, expected_output, quality_rating: 1–5}
+Minimum: 3 anchors  (viable floor)
+Target:  5–10 anchors (1–5% of expected total invocations)
+Source:  manually curated by the skill author or power users
+```
+
+**Why anchors matter for UTE**: Without anchors, UTE L1 micro-patches may optimize for
+the feedback signals of a single power user — drifting away from the skill's documented
+purpose. Anchors act as a fixed evaluation point that each patch must satisfy.
+
+### §11.2  Anchor-Calibrated Micro-Patch Protocol
+
+Replace standard §5 Micro-Patch Protocol with the calibrated version when
+anchors are available:
+
+```
+ANCHOR-CALIBRATED PATCH (replaces standard §5 when anchor_set is present):
+
+1. PROPOSE    — AI describes the patch and reason (same as standard §5)
+2. PRE-CHECK  — Score patch against anchor set BEFORE user confirmation:
+                For each anchor {input, expected_output}:
+                  Predict: would the patched skill produce output ≥ expected_quality?
+                  Score: anchor_pass_rate = passing_anchors / total_anchors
+3. GATE       — If anchor_pass_rate < 0.67 (< 2/3 anchors pass):
+                → Reject the patch automatically
+                → Report: "Patch rejected: fails {N} of {M} anchor cases.
+                           Failing anchors: [list]"
+                → Propose alternative patch or escalate to OPTIMIZE
+4. CONFIRM    — (only if anchor_pass_rate ≥ 0.67) Present to user for approval
+5. APPLY      — Apply with user confirmation (same as standard §5)
+6. POST-CHECK — Run LEAN eval + anchor re-score on patched version
+                If LEAN drops > 10 pts OR anchor_pass_rate drops: rollback
+```
+
+### §11.3  Anchor Set Storage
+
+```yaml
+# Add to skill YAML frontmatter when anchors are established
+ute_anchors:
+  established_at: "2026-04-28"
+  count: 5
+  source: "author-curated"        # author-curated | user-contributed | mixed
+  anchor_file: ".skill-anchors.json"  # companion file; same dir as skill
+  min_pass_rate: 0.67             # minimum anchor pass rate for any patch
+```
+
+Anchor file format (`.skill-anchors.json`):
+```json
+{
+  "skill": "<name>",
+  "version": "<semver>",
+  "anchors": [
+    {
+      "id": "anchor-001",
+      "input": "create a skill that summarizes git diffs",
+      "expected_output_contains": ["skill_tier", "triggers", "## §1"],
+      "quality_rating": 5,
+      "added_by": "author",
+      "added_at": "2026-04-28"
+    }
+  ]
+}
+```
+
+### §11.4  When to Use Anchor-Calibrated Evolution
+
+| Situation | Action |
+|-----------|--------|
+| Skill has 0 anchors | Use standard §5 protocol; gather anchors over time |
+| Skill has 3–4 anchors | Use anchor-calibrated protocol (viable but limited) |
+| Skill has 5+ anchors | Full R-Few anchor calibration — highest confidence |
+| UTE has > 5 patches without anchors | Create anchors before applying more patches (anti-pattern L1) |
+| Meta-skill or planning tier | Create anchors; disable micro_patch_enabled (anti-pattern L3) |
+
+---
+
+## §12  SoK Skill Taxonomy for UTE Scoping (v3.6.0)
+
+> **Research basis**: SoK: Agentic Skills (arXiv:2602.20867, February 2026). Systematization
+> of 60+ agentic skill systems. Establishes formal taxonomy: Atomic → Composite → Adaptive → Meta.
+> Key finding: skill evolution strategies must match the skill type — evolving a Meta-Skill
+> the same way as an Atomic Skill causes cascading failures.
+
+### §12.1  Taxonomy Mapping to UTE Configuration
+
+| SoK Type | skill_tier Equivalent | UTE Micro-Patch Scope | Full OPTIMIZE Trigger |
+|----------|----------------------|----------------------|----------------------|
+| **Atomic** (single API call) | `atomic` | Constraint wording, rejection examples | New mode or workflow phase |
+| **Composite** (multi-step) | `functional` | Trigger keywords, output schema | Structural section changes |
+| **Adaptive** (context-dependent) | `functional` with context flags | Trigger coverage per context | Core routing logic changes |
+| **Meta** (creates/manages skills) | `planning` | NONE — micro-patches disabled | Requires HUMAN_REVIEW |
+
+### §12.2  Skill Type Detection Heuristics
+
+If `skill_tier` is set, use it. Otherwise, use these heuristics to infer SoK type:
+
+```
+Heuristic detection:
+  IF skill body has 1 mode + no sub-skill delegation → Atomic
+  IF skill body has 2+ modes + no sub-skill delegation → Composite/Functional
+  IF skill body has conditional routing based on context → Adaptive
+  IF skill body contains "create skill", "invoke [skill-name]", "delegate to" → Meta
+```
+
+### §12.3  UTE Configuration by Taxonomy
+
+Add to `use_to_evolve:` block:
+```yaml
+use_to_evolve:
+  enabled: true
+  skill_type: "composite"   # atomic | composite | adaptive | meta
+  # For meta-type: micro_patch_enabled MUST be false
+  # For adaptive: set context_aware_triggers: true
+  micro_patch_enabled: true   # false for meta-type
+  feedback_detection: true
+  anchor_calibration: false   # true when ute_anchors: block is present
+```
+
+**Validation rule**: If `skill_type: meta` AND `micro_patch_enabled: true` → EVALUATE
+Phase 4 emits ERROR (anti-pattern L3). Fix: set `micro_patch_enabled: false`.

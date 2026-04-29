@@ -1,16 +1,16 @@
 ---
 name: skill-writer
-version: "3.4.0"
-description: "Universal skill-writer v3.4.0: CREATE (incl. --from-failures) → LEAN/EVALUATE (Behavioral Verifier +20, --pragmatic) → OPTIMIZE → GRAPH (GoS MVR) → COLLECT/SHARE. Honest labeling, supply-chain trust, UTE 2.0. Auto-installs to 8 platforms."
+version: "3.6.0"
+description: "Universal skill-writer v3.6.0: CREATE → LEAN/EVALUATE (TEE calibration, agreeableness bias detection) → OPTIMIZE (S19 DEEVO debates, S20 variance decomposition, Momentum Signal 4) → GRAPH (GoS prerequisite-aware retrieval, SkillFlow 3-stage) → COLLECT/SHARE. Security: ASI07/ASI08 P1-conditional, SecurityLingua compression filter. UTE: R-Few anchor calibration, SoK taxonomy scoping. Auto-installs to 8 platforms."
 description_i18n:
-  en: "Full lifecycle meta-skill framework v3.4.0: CREATE with --from-failures (Failure-Driven CREATE heuristic-style), honest labeling (generation_method+validation_status), LEAN fast-eval (500pt triage), EVALUATE 4-phase + Behavioral Verifier (+20 bonus) + Pragmatic Test Phase (pragmatic_success_rate) + OWASP Agentic Top 10, OPTIMIZE 8-dim loop + score persistence (.optimize-history.jsonl) + co-evolutionary VERIFY, GRAPH mode with Minimum Viable Runtime (depends_on chains, [CORE]) + full GoS (v4.0+), supply-chain trust verification (SHA-256 signatures), Skill Summary heuristic cold-start fix (lean-passed=0.5), UTE hooks in standard install + cross-session persistence, deploy to 8 platforms."
-  zh: "全生命周期元技能框架v3.4.0：支持--from-failures失败驱动创建+诚实标注(generation_method+validation_status)的CREATE、带D8奖励的LEAN快速评测、带行为验证器(+20分)+实用测试阶段+OWASP Agentic Top 10的4阶段EVALUATE、带得分历史持久化+协同进化VERIFY的OPTIMIZE、支持最小可运行时(depends_on链路[CORE])+完整GoS(v4.0+)的GRAPH模式、供应链信任验证(SHA-256签名)、Skill Summary heuristic冷启动修复(lean-passed=0.5)、标准安装中的UTE hooks+跨会话持久化、部署至8平台。"
+  en: "Full lifecycle meta-skill framework v3.6.0: CREATE with honest labeling, LEAN/EVALUATE with TEE variance decomposition + agreeableness bias calibration (eval-calibration.md) + OWASP Agentic Top 10 2026 (ASI07/ASI08 P1-conditional), OPTIMIZE with S19 DEEVO Elo-debate evolution (no ground truth needed) + S20 TEE uncertainty decomposition + Momentum Signal 4 convergence (second-derivative early stop), GRAPH with prerequisite-aware bundle retrieval (+43.6% reward, -37.8% tokens) + SkillFlow 3-stage pipeline (50+ skills), UTE with R-Few anchor calibration (1-5% anchor data) + SoK skill taxonomy (Atomic/Composite/Adaptive/Meta scope), SecurityLingua compression-as-security-filter (OBFUSC P0 class), deploy to 8 platforms."
+  zh: "全生命周期元技能框架v3.6.0：CREATE带诚实标注、LEAN/EVALUATE带TEE方差分解+同意性偏差校准(eval-calibration.md)+OWASP Agentic Top 10 2026(ASI07/ASI08 P1条件级)、OPTIMIZE带S19 DEEVO Elo辩论进化(无需真实标签)+S20 TEE不确定性分解+动量信号4收敛(二阶导数早停)、GRAPH带前提条件感知包检索(+43.6%奖励,-37.8%token)+SkillFlow三阶段流水线(50+技能)、UTE带R-Few锚点校准(1-5%锚数据)+SoK技能分类(原子/组合/自适应/元技能范围)、SecurityLingua压缩安全过滤器(OBFUSC P0类)、部署至8平台。"
 
 license: MIT
 author:
   name: theneoai
 created: "2026-03-31"
-updated: "2026-04-15"
+updated: "2026-04-28"
 type: meta-framework
 skill_tier: planning
 
@@ -67,8 +67,8 @@ extends:
 
 use_to_evolve:
   enabled: true
-  injected_by: "skill-writer v3.4.0"
-  injected_at: "2026-04-14"
+  injected_by: "skill-writer v3.6.0"
+  injected_at: "2026-04-28"
   check_cadence: {lightweight: 10, full_recompute: 50, tier_drift: 100}
   micro_patch_enabled: true
   feedback_detection: true
@@ -101,12 +101,14 @@ use_to_evolve:
 ## Skill Summary
 
 skill-writer is a full-lifecycle meta-skill framework for AI assistants: it CREATEs
-skills from typed templates, evaluates quality with a 1000-point pipeline, optimizes
-through up to 20 iterative rounds, and self-evolves via the UTE protocol. Use it when
-you need to create, certify, improve, or deploy a reusable AI skill for Claude,
-OpenCode, or OpenClaw. Designed for developers and AI power users who want structured,
-certifiable skill artifacts — not ad-hoc prompts. This skill does NOT handle one-off
-questions, direct API calls, or non-skill automation tasks — see Negative Boundaries.
+skills from typed templates, evaluates quality with a calibrated 1000-point pipeline
+(TEE variance decomposition, agreeableness bias detection), optimizes through up to 20
+iterative rounds (S19 DEEVO Elo-debate evolution, Momentum Signal 4), and self-evolves
+via the UTE protocol with R-Few anchor calibration. Use it when you need to create,
+certify, improve, or deploy a reusable AI skill for Claude, OpenCode, or OpenClaw.
+Designed for developers and AI power users who want structured, certifiable skill
+artifacts — not ad-hoc prompts. This skill does NOT handle one-off questions, direct
+API calls, or non-skill automation tasks — see Negative Boundaries.
 
 ---
 

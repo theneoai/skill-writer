@@ -397,11 +397,44 @@ VERDICT:     Certified GOLD for structural quality. Real-world utility: ADEQUATE
 
 ---
 
+## §6.6  Phase 4 Calibration Advisory (v3.6.0)
+
+> **Research basis**: TEE — Total Evaluation Error (arXiv:2604.11581). Agreeableness bias
+> in LLM judges (arXiv:2510.12462, 2506.22316). Full calibration protocol: `refs/eval-calibration.md`.
+
+After Phase 4 Behavioral Verifier, append a calibration advisory based on observed scores:
+
+```
+CALIBRATION ADVISORY (auto-generated based on Phase 3 + Phase 4 patterns):
+
+1. AGREEABLENESS CHECK:
+   If Phase 3 sub-scores are ALL ≥ 90% of their max (e.g., trigger routing 115/120):
+   → Flag: "⚠ Agreeableness bias possible: Phase 3 scores near ceiling.
+             For GOLD/PLATINUM certification, run: refs/eval-calibration.md §2.1"
+
+2. VARIANCE WARNING:
+   If this is the first EVALUATE run AND score is within 30 pts of a tier boundary:
+   → Flag: "⚠ Score {N}/1000 is within 30 pts of {TIER} boundary ({BOUNDARY}).
+             Run S18 (multi-run statistical eval) before certifying this tier.
+             Single-run variance is ±20–40 pts in Phase 3."
+
+3. CALIBRATION RECOMMENDED:
+   Targeting GOLD/PLATINUM? → Run refs/eval-calibration.md §2 before certifying.
+   Already calibrated? → Ensure evaluation_calibration.runs ≥ 3 in YAML frontmatter.
+```
+
+The calibration advisory is **informational only** — it does NOT modify the certification
+tier or score. Act on it before publishing to a registry or declaring production readiness.
+
+---
+
 ## §7  Score Reliability & Variance Guide
 
 > **Why this matters**: skill-writer's 1000-point pipeline is LLM-executed. The same skill
 > evaluated twice may produce different scores. This section documents expected variance ranges
 > per phase and gives guidance on how to interpret scores with appropriate confidence.
+> **v3.6.0**: Added TEE dimension CV table and calibration trigger conditions.
+> Full calibration protocol: `refs/eval-calibration.md`.
 
 ### Phase-Level Reliability
 
@@ -459,6 +492,26 @@ Phase 2 has the highest LLM-judgment component. Sub-dimensions ranked by stabili
 | **Error Handling** | Low ± 12 pts | Adequacy is highly subjective |
 | **Domain Knowledge** | Low ± 15 pts | Content accuracy varies most |
 
+### TEE Dimension Coefficient of Variation (CV) Reference (v3.6.0)
+
+The Coefficient of Variation (CV = stddev/mean) quantifies per-dimension measurement noise
+across independent evaluation runs. Based on S20 (TEE decomposition) empirical benchmarks:
+
+| Sub-Dimension | Typical CV | Classification | Action if CV exceeded |
+|---------------|-----------|---------------|----------------------|
+| Security Baseline | 0.01–0.02 | STABLE | No action needed |
+| Metadata Quality | 0.01–0.03 | STABLE | No action needed |
+| System Design | 0.02–0.04 | STABLE | Note in report |
+| Error Handling | 0.03–0.06 | MODERATE | Acceptable; use median |
+| Examples | 0.03–0.06 | MODERATE | Acceptable; use median |
+| Domain Knowledge | 0.04–0.08 | MODERATE-HIGH | Apply S3 before certifying |
+| Workflow Definition | 0.05–0.10 | HIGH | Apply S4 before certifying |
+
+**When to apply S20 TEE analysis**:
+- Any dimension shows CV > 0.07 after 3+ S18 runs → fix dimension; re-run
+- Score within 30 pts of GOLD/PLATINUM boundary → run S20 to confirm it's real signal
+- Phase 3 scores near ceiling (>95% of max) → agreeableness bias check (eval-calibration.md §2.1)
+
 ### Reducing Score Variance
 
 To get more reliable scores from a single run:
@@ -469,6 +522,9 @@ To get more reliable scores from a single run:
    modes. This converts heuristic routing tests to deterministic pass/fail.
 3. **Use LEAN as floor**: Run LEAN first for `[STATIC]` checks (335 pts max, zero variance).
    If LEAN static score < 270, full EVALUATE will almost certainly FAIL — optimize first.
+4. **Run calibration for GOLD/PLATINUM**: Before certifying at GOLD or higher, run the
+   agreeableness check from `refs/eval-calibration.md §2.1`. A single EVALUATE run at GOLD
+   without calibration is insufficient evidence of actual quality.
 
 ---
 

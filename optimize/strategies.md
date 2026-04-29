@@ -6,6 +6,7 @@
 > **SSOT**: `builder/src/config.js SCORING.dimensions` — canonical dimension definitions
 > **v3.2.0**: Added D8 Composability dimension + S10/S11/S12 graph-level strategies
 > **v3.4.0**: Added S13 (Pragmatic Failure Recovery) + S14 (Score History Analysis); §8 meta-strategies
+> **v3.6.0**: Added S19 (DEEVO debate-driven evolution — no ground truth needed) + S20 (TEE variance decomposition + judge calibration); updated selection matrix with debate/calibration paths
 
 ---
 
@@ -716,6 +717,15 @@ Lowest-scoring dimension → apply strategy
   Targeting PLATINUM/GOLD near tier boundary  → S18 (multi-run statistical eval)
   Phase 3 variance ±30+ pts between runs      → S18 (identify noisy dimensions)
   After S17 converges → run S18 for reliable final score
+
+  ── Debate-driven & calibration (v3.6.0) ──
+  No ground truth / subjective skill domain   → S19 (DEEVO Elo debates replace fitness signal)
+  GEPA plateau in subjective domain           → S19 (Elo debates break GEPA deadlocks)
+  After S19 converges                         → S18 → S20 (stat eval + TEE decomposition)
+  LEAN variance > 30 pts across 3 runs        → S20 (TEE — identify noisy dimensions)
+  A/B benchmark delta near 0.15 (±0.05)      → S20 (confirm delta is real, not noise)
+  Phase 3 agreeableness bias detected         → S20 calibration → recertify
+  Any dimension CV > 0.07 in S18 output       → S20 → fix dim → re-run S18
 ```
 
 **Cycle budget**:
@@ -1011,3 +1021,187 @@ Updated §5 Strategy Selection Matrix additions (v3.5.0):
 
 **After S16**: Run `/benchmark compare v_before v_after` to confirm improvement.
 Update `production.benchmark_delta_pass_rate` and `last_benchmark_at` in YAML frontmatter.
+
+---
+
+## §10  Debate-Driven & Calibration Strategies (S19–S20) (v3.6.0)
+
+> **Why S19/S20?**
+> - **S17 (GEPA)** requires a fitness signal — a scalar score to drive selection. In purely
+>   subjective skill domains (open-ended writing, coaching, creative tasks) where no ground truth
+>   exists, GEPA's fitness function becomes unreliable.
+> - **LLM-as-Judge bias**: Agreeableness bias (>96% TPR, <25% TNR) systematically inflates LEAN
+>   scores. EVALUATE Phase 3 LLM judging produces point estimates with no confidence bounds.
+>   A 2026 study (arXiv:2604.11581 — Total Evaluation Error framework) found MMLU rankings
+>   shifted by up to 8 positions from minor prompt perturbations; 10 preference swaps flipped
+>   the top Chatbot Arena model. S20 quantifies and reports this variance.
+>
+> **Research basis**:
+> - S19: Dubey et al. 2025, *"DEEVO: Debate-Driven Evolutionary Prompt Optimization"*
+>   (arXiv:2506.00178, Amazon Science). Outperforms OPRO, GEPA, and EvoPrompt on open-ended tasks.
+> - S20: Bose et al. 2026, *"Hidden Measurement Error in LLM Evaluation Pipelines"*
+>   (arXiv:2604.11581). Introduces Total Evaluation Error (TEE) decomposition.
+>   Also: LM-Polygraph uncertainty benchmarks (MIT TACL 2025); LLM-as-Judge calibration
+>   via regression (arXiv:2510.12462, 2506.22316).
+
+---
+
+### S19 — Debate-Driven Evolutionary Optimization (DEEVO) `[AVAILABLE]`
+
+**Target dimension**: ANY — dimension-agnostic (no ground truth required)
+**Estimated delta**: comparable to S17 (GEPA) in 1/3 the rollouts; better on subjective tasks
+**When to prefer over S17 (GEPA)**:
+- No ground-truth eval set exists (purely subjective skill domains)
+- GEPA plateau below SILVER after 10+ rounds (Elo debates break deadlocks)
+- Multi-mode skills where different variants excel on different prompt types
+- You want to use your existing A/B benchmark infrastructure as the debate arena
+
+**When S17 still wins**:
+- Ground truth is available and well-defined (e.g., structured output format, code correctness)
+- Single-mode skill with clear success criteria
+- Budget constrained: DEEVO uses N×M API calls per debate round
+
+**Algorithm (5 stages)**:
+
+1. **Seed** — 3–5 skill variants (base + S1/S3/S5 perturbations, same as S17 Stage 1)
+2. **Debate** — Each pair of variants is presented to a Judge LLM that scores the structured debate:
+   ```
+   Judge prompt:
+   "You are comparing two skill prompts (A and B) on this task: [user request].
+    Skill A produced: [output A]. Skill B produced: [output B].
+    DEBATE ROUND: Argue for why A is superior, then for why B is superior.
+    JUDGE: Score A and B on: correctness (0–10), completeness (0–10),
+    clarity (0–10), specificity (0–10). Total = sum.
+    Reply with JSON: {a_score: N, b_score: N, reasoning: '...', winner: 'A'|'B'|'tie'}"
+   ```
+3. **Elo update** — Apply standard Elo formula after each debate:
+   ```
+   K = 32  # standard Elo K-factor
+   expected_a = 1 / (1 + 10^((elo_b - elo_a) / 400))
+   if winner == 'A': score_a, score_b = 1, 0
+   elif winner == 'B': score_a, score_b = 0, 1
+   else: score_a, score_b = 0.5, 0.5
+   elo_a += K * (score_a - expected_a)
+   elo_b += K * (1 - score_a - (1 - expected_a))  # symmetric
+   ```
+4. **Select** — Retain top-M by Elo; eliminate bottom (M+1)+; introduce 1 new random perturbation
+5. **Convergence** — Stop when Elo spread across top-3 is < 50 points for 3+ rounds (STABLE Elo)
+
+**Activation**:
+```bash
+export ANTHROPIC_API_KEY=...
+python3 scripts/run_gepa_optimize.py --skill my-skill.md --rounds 10 --deevo
+# --deevo flag switches from LEAN-score fitness to Elo-debate fitness
+# Output: gepa-out/best-skill.md  gepa-out/deevo-report.json
+```
+
+**Cost estimate**: `rounds × population × population / 2` debate API calls.
+Default (10 rounds, 5 pop): ~125 API calls. Approx $0.25–0.50 at Sonnet pricing.
+Similar cost to S17 for same round budget.
+
+**After S19**: Record Elo ratings in skill YAML under `production.deevo_elo_final`.
+Run S18 (multi-run statistical eval) to get a stable LEAN certification score.
+
+**S19 vs. S17 selection**:
+```
+Ground truth available         → S17 (GEPA scalar fitness is more precise)
+No ground truth / subjective   → S19 (DEEVO Elo debates are the only reliable signal)
+GEPA plateau below SILVER      → S19 (Elo debates break local optima GEPA is stuck in)
+After S19 converges            → S18 (multi-run stat eval for reliable certification)
+```
+
+---
+
+### S20 — Total Evaluation Error Decomposition (TEE) `[AVAILABLE]`
+
+**Target dimension**: Certification reliability (meta-strategy — does NOT modify the skill)
+**When to use**:
+- LEAN or EVALUATE scores fluctuate > 30 pts across independent runs
+- A/B benchmark delta_pass_rate is close to the 0.15 threshold (within ±0.05)
+- Targeting PLATINUM/GOLD where a single-run score swing could change the tier
+- Any dimension shows coefficient of variation (CV) > 20% across 3 S18 runs
+- Before certifying a skill for production use, especially for safety-critical skills
+
+**What TEE measures** (after Bose et al. 2026, arXiv:2604.11581):
+
+```
+Total Evaluation Error (TEE) = Systematic Bias + Random Variance
+
+Systematic Bias (reducible):
+  - Prompt framing bias: judge scores differently based on how the question is phrased
+  - Position bias: judge favors the first or last option in a comparison
+  - Agreeableness bias: judge rates all outputs high (TPR > 96%, TNR < 25%)
+  - Self-consistency bias: generator inflates scores for outputs it produced
+
+Random Variance (partially irreducible):
+  - Temperature sampling variance (different outputs from same prompt)
+  - Context-window truncation effects
+  - Model version drift (same model, different weights over time)
+```
+
+**Activation**:
+```bash
+export ANTHROPIC_API_KEY=...
+python3 scripts/run_multi_eval.py --skill my-skill.md --runs 5 --tee --out eval/out/
+# --tee flag enables TEE decomposition output
+# Output: eval/out/multi-eval-report.json (with tee_analysis block)
+```
+
+**TEE analysis output block** (added to `multi-eval-report.json`):
+```json
+"tee_analysis": {
+  "total_runs": 5,
+  "score_mean": 847,
+  "score_stddev": 32,
+  "score_cv": 0.038,
+  "dimension_cv": {
+    "systemDesign": 0.02,    // LOW — stable
+    "domainKnowledge": 0.05, // MODERATE
+    "workflow": 0.08,        // HIGH — noisy dimension
+    "errorHandling": 0.03,
+    "examples": 0.04,
+    "security": 0.01,        // LOW — pattern-based, deterministic
+    "metadata": 0.02
+  },
+  "bias_flags": {
+    "agreeableness_bias": true,   // Phase3 score range 380–400 out of 400 → ceiling effect
+    "position_bias": false,
+    "self_consistency_bias": "unknown"  // needs cross-model check
+  },
+  "reliable_dimensions": ["security", "metadata", "systemDesign"],
+  "noisy_dimensions": ["workflow", "domainKnowledge"],
+  "tee_verdict": "MODERATE_VARIANCE",
+  "certification_recommendation": "Use median score (847). Flag workflow (D3) as noisy — apply S4 before re-certifying."
+}
+```
+
+**Interpretation table**:
+
+| CV per dimension | Verdict | Action |
+|-----------------|---------|--------|
+| CV < 0.03 | STABLE — reliable signal | Use score as-is for certification |
+| CV 0.03–0.07 | MODERATE — acceptable | Note uncertainty; use median |
+| CV > 0.07 | NOISY — unreliable | Fix dimension content first; re-run |
+| Agreeableness flag | INFLATED | Apply judge calibration (see below) |
+
+**Agreeableness bias calibration** (from arXiv:2510.12462, 2506.22316):
+
+When `agreeableness_bias: true` (Phase 3 scores consistently near ceiling):
+1. Create a calibration set of 5–10 known-FAIL skills (deliberately broken skills)
+2. Re-run LEAN on each — if all score ≥ 400/500, agreeableness bias confirmed
+3. Apply calibrated discount: `calibrated_score = score × (1 - false_positive_rate)`
+   where `false_positive_rate = (n_fail_scored_high) / (total_fail_skills_in_calibration_set)`
+4. Use calibrated_score for tier assignment in PLATINUM/GOLD range
+5. Document in skill audit: `{"calibration_applied": true, "discount_factor": 0.08}`
+
+**S20 does NOT improve the skill** — it quantifies how reliable the evaluation is.
+Always combine S20 with content improvement strategies (S1–S19) when CV is HIGH.
+
+**S20 in the selection matrix**:
+```
+LEAN variance > 30 pts across 3 runs          → S20 (identify noisy dimensions)
+A/B benchmark near 0.15 threshold (±0.05)    → S20 (confirm delta is real signal)
+PLATINUM/GOLD target near tier boundary       → S18 first, then S20 if CI is wide
+Phase 3 agreeableness flag                    → S20 calibration + S8 security crosscheck
+Any dimension CV > 0.07                       → S20 → fix that dimension → re-run
+```

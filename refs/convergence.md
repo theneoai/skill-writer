@@ -1,8 +1,10 @@
 # Convergence Detection
 
-> **Purpose**: Three-signal convergence algorithm used to stop optimization loops early.
+> **Purpose**: Four-signal convergence algorithm used to stop optimization loops early.
 > **Load**: When §9 (OPTIMIZE Loop) of `claude/skill-writer.md` is accessed.
 > **Main doc**: `claude/skill-writer.md §9`
+> **v3.6.0**: Added Signal 4 (Momentum Check) — second-derivative stopping criterion for early
+> strategy-switch detection when gains are consistently decelerating.
 
 ---
 
@@ -26,8 +28,8 @@ Without convergence detection, it wastes compute on loops where:
 - All easy gains are exhausted (plateau check)
 - The strategy is actively making things worse (trend check — DIVERGING)
 
-The loop checks all three signals after every round. **Any convergence signal
-triggers early stopping.**
+The loop checks all four signals after every round. **Any convergence signal
+triggers early stopping or strategy switching (momentum_stall).**
 
 ---
 
@@ -139,33 +141,104 @@ def trend_check(score_history: list[float]) -> str:
 
 ---
 
+## §4a  Signal 4 — Momentum Check (v3.6.0) `[ENFORCED via reasoning]`
+
+> **Why momentum?** The three signals above detect *when* improvement has stopped.
+> Momentum detects *that* improvement is decelerating — allowing early exit before
+> a full plateau forms. Formally: momentum is the second derivative of the score
+> trajectory. When momentum turns negative (gains are shrinking each round), the
+> optimization is approaching a local maximum and continued investment yields
+> diminishing returns.
+>
+> **Research basis**: Optimization theory — second-order stopping criteria prevent
+> wasted compute on the tail of a convergence curve (common in gradient descent
+> with momentum, e.g., Adam optimizer's β₂ parameter). Applied here to discrete
+> round-by-round score improvements.
+
+**Algorithm** *(reference implementation)*:
+```python
+def momentum_check(score_history: list[float], window: int = 5) -> str:
+    """
+    Returns "ACCELERATING", "DECELERATING", or "FLAT".
+    Computes momentum as the trend of round-to-round deltas.
+    """
+    if len(score_history) < window + 1:
+        return "ACCELERATING"  # too early — assume still improving
+
+    recent = score_history[-(window + 1):]
+    # First derivatives: round-to-round gains
+    deltas = [recent[i] - recent[i-1] for i in range(1, len(recent))]
+
+    # Second derivative: is the gain itself growing or shrinking?
+    if len(deltas) < 2:
+        return "ACCELERATING"
+
+    first_half = deltas[:len(deltas)//2]
+    second_half = deltas[len(deltas)//2:]
+    first_mean = sum(first_half) / len(first_half)
+    second_mean = sum(second_half) / len(second_half)
+
+    diff = second_mean - first_mean   # positive = accelerating; negative = decelerating
+
+    if diff > 2.0:    return "ACCELERATING"    # gains growing by ≥2 pts/round
+    elif diff < -2.0: return "DECELERATING"    # gains shrinking by ≥2 pts/round
+    else:             return "FLAT"            # stable gain rate
+```
+
+**Interpretation and actions**:
+
+| Momentum | Meaning | Action |
+|----------|---------|--------|
+| ACCELERATING | Current strategy is gaining momentum | Continue; increase rounds if budget allows |
+| FLAT | Consistent but not growing gains | Continue for ≤ 3 more rounds |
+| DECELERATING (≥ 3 rounds) | Gains are diminishing — approaching local max | Switch strategy (S14 analysis) OR stop |
+
+**Integration with convergence decision**:
+- DECELERATING alone does NOT stop the loop — it triggers S14 strategy-switch analysis
+- DECELERATING + FLAT trend (from Signal 3) → declare `momentum_stall` convergence signal
+- DECELERATING momentum overrides "try one more round" after plateau signal
+
+**AI reasoning approximation**:
+"After the last 5 rounds, the gains were: +22, +15, +9, +4, +1. The average gain is
+shrinking each round (second derivative negative). Momentum is DECELERATING.
+I will switch strategy via S14 rather than continuing with S3."
+
+---
+
 ## §5  Combined Convergence Decision
 
-All three signals are checked after every optimization round:
+All **four** signals are checked after every optimization round (v3.6.0):
 
 ```python
 def should_stop(score_history: list[float], current_round: int) -> tuple[bool, str]:
     """
     Returns (stop: bool, reason: str).
+    v3.6.0: Added Signal 4 (momentum) as strategy-switch trigger.
     """
     # Hard stop
     if current_round >= 20:
         return True, "max_rounds"
 
-    # Volatility: stop if stable
+    # Signal 1 — Volatility: stop if stable
     if volatility_check(score_history):
         return True, "volatility"
 
-    # Plateau: stop if exhausted
+    # Signal 2 — Plateau: stop if exhausted
     if plateau_check(score_history):
         return True, "plateau"
 
-    # Trend: stop if diverging
+    # Signal 3 — Trend: stop if diverging or stable
     trend = trend_check(score_history)
     if trend == "STABLE" and current_round >= 5:
         return True, "trend_stable"
     if trend == "DIVERGING":
         return True, "trend_diverging"
+
+    # Signal 4 — Momentum: trigger strategy switch, not full stop
+    momentum = momentum_check(score_history)
+    if momentum == "DECELERATING" and trend == "STABLE" and current_round >= 5:
+        return True, "momentum_stall"  # gains shrinking AND no upward trend
+    # Note: DECELERATING alone → trigger S14 strategy switch; do NOT stop loop
 
     return False, "continue"
 ```
@@ -180,6 +253,7 @@ def should_stop(score_history: list[float], current_round: int) -> tuple[bool, s
 | `plateau` | Try one final alternative strategy; if no improvement → proceed to Step 10 VERIFY |
 | `trend_stable` | Proceed to Step 10 VERIFY; log "plateau reached at round N" |
 | `trend_diverging` | **HALT**, roll back to best-score snapshot, escalate HUMAN_REVIEW; skip Step 10 |
+| `momentum_stall` | Run S14 strategy-switch analysis; if no new strategy → proceed to Step 10 VERIFY |
 | `max_rounds` | If score ≥ 700 → proceed to Step 10 VERIFY; else → HUMAN_REVIEW; skip Step 10 |
 
 **Step 10 VERIFY** (v3.1.0): After any convergence signal (except `trend_diverging` and FAIL),
@@ -204,8 +278,8 @@ The optimization loop maintains a score history list (persisted to `.<skill-name
     {"round": 3, "lowest_dim": "Error Handling",      "score": 718, "delta": +12}
   ],
   "convergence_check": [
-    {"round": 9,  "volatility": false, "plateau": false, "trend": "STABLE"},
-    {"round": 10", "volatility": true,  "plateau": false, "trend": "STABLE",
+    {"round": 9,  "volatility": false, "plateau": false, "trend": "STABLE", "momentum": "DECELERATING"},
+    {"round": 10, "volatility": true,  "plateau": false, "trend": "STABLE", "momentum": "FLAT",
      "decision": "STOP", "reason": "volatility"}
   ],
   "final_score": 732,
